@@ -3,6 +3,7 @@
     python scripts/live_decide.py            # mock: prints the worst-case cost, spends nothing
     python scripts/live_decide.py --live     # real calls; refused up front if the worst case is over --budget
     python scripts/live_decide.py --live --backstop-only   # owner's call: only the ledger cap stops it
+    python scripts/live_decide.py --live --limit 1 --budget 0.16   # Maya only
 
 The four others are the first Brightdesk customers (in file order) in four other journey stages, so
 the sample covers different kinds of next step. The worst case assumes every decision uses all its
@@ -22,6 +23,7 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 LIVE = "--live" in sys.argv
 BUDGET = float(sys.argv[sys.argv.index("--budget") + 1]) if "--budget" in sys.argv else 0.40
+LIMIT = int(sys.argv[sys.argv.index("--limit") + 1]) if "--limit" in sys.argv else 5  # --limit 1: Maya only
 os.environ["PHERI_LLM_MODE"] = "live" if LIVE else "mock"
 REPO = Path(__file__).resolve().parents[1]
 if not LIVE:  # mock rows cost nothing, but they don't belong in the real ledger
@@ -99,9 +101,55 @@ def worst_case(ds, keys, store) -> dict:
     return out
 
 
+MODE_LABELS = {"suggest": "suggest", "ask_owner": "ask owner", "act_alone": "act alone"}
+
+
+def card(o, prof, proof, store, run_usd: float, total, cap_usd: float) -> str:
+    """Maya's decision in the owner's format."""
+    d = o.decision
+    quotes = "; ".join(f'"{e["value"]}" ({e["ref"]})' for e in o.evidence
+                       if e["ref"] not in prof.facts and e["ref"] != "journey_stage")
+    facts = ", ".join(f"{e['ref']}={e['value']}" for e in o.evidence if e["ref"] in prof.facts or
+                      e["ref"] == "journey_stage")
+    rules = {r.id: r for r in rules_mod.active_rules(store)}
+    tried = [a["details"] for a in store.audit_log(o.customer_key)
+             if a["event"] == "rule_precheck" and a["details"]["action"] == "offer_discount"]
+    blocked_by = [r for r in proof.results if not r["passed"]]
+    rule = rules.get(blocked_by[0]["rule_id"]) if blocked_by else None
+    rule_text = (f"rule \"{rule.source_text}\" ({'; '.join(rules_mod.describe(c) for c in rule.checks)})"
+                 if rule else "no rule")
+    if tried:
+        attempt = "; ".join(f"Pheri tried offer_discount {t['discount_pct']:g}% -> "
+                            f"{'blocked: ' + '; '.join(t['violations']) if not t['allowed'] else 'allowed'}"
+                            for t in tried)
+    else:
+        attempt = ("Pheri did not try a discount this run. Code check of a 10% discount for Maya -> "
+                   f"allowed={proof.allowed}: {'; '.join(proof.violations)}")
+    action = o.action or {}
+    lines = [
+        f"ACTION:   {d['action']} via {d['channel']}" + (f", {d['discount_pct']:g}% off" if d["discount_pct"] else "")
+        + f"  [{action.get('status', 'no_action')}]",
+        f"          message: {d['message']}",
+        f"WHY THIS: {d['why_this']}",
+        f"          evidence: {quotes or 'none'}",
+        f"          facts: {facts or 'none'}",
+        f"WHY NOW:  {d['why_now']}",
+        f"BLOCKED:  {attempt}",
+        f"          by {rule_text}",
+        f"MODE:     {MODE_LABELS.get(action.get('mode'), action.get('mode') or 'n/a')}",
+        f"COST:     this run ${run_usd:.4f}; total Meta spend in the ledger ${total.settled_usd:.4f}"
+        + (f" (+ ${total.offset_usd:.2f} offset)" if total.offset_usd else "")
+        + f", cap ${cap_usd:.2f}",  # the configured cap, not this run's backstop
+    ]
+    if o.fallback:
+        lines.insert(1, f"          FALLBACK: {o.fallback}")
+    return "\n".join(lines)
+
+
+
 def main() -> int:
     ds = profile_mod.load("brightdesk")
-    keys = sample(ds)
+    keys = sample(ds)[:LIMIT]
     estimate = worst_case(ds, keys, MemoryStore("brightdesk"))
     print("Sample:", ", ".join(keys))
     print("Worst case: " + ", ".join(f"{k} ${v:.4f}" for k, v in estimate.items()) + f"  (budget ${BUDGET:.2f})")
@@ -118,6 +166,7 @@ def main() -> int:
     llm = LLM()
     store = MemoryStore("brightdesk")
 
+    maya = None
     drafts, how = seed_once(store, llm)
     for d in drafts:
         print(f"\nRule ({how}): {d.source_text!r} -> {[c.model_dump() for c in d.checks]}")
@@ -148,10 +197,13 @@ def main() -> int:
                                     decide_mod.context_for(store, p))
             print(f"  PROOF: a 10% discount for Maya through the code check -> allowed={proof.allowed}, "
                   f"violations={proof.violations}")
+            maya = (o, p, proof)
 
     after = Ledger().totals("meta")
     print(f"\nLedger (meta): settled ${before.settled_usd:.6f} -> ${after.settled_usd:.6f}; "
           f"this run ${after.settled_usd - before.settled_usd:.6f}; still reserved ${after.reserved_usd:.6f}")
+    if maya:
+        print("\n" + card(*maya, store, after.settled_usd - before.settled_usd, after, before.cap_usd))
     return 0
 
 

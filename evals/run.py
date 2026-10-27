@@ -153,6 +153,7 @@ def main(argv=None) -> int:
     rows = sample(items(), args.sample)
     providers = ["meta", "baseten"] if args.provider == "both" else [args.provider]
     probe = LLM()
+    caps = {}
     if args.live:
         for prov in providers:
             worst = worst_case_usd(rows, prov, probe)
@@ -161,6 +162,7 @@ def main(argv=None) -> int:
                 print("Worst case is over the budget: nothing was sent.")
                 return 2
         led = Ledger()
+        caps = {prov: led.cap_for(prov) for prov in providers}  # the configured caps, before this run's backstop
         for prov in providers:  # this process only: the ledger refuses anything past the budget
             os.environ[f"PHERI_{prov.upper()}_CAP_USD"] = f"{led.totals(prov).committed_usd + args.budget:.6f}"
     llm = LLM()
@@ -170,7 +172,7 @@ def main(argv=None) -> int:
         print(report(evaluate(rows, prov, llm), args.live) + "\n")
     if args.live:
         led = Ledger()
-        print("Ledger: " + "; ".join(f"{p} spent ${led.totals(p).settled_usd:.4f} of ${led.cap_for(p):.2f}"
+        print("Ledger: " + "; ".join(f"{p} spent ${led.totals(p).settled_usd:.4f} in total (cap ${caps[p]:.2f})"
                                      for p in providers))
     return 0
 

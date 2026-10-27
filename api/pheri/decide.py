@@ -348,6 +348,8 @@ def _decide_with_tools(run: _Run, llm: LLM, now: datetime, data_class: str):
 
 # ---- private mode: one call to Muse Spark Open -------------------------------------
 PRIVATE_PURPOSE = "decide_private"
+# Live, Muse Spark Open at effort medium spent all of 4000 output tokens reasoning before the JSON.
+PRIVATE_MAX_OUTPUT_TOKENS = 8000
 PRIVATE_SYSTEM = SYSTEM.split("\n", 3)[0] + """
 Everything you need is below: the profile, the allowed actions, and a dry run of the owner's rules on
 every allowed action (a discount is dry-run at 10%). Choose an action whose dry run is allowed, and
@@ -376,9 +378,9 @@ def _decide_private(run: _Run, llm: LLM, now: datetime, data_class: str):
                 {"role": "user", "content": json.dumps(payload, ensure_ascii=False, default=str)}]
     try:
         r = llm.complete_json(messages, schema=Decision, provider="baseten", purpose=PRIVATE_PURPOSE,
-                              effort="medium", max_tokens=MAX_OUTPUT_TOKENS, data_class=data_class)
+                              effort="medium", max_tokens=PRIVATE_MAX_OUTPUT_TOKENS, data_class=data_class)
     except ModelOutputError as exc:
-        return None, f"Muse Spark Open's answer was not the decision JSON ({str(exc)[:120]})", 1, 0.0
+        return None, f"Muse Spark Open's answer was not usable: {str(exc)[:160]}", 1, 0.0
     except Exception as exc:  # noqa: BLE001
         status = getattr(exc, "status_code", None)
         if status is None or not 400 <= status < 500:

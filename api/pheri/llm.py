@@ -267,14 +267,18 @@ class LLM:
             self._context_tokens[resp_id] = in_tok + out_tok
 
         incomplete = None
-        if getattr(raw, "status", None) == "incomplete":
+        if getattr(raw, "status", None) == "incomplete":  # Responses API
             incomplete = getattr(getattr(raw, "incomplete_details", None), "reason", None) or "unknown"
+        elif getattr((getattr(raw, "choices", None) or [None])[0], "finish_reason", None) == "length":  # Chat
+            incomplete = "max_output_tokens"
         parsed, parse_error = None, None
         if schema is not None and not calls:
             try:
                 parsed = _parse(text, schema)
             except ModelOutputError as exc:
                 if not tools:
+                    if incomplete:  # say why: the limit, not the model's grasp of the schema
+                        raise ModelOutputError(f"Answer cut off ({incomplete}) before the JSON was complete") from exc
                     raise
                 parse_error = f"cut off ({incomplete})" if incomplete else str(exc)
         return LLMResult(text, parsed, provider, model, in_tok, cached_tok, out_tok, actual, latency, resp_id, raw,

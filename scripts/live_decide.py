@@ -4,6 +4,7 @@
     python scripts/live_decide.py --live     # real calls; refused up front if the worst case is over --budget
     python scripts/live_decide.py --live --backstop-only   # owner's call: only the ledger cap stops it
     python scripts/live_decide.py --live --limit 1 --budget 0.16   # Maya only
+    python scripts/live_decide.py --live --limit 1 --budget 0.10 --private   # Maya, decided on Muse Spark Open
 
 The four others are the first Brightdesk customers (in file order) in four other journey stages, so
 the sample covers different kinds of next step. The worst case assumes every decision uses all its
@@ -24,6 +25,9 @@ sys.stdout.reconfigure(encoding="utf-8")
 LIVE = "--live" in sys.argv
 BUDGET = float(sys.argv[sys.argv.index("--budget") + 1]) if "--budget" in sys.argv else 0.40
 LIMIT = int(sys.argv[sys.argv.index("--limit") + 1]) if "--limit" in sys.argv else 5  # --limit 1: Maya only
+# --private: decide on Muse Spark Open (Meta's open-weight model, served by a partner, self-hostable).
+# The budget then applies to each provider: Meta (rule, profiles) and Baseten (decisions).
+PRIVATE = "--private" in sys.argv
 os.environ["PHERI_LLM_MODE"] = "live" if LIVE else "mock"
 REPO = Path(__file__).resolve().parents[1]
 if not LIVE:  # mock rows cost nothing, but they don't belong in the real ledger
@@ -38,6 +42,7 @@ from pheri.journey import stage  # noqa: E402
 from pheri.ledger import Ledger  # noqa: E402
 from pheri.llm import LLM, _estimate_input_tokens  # noqa: E402
 from pheri.pricing import cost_usd, price_for  # noqa: E402
+from pheri.guard import set_private_mode  # noqa: E402
 from pheri.store import MemoryStore  # noqa: E402
 
 MAYA = "maya.okafor@pinecrest.example"
@@ -94,11 +99,23 @@ def worst_case(ds, keys, store) -> dict:
         # The profile and the allowed actions are given once (repeat reads get a one-line note); every turn
         # after that re-reads the full output limit plus a check_rules-sized result.
         per_turn = decide_mod.MAX_OUTPUT_TOKENS + 200
+        if PRIVATE:  # one call, plus at worst the JSON-instructions retry (a refused schema call is not billed)
+            one = tok([{"role": "system", "content": decide_mod.PRIVATE_SYSTEM}]) + view + 400
+            price = price_for("baseten", "meta-models/muse-spark-open-1026")
+            out["decisions"] += cost_usd(price, one, decide_mod.MAX_OUTPUT_TOKENS) + cost_usd(
+                price, one + decide_mod.MAX_OUTPUT_TOKENS, decide_mod.MAX_OUTPUT_TOKENS)
+            continue
         for turn in range(decide_mod.MAX_TURNS):
             context = base + (view + per_turn * turn if turn else 0)
             out["decisions"] += cost_usd(PRICE, context, decide_mod.MAX_OUTPUT_TOKENS)
     out["total"] = sum(out.values())
     return out
+
+
+def over_budget(estimate: dict) -> bool:
+    if PRIVATE:  # each provider has its own budget
+        return estimate["compile"] + estimate["profiles"] > BUDGET or estimate["decisions"] > BUDGET
+    return estimate["total"] > BUDGET
 
 
 MODE_LABELS = {"suggest": "suggest", "ask_owner": "ask owner", "act_alone": "act alone"}
@@ -114,11 +131,15 @@ def card(o, prof, proof, store, run_usd: float, total, cap_usd: float) -> str:
     rules = {r.id: r for r in rules_mod.active_rules(store)}
     tried = [a["details"] for a in store.audit_log(o.customer_key)
              if a["event"] == "rule_precheck" and a["details"]["action"] == "offer_discount"]
+    dry = [x for x in o.prechecks if o.private and x["action"] == "offer_discount"]
     blocked_by = [r for r in proof.results if not r["passed"]]
     rule = rules.get(blocked_by[0]["rule_id"]) if blocked_by else None
     rule_text = (f"rule \"{rule.source_text}\" ({'; '.join(rules_mod.describe(c) for c in rule.checks)})"
                  if rule else "no rule")
-    if tried:
+    if dry:
+        attempt = ("Code dry-ran a 10% discount before the model saw anything -> "
+                   + ("blocked: " + "; ".join(dry[0]["violations"]) if not dry[0]["allowed"] else "allowed"))
+    elif tried:
         attempt = "; ".join(f"Pheri tried offer_discount {t['discount_pct']:g}% -> "
                             f"{'blocked: ' + '; '.join(t['violations']) if not t['allowed'] else 'allowed'}"
                             for t in tried)
@@ -137,10 +158,13 @@ def card(o, prof, proof, store, run_usd: float, total, cap_usd: float) -> str:
         f"BLOCKED:  {attempt}",
         f"          by {rule_text}",
         f"MODE:     {MODE_LABELS.get(action.get('mode'), action.get('mode') or 'n/a')}",
-        f"COST:     this run ${run_usd:.4f}; total Meta spend in the ledger ${total.settled_usd:.4f}"
+        f"COST:     Meta: this run ${run_usd:.4f}; total Meta spend in the ledger ${total.settled_usd:.4f}"
         + (f" (+ ${total.offset_usd:.2f} offset)" if total.offset_usd else "")
         + f", cap ${cap_usd:.2f}",  # the configured cap, not this run's backstop
     ]
+    if o.private:
+        lines.insert(1, "          DECIDED ON: Muse Spark Open, Meta's open-weight model, served by a partner "
+                        "(Baseten), self-hostable")
     if o.fallback:
         lines.insert(1, f"          FALLBACK: {o.fallback}")
     return "\n".join(lines)
@@ -153,7 +177,7 @@ def main() -> int:
     estimate = worst_case(ds, keys, MemoryStore("brightdesk"))
     print("Sample:", ", ".join(keys))
     print("Worst case: " + ", ".join(f"{k} ${v:.4f}" for k, v in estimate.items()) + f"  (budget ${BUDGET:.2f})")
-    if estimate["total"] > BUDGET and "--backstop-only" not in sys.argv:
+    if over_budget(estimate) and "--backstop-only" not in sys.argv:
         print("Worst case is over the budget: nothing was sent. (--backstop-only runs anyway; the ledger cap "
               "still refuses any call past the budget.)")
         return 2
@@ -161,13 +185,17 @@ def main() -> int:
         print("Mock mode: add --live to run for real.")
 
     before = Ledger().totals("meta")
+    before_bt = Ledger().totals("baseten")
     if LIVE:
         os.environ["PHERI_META_CAP_USD"] = f"{before.committed_usd + BUDGET:.6f}"  # this process only
+        os.environ["PHERI_BASETEN_CAP_USD"] = f"{before_bt.committed_usd + BUDGET:.6f}"
     llm = LLM()
     store = MemoryStore("brightdesk")
 
     maya = None
     drafts, how = seed_once(store, llm)
+    if PRIVATE:
+        set_private_mode(store, guard=True, decide=True, by="owner:demo")
     for d in drafts:
         print(f"\nRule ({how}): {d.source_text!r} -> {[c.model_dump() for c in d.checks]}")
         print(f"  Owner confirms: {d.described}  unsupported={d.unsupported}")
@@ -177,7 +205,7 @@ def main() -> int:
         o = decide_mod.decide(p, store, llm)
         status = o.action["status"] if o.action else "no_action"
         print(f"\n== {p.name} ({key}) stage={stage('brightdesk', p.facts).stage} -> {o.decision['action']} "
-              f"[{status}] turns={o.turns} fallback={o.fallback}")
+              f"[{status}] turns={o.turns} fallback={o.fallback} private={o.private}")
         print(f"  channel={o.decision['channel']} discount={o.decision['discount_pct']}")
         print(f"  message: {o.decision['message']}")
         print(f"  why this: {o.decision['why_this']}")
@@ -202,8 +230,15 @@ def main() -> int:
     after = Ledger().totals("meta")
     print(f"\nLedger (meta): settled ${before.settled_usd:.6f} -> ${after.settled_usd:.6f}; "
           f"this run ${after.settled_usd - before.settled_usd:.6f}; still reserved ${after.reserved_usd:.6f}")
+    after_bt = Ledger().totals("baseten")
+    bt_run = after_bt.settled_usd - before_bt.settled_usd
+    print(f"Ledger (baseten): settled ${before_bt.settled_usd:.6f} -> ${after_bt.settled_usd:.6f}; this run ${bt_run:.6f}")
     if maya:
-        print("\n" + card(*maya, store, after.settled_usd - before.settled_usd, after, before.cap_usd))
+        text = card(*maya, store, after.settled_usd - before.settled_usd, after, before.cap_usd)
+        if PRIVATE:
+            text += (f"\n          Baseten (Muse Spark Open): this run ${bt_run:.4f}; total ${after_bt.settled_usd:.4f}, "
+                     f"cap ${before_bt.cap_usd:.2f} (placeholder prices in pricing.py: an estimate)")
+        print("\n" + text)
     return 0
 
 

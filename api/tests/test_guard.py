@@ -320,3 +320,30 @@ def test_guard_result_round_trips_through_the_audit_log(llm):
     g = handle_reply(store, llm, "x@mail.example", "Can I pay with PayPal?", source_id="M9002")
     again = guard_mod._already_screened(store, "M9002")
     assert isinstance(again, GuardResult) and again == g
+
+
+def test_a_private_decision_cut_off_at_the_limit_says_so(brightdesk, llm, monkeypatch):
+    # Seen live: Muse Spark Open used all 4000 output tokens reasoning, and the JSON never came.
+    store = MemoryStore("brightdesk")
+    set_private_mode(store, guard=True, decide=True, by="owner")
+    _model(monkeypatch, lambda m, s: {"text": "", "incomplete": "max_output_tokens"}, purpose="decide_private")
+    calls = _calls(llm, monkeypatch)
+    out = decide(build_profile(brightdesk, MAYA, llm), store, llm)
+    assert "cut off (max_output_tokens)" in out.fallback and out.decision["action"] == "task_for_owner"
+    assert calls[-1]["max_tokens"] == 8000
+
+
+def test_chat_finish_reason_length_counts_as_cut_off(tmp_path, monkeypatch):
+    """The Chat Completions path (Baseten) reports a reply stopped at the output limit, like the Responses API."""
+    from types import SimpleNamespace
+
+    monkeypatch.setenv("PHERI_LLM_MODE", "live")
+    monkeypatch.setenv("PHERI_LEDGER_PATH", str(tmp_path / "ledger.sqlite"))
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    live = LLM(Settings())
+    raw = SimpleNamespace(choices=[SimpleNamespace(finish_reason="length", message=SimpleNamespace(content=""))])
+    monkeypatch.setattr(live, "_chat", lambda provider, req: ("", (100, 0, 4000), raw, "chat_1"))  # no network
+    with pytest.raises(ModelOutputError, match=r"cut off \(max_output_tokens\)"):
+        live.complete([{"role": "user", "content": "x"}], purpose="guard", provider="baseten",
+                      schema=guard_mod.GuardOutput, max_tokens=4000)
+    assert live.ledger.totals("baseten").reserved_usd == 0  # settled at the billed tokens, nothing left reserved

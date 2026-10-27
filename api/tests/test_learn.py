@@ -126,3 +126,25 @@ def test_mock_only_from_the_command_line(tmp_path, monkeypatch):
     done = subprocess.run([sys.executable, "-m", "pheri.learn", str(path)], capture_output=True, text=True,
                           encoding="utf-8", cwd=REPO_ROOT / "api", env=env)
     assert done.returncode != 0 and "Mock only" in (done.stderr + done.stdout)  # Wonder is not called yet
+
+
+def test_the_wonder_ready_summary_is_the_exact_request_and_sends_nothing(results, llm, monkeypatch):
+    sent = []
+    real = llm.complete
+    monkeypatch.setattr(llm, "complete", lambda m, **kw: sent.append(kw["purpose"]) or real(m, **kw))
+    summary = learn.wonder_ready(results, llm)
+    assert sent == ["learn_report"]  # only the offline stand-in ran (mock mode): no Wonder call
+    req = summary["request"]
+    assert req["model"] == "muse-wonder-1.0" and req["messages"] == learn.wonder_request(results)["messages"]
+    assert "twin_truth" not in json.dumps(req["messages"])  # the truth stays out of what Wonder reads
+    assert summary["worst_case_usd"] > 0 and summary["fact_count"] == len(learn.catalogue(results))
+    assert summary["offline_check"]["rejected"] == [] and "not sent" in summary["not_sent"]
+    json.dumps(summary)
+
+
+def test_learned_vs_truth_flags_a_wrong_best_action(results):
+    planted = json.loads(json.dumps(results))
+    stuck = next(s for s in planted["stages"] if s["stage"] == "stuck")
+    stuck["best_action"] = "offer_upgrade"  # the twin's truth says send_help
+    row = next(x for x in learn.learned_vs_truth(planted) if x["stage"] == "stuck")
+    assert row == {**row, "learned": "offer_upgrade", "true_best": "send_help", "match": False}

@@ -29,7 +29,8 @@ from .llm import LLM, ModelOutputError, register_mock
 
 PURPOSE = "learn_report"
 MODEL = "muse-wonder-1.0"  # reports and grading only, never in loops (CLAUDE.md)
-MAX_OUTPUT_TOKENS = 3000
+MAX_OUTPUT_TOKENS = 3000  # live, the 200-customer report used 2904 of these (1651 reasoning)
+EFFORT = "medium"
 VERDICTS = ("works", "hurts", "unclear")
 CLAIM_WORDS = ("works", "worked", "proven", "clearly", "significant", "boost", "improves", "improved", "hurts",
                "hurt", "harms", "drives")  # an unclear finding may not say these
@@ -189,15 +190,60 @@ def _code_headline(facts: dict[str, str]) -> str:
             f"{facts['overall.ci_high_pp']}): {facts['overall.verdict']}.")
 
 
-def write_report(results: dict, llm: LLM, data_class: str = "synthetic") -> LearnedReport:
+def wonder_request(results: dict) -> dict:
+    """Exactly what Muse Wonder would be sent for these results: one place, so a saved summary and a live
+    call can never differ."""
     facts = catalogue(results)
     stages = [s["stage"] for s in results["stages"]]
-    schema = report_schema(stages, list(facts))
     messages = [{"role": "system", "content": SYSTEM},
                 {"role": "user", "content": json.dumps({"business": results["business"], "facts": facts},
                                                        ensure_ascii=False)}]
+    return {"facts": facts, "messages": messages, "schema": report_schema(stages, list(facts)), "model": MODEL,
+            "purpose": PURPOSE, "effort": EFFORT, "max_output_tokens": MAX_OUTPUT_TOKENS}
+
+
+def learned_vs_truth(results: dict) -> list[dict]:
+    """For checking the twin, never for the owner's report: per stage, the action Pheri learned is best next
+    to the one the twin's hidden truth says is best. A real business has no truth table to compare with."""
+    truth = results["twin_truth"]["response"]
+    out = []
+    for s in results["stages"]:
+        if s["stage"] not in truth:
+            continue
+        row = truth[s["stage"]]
+        best = max(row, key=row.get)
+        out.append({"stage": s["stage"], "learned": s["best_action"], "true_best": best,
+                    "match": s["best_action"] == best, "true_rates": row})
+    return out
+
+
+def wonder_ready(results: dict, llm: LLM) -> dict:
+    """A summary to read before paying for a Wonder call: the exact request, its worst-case cost, how the
+    offline stand-in's report fares against code's checks, and (kept apart) learned vs the twin's truth."""
+    from .llm import _estimate_input_tokens, strict_schema
+    from .pricing import cost_usd, price_for
+
+    req = wonder_request(results)
+    schema = strict_schema(req["schema"])
+    tokens_in = _estimate_input_tokens(req["messages"]) + len(json.dumps(schema)) // 3
+    mock = write_report(results, llm)
+    return {"business": results["business"], "customers": results["customers"], "seed": results["seed"],
+            "not_sent": "Prepared for Muse Wonder; not sent. A live call is made on purpose (scripts/live_learn.py).",
+            "request": {"model": req["model"], "purpose": req["purpose"], "effort": req["effort"],
+                        "max_output_tokens": req["max_output_tokens"], "messages": req["messages"],
+                        "schema": schema},
+            "fact_count": len(req["facts"]),
+            "worst_case_usd": round(cost_usd(price_for("meta", MODEL), tokens_in, MAX_OUTPUT_TOKENS), 4),
+            "offline_check": {"kept_findings": len(mock.findings), "kept_caveats": len(mock.caveats),
+                              "rejected": mock.rejected, "markdown": mock.markdown},
+            "learned_vs_truth": learned_vs_truth(results)}
+
+
+def write_report(results: dict, llm: LLM, data_class: str = "synthetic") -> LearnedReport:
+    req = wonder_request(results)
+    facts, schema, messages = req["facts"], req["schema"], req["messages"]
     try:
-        r = llm.complete_json(messages, schema=schema, model=MODEL, purpose=PURPOSE, effort="medium",
+        r = llm.complete_json(messages, schema=schema, model=MODEL, purpose=PURPOSE, effort=EFFORT,
                               max_tokens=MAX_OUTPUT_TOKENS, data_class=data_class)
     except ModelOutputError as exc:
         return LearnedReport(_code_headline(facts), [], [], [{"part": "report", "text": "",
@@ -264,7 +310,19 @@ if __name__ == "__main__":
     if llm.settings.llm_mode != "mock":
         raise SystemExit("Mock only for now: Muse Wonder is called on purpose, later.")
     path = Path(sys.argv[1])
-    rep = write_report(json.loads(path.read_text(encoding="utf-8")), llm)
+    results = json.loads(path.read_text(encoding="utf-8"))
+    if "--wonder-ready" in sys.argv:  # write the summary to read before any Wonder call
+        out = Path(sys.argv[sys.argv.index("--wonder-ready") + 1])
+        summary = wonder_ready(results, llm)
+        out.write_text(json.dumps(summary, ensure_ascii=False, indent=1), encoding="utf-8")
+        off = [x for x in summary["learned_vs_truth"] if not x["match"]]
+        print(f"{out}: {summary['fact_count']} facts, worst case ${summary['worst_case_usd']:.4f}, offline check "
+              f"{summary['offline_check']['kept_findings']} findings kept, "
+              f"{len(summary['offline_check']['rejected'])} rejected; learned vs truth: "
+              + ("all match" if not off else ", ".join(f"{x['stage']} learned {x['learned']}, truth {x['true_best']}"
+                                                       for x in off)))
+        raise SystemExit(0)
+    rep = write_report(results, llm)
     print(rep.markdown)
     if rep.rejected:
         print("\nRejected by code:")

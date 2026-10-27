@@ -1,0 +1,612 @@
+{
+ "business": "kettle",
+ "customers": 5000,
+ "rounds": 10,
+ "seed": 7,
+ "holdout_share": 0.2,
+ "policy": "thompson",
+ "overall": {
+  "treated": {
+   "n": 4000,
+   "responded": 908,
+   "rate": 0.227
+  },
+  "holdout": {
+   "n": 1000,
+   "responded": 106,
+   "rate": 0.106
+  },
+  "lift_pp": 12.1,
+  "ci_pp": [
+   9.8,
+   14.4
+  ],
+  "verdict": "works",
+  "random_policy": {
+   "n": 4000,
+   "responded": 513,
+   "rate": 0.1283
+  }
+ },
+ "stages": [
+  {
+   "stage": "new",
+   "treated": {
+    "n": 543,
+    "responded": 116,
+    "rate": 0.2136
+   },
+   "holdout": {
+    "n": 127,
+    "responded": 8,
+    "rate": 0.063
+   },
+   "lift_pp": 15.1,
+   "ci_pp": [
+    9.6,
+    20.5
+   ],
+   "verdict": "works",
+   "best_action": "recommend_product",
+   "actions": [
+    {
+     "action": "send_reminder",
+     "n": 17,
+     "responded": 0,
+     "rate": 0.0,
+     "rate_ci": [
+      0.0,
+      0.1843
+     ],
+     "posterior_mean": 0.0526
+    },
+    {
+     "action": "recommend_product",
+     "n": 280,
+     "responded": 69,
+     "rate": 0.2464,
+     "rate_ci": [
+      0.1996,
+      0.3001
+     ],
+     "posterior_mean": 0.2482
+    },
+    {
+     "action": "offer_subscription",
+     "n": 24,
+     "responded": 1,
+     "rate": 0.0417,
+     "rate_ci": [
+      0.0074,
+      0.2024
+     ],
+     "posterior_mean": 0.0769
+    },
+    {
+     "action": "offer_discount",
+     "n": 198,
+     "responded": 45,
+     "rate": 0.2273,
+     "rate_ci": [
+      0.1744,
+      0.2905
+     ],
+     "posterior_mean": 0.23
+    },
+    {
+     "action": "send_checkin",
+     "n": 24,
+     "responded": 1,
+     "rate": 0.0417,
+     "rate_ci": [
+      0.0074,
+      0.2024
+     ],
+     "posterior_mean": 0.0769
+    }
+   ]
+  },
+  {
+   "stage": "loyal",
+   "treated": {
+    "n": 875,
+    "responded": 245,
+    "rate": 0.28
+   },
+   "holdout": {
+    "n": 234,
+    "responded": 47,
+    "rate": 0.2009
+   },
+   "lift_pp": 7.9,
+   "ci_pp": [
+    2.0,
+    13.8
+   ],
+   "verdict": "works",
+   "best_action": "recommend_product",
+   "actions": [
+    {
+     "action": "send_reminder",
+     "n": 31,
+     "responded": 3,
+     "rate": 0.0968,
+     "rate_ci": [
+      0.0335,
+      0.249
+     ],
+     "posterior_mean": 0.1212
+    },
+    {
+     "action": "recommend_product",
+     "n": 704,
+     "responded": 220,
+     "rate": 0.3125,
+     "rate_ci": [
+      0.2794,
+      0.3477
+     ],
+     "posterior_mean": 0.313
+    },
+    {
+     "action": "offer_subscription",
+     "n": 53,
+     "responded": 9,
+     "rate": 0.1698,
+     "rate_ci": [
+      0.092,
+      0.2923
+     ],
+     "posterior_mean": 0.1818
+    },
+    {
+     "action": "offer_discount",
+     "n": 61,
+     "responded": 11,
+     "rate": 0.1803,
+     "rate_ci": [
+      0.1038,
+      0.2947
+     ],
+     "posterior_mean": 0.1905
+    },
+    {
+     "action": "send_checkin",
+     "n": 26,
+     "responded": 2,
+     "rate": 0.0769,
+     "rate_ci": [
+      0.0214,
+      0.2414
+     ],
+     "posterior_mean": 0.1071
+    }
+   ]
+  },
+  {
+   "stage": "subscriber",
+   "treated": {
+    "n": 763,
+    "responded": 92,
+    "rate": 0.1206
+   },
+   "holdout": {
+    "n": 206,
+    "responded": 17,
+    "rate": 0.0825
+   },
+   "lift_pp": 3.8,
+   "ci_pp": [
+    -0.6,
+    8.2
+   ],
+   "verdict": "unclear",
+   "best_action": "recommend_product",
+   "actions": [
+    {
+     "action": "send_reminder",
+     "n": 26,
+     "responded": 0,
+     "rate": 0.0,
+     "rate_ci": [
+      0.0,
+      0.1287
+     ],
+     "posterior_mean": 0.0357
+    },
+    {
+     "action": "recommend_product",
+     "n": 327,
+     "responded": 53,
+     "rate": 0.1621,
+     "rate_ci": [
+      0.1261,
+      0.2059
+     ],
+     "posterior_mean": 0.1641
+    },
+    {
+     "action": "offer_subscription",
+     "n": 30,
+     "responded": 0,
+     "rate": 0.0,
+     "rate_ci": [
+      0.0,
+      0.1135
+     ],
+     "posterior_mean": 0.0312
+    },
+    {
+     "action": "offer_discount",
+     "n": 176,
+     "responded": 18,
+     "rate": 0.1023,
+     "rate_ci": [
+      0.0657,
+      0.1559
+     ],
+     "posterior_mean": 0.1067
+    },
+    {
+     "action": "send_checkin",
+     "n": 204,
+     "responded": 21,
+     "rate": 0.1029,
+     "rate_ci": [
+      0.0683,
+      0.1522
+     ],
+     "posterior_mean": 0.1068
+    }
+   ]
+  },
+  {
+   "stage": "lapsing",
+   "treated": {
+    "n": 823,
+    "responded": 179,
+    "rate": 0.2175
+   },
+   "holdout": {
+    "n": 176,
+    "responded": 9,
+    "rate": 0.0511
+   },
+   "lift_pp": 16.6,
+   "ci_pp": [
+    12.3,
+    20.9
+   ],
+   "verdict": "works",
+   "best_action": "offer_discount",
+   "actions": [
+    {
+     "action": "send_reminder",
+     "n": 57,
+     "responded": 7,
+     "rate": 0.1228,
+     "rate_ci": [
+      0.0608,
+      0.2325
+     ],
+     "posterior_mean": 0.1356
+    },
+    {
+     "action": "recommend_product",
+     "n": 65,
+     "responded": 8,
+     "rate": 0.1231,
+     "rate_ci": [
+      0.0637,
+      0.2245
+     ],
+     "posterior_mean": 0.1343
+    },
+    {
+     "action": "offer_subscription",
+     "n": 21,
+     "responded": 0,
+     "rate": 0.0,
+     "rate_ci": [
+      0.0,
+      0.1546
+     ],
+     "posterior_mean": 0.0435
+    },
+    {
+     "action": "offer_discount",
+     "n": 544,
+     "responded": 144,
+     "rate": 0.2647,
+     "rate_ci": [
+      0.2294,
+      0.3033
+     ],
+     "posterior_mean": 0.2656
+    },
+    {
+     "action": "send_checkin",
+     "n": 136,
+     "responded": 20,
+     "rate": 0.1471,
+     "rate_ci": [
+      0.0973,
+      0.2163
+     ],
+     "posterior_mean": 0.1522
+    }
+   ]
+  },
+  {
+   "stage": "cart_abandoner",
+   "treated": {
+    "n": 606,
+    "responded": 204,
+    "rate": 0.3366
+   },
+   "holdout": {
+    "n": 168,
+    "responded": 17,
+    "rate": 0.1012
+   },
+   "lift_pp": 23.5,
+   "ci_pp": [
+    17.6,
+    29.5
+   ],
+   "verdict": "works",
+   "best_action": "send_reminder",
+   "actions": [
+    {
+     "action": "send_reminder",
+     "n": 458,
+     "responded": 169,
+     "rate": 0.369,
+     "rate_ci": [
+      0.3261,
+      0.4141
+     ],
+     "posterior_mean": 0.3696
+    },
+    {
+     "action": "recommend_product",
+     "n": 13,
+     "responded": 0,
+     "rate": 0.0,
+     "rate_ci": [
+      0.0,
+      0.2281
+     ],
+     "posterior_mean": 0.0667
+    },
+    {
+     "action": "offer_subscription",
+     "n": 11,
+     "responded": 0,
+     "rate": 0.0,
+     "rate_ci": [
+      0.0,
+      0.2588
+     ],
+     "posterior_mean": 0.0769
+    },
+    {
+     "action": "offer_discount",
+     "n": 105,
+     "responded": 33,
+     "rate": 0.3143,
+     "rate_ci": [
+      0.2334,
+      0.4083
+     ],
+     "posterior_mean": 0.3178
+    },
+    {
+     "action": "send_checkin",
+     "n": 19,
+     "responded": 2,
+     "rate": 0.1053,
+     "rate_ci": [
+      0.0294,
+      0.3139
+     ],
+     "posterior_mean": 0.1429
+    }
+   ]
+  },
+  {
+   "stage": "gift_buyer",
+   "treated": {
+    "n": 390,
+    "responded": 72,
+    "rate": 0.1846
+   },
+   "holdout": {
+    "n": 89,
+    "responded": 8,
+    "rate": 0.0899
+   },
+   "lift_pp": 9.5,
+   "ci_pp": [
+    2.4,
+    16.6
+   ],
+   "verdict": "works",
+   "best_action": "recommend_product",
+   "actions": [
+    {
+     "action": "send_reminder",
+     "n": 18,
+     "responded": 0,
+     "rate": 0.0,
+     "rate_ci": [
+      0.0,
+      0.1759
+     ],
+     "posterior_mean": 0.05
+    },
+    {
+     "action": "recommend_product",
+     "n": 281,
+     "responded": 67,
+     "rate": 0.2384,
+     "rate_ci": [
+      0.1923,
+      0.2916
+     ],
+     "posterior_mean": 0.2403
+    },
+    {
+     "action": "offer_subscription",
+     "n": 18,
+     "responded": 0,
+     "rate": 0.0,
+     "rate_ci": [
+      0.0,
+      0.1759
+     ],
+     "posterior_mean": 0.05
+    },
+    {
+     "action": "offer_discount",
+     "n": 54,
+     "responded": 5,
+     "rate": 0.0926,
+     "rate_ci": [
+      0.0402,
+      0.1991
+     ],
+     "posterior_mean": 0.1071
+    },
+    {
+     "action": "send_checkin",
+     "n": 19,
+     "responded": 0,
+     "rate": 0.0,
+     "rate_ci": [
+      0.0,
+      0.1682
+     ],
+     "posterior_mean": 0.0476
+    }
+   ]
+  }
+ ],
+ "learning_curve": [
+  {
+   "round": 0,
+   "treated_rate": 0.1244,
+   "holdout_rate": 0.1224,
+   "best_pick_share": 0.204
+  },
+  {
+   "round": 1,
+   "treated_rate": 0.1553,
+   "holdout_rate": 0.1154,
+   "best_pick_share": 0.4282
+  },
+  {
+   "round": 2,
+   "treated_rate": 0.1769,
+   "holdout_rate": 0.1115,
+   "best_pick_share": 0.4782
+  },
+  {
+   "round": 3,
+   "treated_rate": 0.1865,
+   "holdout_rate": 0.0972,
+   "best_pick_share": 0.6025
+  },
+  {
+   "round": 4,
+   "treated_rate": 0.2046,
+   "holdout_rate": 0.1059,
+   "best_pick_share": 0.68
+  },
+  {
+   "round": 5,
+   "treated_rate": 0.2072,
+   "holdout_rate": 0.1141,
+   "best_pick_share": 0.7203
+  },
+  {
+   "round": 6,
+   "treated_rate": 0.2134,
+   "holdout_rate": 0.1132,
+   "best_pick_share": 0.7563
+  },
+  {
+   "round": 7,
+   "treated_rate": 0.2198,
+   "holdout_rate": 0.1073,
+   "best_pick_share": 0.8539
+  },
+  {
+   "round": 8,
+   "treated_rate": 0.2232,
+   "holdout_rate": 0.1058,
+   "best_pick_share": 0.8756
+  },
+  {
+   "round": 9,
+   "treated_rate": 0.227,
+   "holdout_rate": 0.106,
+   "best_pick_share": 0.8945
+  }
+ ],
+ "twin_truth": {
+  "note": "the twin's hidden ground truth, never shown to the policy",
+  "response": {
+   "new": {
+    "send_reminder": 0.05,
+    "recommend_product": 0.25,
+    "offer_subscription": 0.08,
+    "offer_discount": 0.18,
+    "send_checkin": 0.1
+   },
+   "loyal": {
+    "send_reminder": 0.04,
+    "recommend_product": 0.3,
+    "offer_subscription": 0.22,
+    "offer_discount": 0.2,
+    "send_checkin": 0.08
+   },
+   "subscriber": {
+    "send_reminder": 0.02,
+    "recommend_product": 0.14,
+    "offer_subscription": 0.01,
+    "offer_discount": 0.1,
+    "send_checkin": 0.12
+   },
+   "lapsing": {
+    "send_reminder": 0.08,
+    "recommend_product": 0.12,
+    "offer_subscription": 0.05,
+    "offer_discount": 0.26,
+    "send_checkin": 0.14
+   },
+   "cart_abandoner": {
+    "send_reminder": 0.35,
+    "recommend_product": 0.1,
+    "offer_subscription": 0.03,
+    "offer_discount": 0.3,
+    "send_checkin": 0.06
+   },
+   "gift_buyer": {
+    "send_reminder": 0.04,
+    "recommend_product": 0.22,
+    "offer_subscription": 0.03,
+    "offer_discount": 0.12,
+    "send_checkin": 0.06
+   }
+  },
+  "baseline": {
+   "new": 0.07,
+   "loyal": 0.2,
+   "subscriber": 0.1,
+   "lapsing": 0.04,
+   "cart_abandoner": 0.12,
+   "gift_buyer": 0.06
+  }
+ }
+}

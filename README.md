@@ -9,7 +9,7 @@ rules and approvals, and proves what worked with a holdout.
 Python 3.12+.
 
 ```bash
-pip install pydantic openai "psycopg[binary]" pytest
+pip install pydantic openai "psycopg[binary]" pytest fastapi httpx uvicorn
 cd api
 python -m pytest
 ```
@@ -24,6 +24,20 @@ Neon branch). Without it they are skipped and say so.
 python scripts/smoke.py           # mock mode, no network
 python scripts/smoke.py --live    # one real call per provider, under $0.01 in total
 ```
+
+## The API
+
+```bash
+cd api
+uvicorn pheri.app:app --reload     # mock mode: no network, no spend; docs at http://127.0.0.1:8000/docs
+```
+
+`pheri/app.py` (FastAPI) serves, per business: customers with their journey stage, a customer's
+profile and next best action, the approval queue (approve re-runs the rules, reject keeps a note),
+the owner's rules (add, confirm, list), the "offer a discount" check, the private-mode switch, the
+twin's results, the "What Pheri learned" report, the audit log, and `/spend` against the caps. Every
+route calls code that is already tested. It refuses live mode unless `PHERI_API_ALLOW_LIVE=1`, and it
+never calls Muse Wonder from a request.
 
 ## How Pheri decides
 

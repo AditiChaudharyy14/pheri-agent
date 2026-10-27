@@ -495,6 +495,8 @@ def strict_schema(schema: type[BaseModel]) -> dict:
 
     def walk(node):
         if isinstance(node, dict):
+            if "const" in node:  # a one-value Literal: written as an enum, the form every strict subset knows
+                node["enum"] = [node.pop("const")]
             if node.get("type") == "object" and "properties" in node:
                 node["additionalProperties"] = False
                 node["required"] = list(node["properties"].keys())

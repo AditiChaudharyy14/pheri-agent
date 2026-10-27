@@ -44,11 +44,16 @@ def store(llm):
 
 def _answer(**over):
     d = {"action": "send_help", "channel": "email", "discount_pct": None,
-         "message": "Hi Maya, here are the steps that fix the CSV export. - The team",
+         "message": "Hi Maya, here are the steps that fix the CSV export. - The Brightdesk team",
          "why_this": "Her exports fail.", "why_now": "She has been quiet for 12 days.",
-         "evidence": [{"ref": "failed_exports_30d", "value": "5"}, {"ref": "days_quiet", "value": "12"},
-                      {"ref": "T0999", "value": "it fails at 90%"}]}
+         "fact_keys": ["failed_exports_30d", "days_quiet"], "quote_ids": []}
     return json.dumps({**d, **over})
+
+
+def _quote_id(p, source_id):
+    from pheri.decide import quote_index
+
+    return next(qid for qid, q in quote_index(p).items() if q["source_id"] == source_id)
 
 
 def _model(monkeypatch, fn):
@@ -128,7 +133,7 @@ def test_plain_text_gets_one_nudge(maya, store, llm, monkeypatch):
 def test_plain_text_twice_falls_back_to_the_owner(maya, store, llm, monkeypatch):
     _model(monkeypatch, lambda m, s: "Let me think about Maya some more.")
     out = decide(maya, store, llm)
-    assert out.turns == 2 and "plain text" in out.fallback
+    assert out.turns == 2 and "not valid decision JSON" in out.fallback
     assert out.decision["action"] == "task_for_owner" and out.action["status"] == "executed"  # a task, nothing sent
 
 
@@ -156,16 +161,44 @@ def test_bad_tool_arguments_and_unknown_tools_return_errors_to_the_model(maya, s
 
 
 # ---- evidence -------------------------------------------------------------------------
-def test_made_up_evidence_is_dropped_and_pheri_may_not_act_alone(maya, store, llm, monkeypatch):
-    set_mode(store, "send_help", "act_alone", by="owner")
-    _model(monkeypatch, lambda m, s: _answer(why_now="She is quiet.", evidence=[
-        {"ref": "days_quiet", "value": "3"},  # wrong value
-        {"ref": "T0999", "value": "she said she will cancel"},  # not what she wrote
-        {"ref": "credit_score", "value": "low"},  # not in the profile at all
-    ]))
+def test_the_schema_only_offers_this_customers_facts_and_quotes(maya, store, llm, monkeypatch):
+    from pheri.decide import fact_names, quote_index
+
+    schemas = []
+    _model(monkeypatch, lambda m, s: schemas.append(s) or _answer())
+    decide(maya, store, llm)
+    props = schemas[0]["properties"]
+    assert set(props) >= {"fact_keys", "quote_ids"} and "evidence" not in props  # no free-text evidence
+    assert set(props["fact_keys"]["items"]["enum"]) == set(fact_names(maya))
+    assert set(props["quote_ids"]["items"]["enum"]) == set(quote_index(maya))
+    assert all("#" in qid for qid in quote_index(maya))  # "T0999#1": source and position
+
+
+def test_code_attaches_the_real_values_and_quotes(maya, store, llm, monkeypatch):
+    from pheri.decide import quote_index
+
+    qid = _quote_id(maya, "T1001")
+    _model(monkeypatch, lambda m, s: _answer(fact_keys=["days_quiet", "journey_stage"], quote_ids=[qid]))
     out = decide(maya, store, llm)
-    assert out.evidence == [] and len(out.dropped_evidence) == 3
-    assert out.action["status"] == "awaiting_approval"  # would have been executed with real evidence
+    assert out.evidence == [
+        {"kind": "fact", "ref": "days_quiet", "value": "12"},
+        {"kind": "fact", "ref": "journey_stage", "value": "stuck"},
+        {"kind": "quote", "ref": "T1001", "value": quote_index(maya)[qid]["quote"], "quote_id": qid}]
+
+
+def test_a_key_or_id_outside_the_lists_is_an_invalid_answer(maya, store, llm, monkeypatch):
+    _model(monkeypatch, lambda m, s: _answer(fact_keys=["credit_score"]))  # not in her profile
+    out = decide(maya, store, llm)
+    assert out.decision["action"] == "task_for_owner" and "not valid decision JSON" in out.fallback
+    _model(monkeypatch, lambda m, s: _answer(quote_ids=["T0999#99"]))  # no such verified quote
+    assert "not valid decision JSON" in decide(maya, store, llm).fallback
+
+
+def test_no_evidence_picked_means_pheri_may_not_act_alone(maya, store, llm, monkeypatch):
+    set_mode(store, "send_help", "act_alone", by="owner")
+    _model(monkeypatch, lambda m, s: _answer(why_now="She is quiet.", fact_keys=[], quote_ids=[]))
+    out = decide(maya, store, llm)
+    assert out.evidence == [] and out.action["status"] == "awaiting_approval"  # executed with evidence
 
 
 def test_a_number_nobody_can_back_caps_the_dial(maya, store, llm, monkeypatch):
@@ -279,7 +312,7 @@ LIVE_PRIVATE = {  # close to what Muse Spark Open answered for Maya, live
     "message": "Hi Maya, would a quick call help with the CSV export? — Pinecrest Team",
     "why_this": "Blocked with 5 failed exports and 2 open tickets.",
     "why_now": "Quiet for 12 days with renewal in 8 days.",
-    "evidence": [{"ref": "journey_stage", "value": "stuck"}, {"ref": "T1001", "value": "Can't connect our email inbox"}]}
+    "fact_keys": ["journey_stage"], "quote_ids": []}
 
 
 def test_the_tool_loop_names_the_business_and_asks_for_the_facts_behind_numbers(maya, store, llm, monkeypatch):
@@ -287,7 +320,8 @@ def test_the_tool_loop_names_the_business_and_asks_for_the_facts_behind_numbers(
 
     prompt = " ".join(SYSTEM.split())  # wording, not line breaks
     assert "never as the customer's own company" in prompt
-    assert "Cite the facts behind the numbers you use" in prompt and "At most 8 evidence items" in prompt
+    assert "fact_keys" in prompt and "quote_ids" in prompt and "at most 8 of each" in prompt
+    assert "code attaches the real values and quotes" in prompt
     calls = []
     real = llm.complete
     monkeypatch.setattr(llm, "complete", lambda items, **kw: calls.append(items) or real(items, **kw))
@@ -295,22 +329,29 @@ def test_the_tool_loop_names_the_business_and_asks_for_the_facts_behind_numbers(
     assert json.loads(calls[0][1]["content"])["business_name"] == "Brightdesk"
 
 
-def test_the_private_prompt_is_pinned_to_the_run_that_worked(maya, store, llm, monkeypatch):
-    """Live, the newer wording sent Muse Spark Open into whitespace-padded JSON; the private prompt is the one
-    from the 713-token run, word for word, and code (not the prompt) checks signature and numbers."""
+def test_the_private_prompt_differs_from_the_713_run_only_in_signature_and_evidence(maya, store, llm, monkeypatch):
+    """tests/data/private_prompt_713.txt is the private prompt of the one run that worked (713 tokens, ab38399)."""
+    from pheri.config import REPO_ROOT
     from pheri.decide import PRIVATE_SYSTEM
     from pheri.privacy import set_private_mode
 
-    text = " ".join(PRIVATE_SYSTEM.split())
-    assert "signed by the team" in text and "Never use a number that is not in the profile" in text
-    assert "business_name" not in text and "At most 8 evidence items" not in text
+    old = (REPO_ROOT / "api" / "tests" / "data" / "private_prompt_713.txt").read_text(encoding="utf-8").splitlines()
+    new = PRIVATE_SYSTEM.splitlines()
+    removed = [line for line in old if line not in new]
+    added = [line for line in new if line not in old]
+    sig = next(i for i, line in enumerate(old) if line.startswith("- message:"))
+    ev = next(i for i, line in enumerate(old) if line.startswith("- evidence:"))
+    assert removed == old[sig:sig + 2] + old[ev:ev + 4]  # the signature and the free-text evidence lines
+    assert added[0].startswith("- message:") and "business_name team" in added[0]
+    assert added[2].startswith("- fact_keys:") and all("evidence" not in line for line in added)
+    assert len(added) == 6  # 2 signature lines + 4 evidence lines; every other line is word for word
     set_private_mode(store, decide=True, by="owner")
     calls = []
     real = llm.complete
     monkeypatch.setattr(llm, "complete", lambda items, **kw: calls.append(items) or real(items, **kw))
     decide(maya, store, llm)
     payload = json.loads(calls[0][-1]["content"])
-    assert set(payload) == {"today", "profile", "allowed", "dry_run"} and "business_name" not in payload["allowed"]
+    assert payload["business_name"] == "Brightdesk" and payload["allowed"]["business_name"] == "Brightdesk"
 
 
 def test_signed_as_the_customers_company_is_caught_in_code(maya, store, llm, monkeypatch):
@@ -333,9 +374,8 @@ def test_numbers_cited_as_facts_pass_and_the_business_signature_is_fine(maya, st
     set_private_mode(store, decide=True, by="owner")
     set_mode(store, "book_call", "act_alone", by="owner")
     fixed = {**LIVE_PRIVATE, "message": "Hi Maya, would a quick call help with the CSV export? — The Brightdesk team",
-             "evidence": LIVE_PRIVATE["evidence"] + [
-                 {"ref": "failed_exports_30d", "value": "5"}, {"ref": "open_tickets", "value": "2"},
-                 {"ref": "days_quiet", "value": "12"}, {"ref": "renewal_in_days", "value": "8"}]}
+             "fact_keys": ["journey_stage", "failed_exports_30d", "open_tickets", "days_quiet", "renewal_in_days"],
+             "quote_ids": [_quote_id(maya, "T1001")]}
     monkeypatch.setitem(llm_module._mock_responders, "decide_private", lambda m, s: json.dumps(fixed))
     out = decide(maya, store, llm)
     assert out.message_problems == [] and out.unsupported_numbers == [] and out.dropped_evidence == []
@@ -363,10 +403,11 @@ def test_every_live_run_can_be_saved_in_full(tmp_path, maya, store, llm):
 
 
 def test_evidence_is_capped_at_8_in_code(maya, store, llm, monkeypatch):
-    many = [{"ref": "days_quiet", "value": "12"}] * 30  # a runaway list
-    _model(monkeypatch, lambda m, s: _answer(evidence=many))
+    keys = list(maya.facts)  # more than 8, with repeats on top: a runaway list
+    assert len(keys) > 8
+    _model(monkeypatch, lambda m, s: _answer(fact_keys=keys + keys))
     out = decide(maya, store, llm)
-    assert len(out.evidence) + len(out.dropped_evidence) == 8
+    assert [e["ref"] for e in out.evidence] == keys[:8]
 
 
 def test_private_decide_is_strict_json_schema_only(maya, store, llm, monkeypatch):

@@ -29,7 +29,7 @@ from .llm import LLM, ModelOutputError, register_mock
 
 PURPOSE = "learn_report"
 MODEL = "muse-wonder-1.0"  # reports and grading only, never in loops (CLAUDE.md)
-MAX_OUTPUT_TOKENS = 3000  # live, the 200-customer report used 2904 of these (1651 reasoning)
+MAX_OUTPUT_TOKENS = 5000  # live, the 200-customer report used 2904 of 3000 (1651 reasoning): too close
 EFFORT = "medium"
 VERDICTS = ("works", "hurts", "unclear")
 CLAIM_WORDS = ("works", "worked", "proven", "clearly", "significant", "boost", "improves", "improved", "hurts",

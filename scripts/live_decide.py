@@ -42,7 +42,7 @@ from pheri.journey import stage  # noqa: E402
 from pheri.ledger import Ledger  # noqa: E402
 from pheri.llm import LLM, _estimate_input_tokens  # noqa: E402
 from pheri.pricing import cost_usd, price_for  # noqa: E402
-from pheri.guard import set_private_mode  # noqa: E402
+from pheri.privacy import private_mode, set_private_mode  # noqa: E402
 from pheri.store import MemoryStore  # noqa: E402
 
 MAYA = "maya.okafor@pinecrest.example"
@@ -163,8 +163,11 @@ def card(o, prof, proof, store, run_usd: float, total, cap_usd: float) -> str:
         + f", cap ${cap_usd:.2f}",  # the configured cap, not this run's backstop
     ]
     if o.private:
-        lines.insert(1, "          DECIDED ON: Muse Spark Open, Meta's open-weight model, served by a partner "
-                        "(Baseten), self-hostable")
+        lines.insert(0, "PRIVATE MODE: Muse Spark Open via Baseten (Meta's open-weight model, served by a partner, "
+                        "self-hostable)")
+        steps = private_mode(store)
+        lines.insert(1, "          private steps: " + ", ".join(k for k, v in steps.items() if v)
+                     + "; on the Meta API: " + (", ".join(k for k, v in steps.items() if not v) or "nothing"))
     if o.fallback:
         lines.insert(1, f"          FALLBACK: {o.fallback}")
     return "\n".join(lines)

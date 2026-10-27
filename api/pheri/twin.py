@@ -183,3 +183,159 @@ def simulate(twin: Twin, policy) -> list[Record]:
             if rec.action:
                 policy.update(rec.seen_stage, rec.action, rec.responded)
     return records
+
+
+# ---- Thompson sampling ---------------------------------------------------------------
+class ThompsonPolicy:
+    """One Beta(1, 1) prior per seen stage x action. For each customer it draws once from every allowed
+    action's posterior and picks the highest draw; outcomes update the posteriors at the end of a round."""
+
+    def __init__(self, seed: int = 0):
+        self.rng = random.Random(f"{seed}:thompson")
+        self.ab: dict[tuple[str, str], list[int]] = {}
+
+    def _beta(self, stage: str, action: str) -> list[int]:
+        return self.ab.setdefault((stage, action), [1, 1])
+
+    def choose(self, seen_stage: str, allowed: tuple[str, ...]) -> str:
+        return max(allowed, key=lambda a: self.rng.betavariate(*self._beta(seen_stage, a)))
+
+    def update(self, seen_stage: str, action: str, responded: bool) -> None:
+        self._beta(seen_stage, action)[0 if responded else 1] += 1
+
+    def posterior_mean(self, stage: str, action: str) -> float:
+        a, b = self._beta(stage, action)
+        return a / (a + b)
+
+
+# ---- lift vs holdout ------------------------------------------------------------------
+Z95 = 1.96
+
+
+def lift_ci(k1: int, n1: int, k0: int, n0: int) -> tuple[float, float, float] | None:
+    """(lift, low, high) in percentage points: treated rate minus holdout rate, 95% normal interval."""
+    if not n1 or not n0:
+        return None
+    p1, p0 = k1 / n1, k0 / n0
+    se = (p1 * (1 - p1) / n1 + p0 * (1 - p0) / n0) ** 0.5
+    return round(100 * (p1 - p0), 1), round(100 * (p1 - p0 - Z95 * se), 1), round(100 * (p1 - p0 + Z95 * se), 1)
+
+
+def wilson(k: int, n: int) -> list[float] | None:
+    """95% interval for one rate; sensible for small n and for 0 or n successes."""
+    if not n:
+        return None
+    p, z2 = k / n, Z95 ** 2
+    centre = (p + z2 / (2 * n)) / (1 + z2 / n)
+    half = Z95 * ((p * (1 - p) / n + z2 / (4 * n * n)) ** 0.5) / (1 + z2 / n)
+    return [round(max(0.0, centre - half), 4), round(min(1.0, centre + half), 4)]
+
+
+def verdict(ci: tuple[float, float, float] | None) -> str:
+    """Decided in code, so a report can never call something that is not clear a win."""
+    if ci is None:
+        return "unclear"
+    return "works" if ci[1] > 0 else "hurts" if ci[2] < 0 else "unclear"
+
+
+def _group(records: list[Record]) -> dict:
+    n, k = len(records), sum(r.responded for r in records)
+    return {"n": n, "responded": k, "rate": round(k / n, 4) if n else None}
+
+
+def _lift(treated: list[Record], holdout: list[Record]) -> dict:
+    t, h = _group(treated), _group(holdout)
+    ci = lift_ci(t["responded"], t["n"], h["responded"], h["n"])
+    return {"treated": t, "holdout": h, "lift_pp": ci[0] if ci else None, "ci_pp": [ci[1], ci[2]] if ci else None,
+            "verdict": verdict(ci)}
+
+
+def _true_best(business: str, hidden: str, allowed: tuple[str, ...]) -> str | None:
+    return max(allowed, key=lambda a: RESPONSE[business][hidden][a]) if allowed else None
+
+
+def report(twin: Twin, records: list[Record], policy: ThompsonPolicy,
+           random_records: list[Record] | None = None) -> dict:
+    """The chart-ready results: overall and per seen stage lift with 95% intervals, what the policy learned per
+    stage x action, the learning curve, and (labelled) the twin's hidden truth for comparison."""
+    b = twin.business
+    treated = [r for r in records if not r.holdout]
+    holdout = [r for r in records if r.holdout]
+    stages = []
+    for s in STAGES[b]:
+        st = [r for r in treated if r.seen_stage == s]
+        actions = []
+        for a in ACTIONS[b]:
+            g = _group([r for r in st if r.action == a])
+            actions.append({"action": a, **g, "rate_ci": wilson(g["responded"], g["n"]),
+                            "posterior_mean": round(policy.posterior_mean(s, a), 4)})
+        tried = [x for x in actions if x["n"]]
+        best = max(tried, key=lambda x: x["posterior_mean"])["action"] if tried else None
+        stages.append({"stage": s, **_lift(st, [r for r in holdout if r.seen_stage == s]), "best_action": best,
+                       "actions": actions})
+    by_id = {c.id: c for c in twin.customers}
+    curve = []
+    for r in range(twin.rounds):
+        this = [x for x in treated if x.round == r and x.action]
+        best = [x.action == _true_best(b, x.hidden_stage, by_id[x.customer].allowed(b, twin.rules)) for x in this]
+        curve.append({"round": r, "treated_rate": _group([x for x in treated if x.round <= r])["rate"],
+                      "holdout_rate": _group([x for x in holdout if x.round <= r])["rate"],
+                      "best_pick_share": round(sum(best) / len(best), 4) if best else None})
+    overall = _lift(treated, holdout)
+    if random_records is not None:
+        overall["random_policy"] = _group([r for r in random_records if not r.holdout])
+    return {"business": b, "customers": len(twin.customers), "rounds": twin.rounds, "seed": twin.seed,
+            "holdout_share": round(len(holdout) / len(records), 4), "policy": "thompson", "overall": overall,
+            "stages": stages, "learning_curve": curve,
+            "twin_truth": {"note": "the twin's hidden ground truth, never shown to the policy",
+                           "response": RESPONSE[b], "baseline": BASELINE[b]}}
+
+
+def run(business: str, n: int = 200, rounds: int = 10, seed: int = 7) -> dict:
+    """Thompson sampling on a fresh twin, plus the random policy on the same twin and luck for comparison."""
+    twin = population(business, n, rounds, seed)
+    policy = ThompsonPolicy(seed)
+    records = simulate(twin, policy)
+    return report(twin, records, policy, simulate(twin, RandomPolicy(seed)))
+
+
+def table(res: dict) -> str:
+    o = res["overall"]
+    rnd = f"  (random policy {o['random_policy']['rate']:.1%})" if "random_policy" in o else ""
+    lines = [f"{res['business']}: {res['customers']} customers, {res['rounds']} rounds, "
+             f"holdout {res['holdout_share']:.0%}, seed {res['seed']}",
+             f"  overall          treated {o['treated']['rate']:.1%} (n={o['treated']['n']}), "
+             f"holdout {o['holdout']['rate']:.1%} (n={o['holdout']['n']}), lift {o['lift_pp']:+.1f} pp "
+             f"[{o['ci_pp'][0]:+.1f}, {o['ci_pp'][1]:+.1f}] {o['verdict']}{rnd}"]
+    for s in res["stages"]:
+        if s["lift_pp"] is None:
+            lines.append(f"  {s['stage']:16} too few to compare (treated {s['treated']['n']}, "
+                         f"holdout {s['holdout']['n']})")
+        else:
+            lines.append(f"  {s['stage']:16} lift {s['lift_pp']:+6.1f} pp [{s['ci_pp'][0]:+6.1f}, "
+                         f"{s['ci_pp'][1]:+6.1f}]  {s['verdict']:8} best {s['best_action']:18} "
+                         f"(treated {s['treated']['n']}, holdout {s['holdout']['n']})")
+    return "\n".join(lines)
+
+
+if __name__ == "__main__":
+    import argparse
+    import sys
+    from pathlib import Path
+
+    from .config import REPO_ROOT
+
+    ap = argparse.ArgumentParser(description="Run the customer twin with Thompson sampling (maths only, $0).")
+    ap.add_argument("business", choices=sorted(RESPONSE))
+    ap.add_argument("--customers", type=int, default=200, help="200 while developing; 5000 for the full run")
+    ap.add_argument("--rounds", type=int, default=10)
+    ap.add_argument("--seed", type=int, default=7)
+    ap.add_argument("--out", default=None, help="results JSON (default .pheri/twin/<business>-n<N>-seed<S>.json)")
+    args = ap.parse_args()
+    sys.stdout.reconfigure(encoding="utf-8")
+    res = run(args.business, args.customers, args.rounds, args.seed)
+    out = Path(args.out or REPO_ROOT / ".pheri" / "twin" / f"{args.business}-n{args.customers}-seed{args.seed}.json")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(res, indent=1), encoding="utf-8")
+    print(table(res))
+    print(f"\nChart-ready results: {out}")

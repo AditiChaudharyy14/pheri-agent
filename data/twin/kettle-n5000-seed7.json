@@ -5,21 +5,22 @@
  "seed": 7,
  "holdout_share": 0.2,
  "policy": "thompson",
+ "min_tries": 20,
  "overall": {
   "treated": {
    "n": 4000,
-   "responded": 908,
-   "rate": 0.227
+   "responded": 867,
+   "rate": 0.2167
   },
   "holdout": {
    "n": 1000,
    "responded": 106,
    "rate": 0.106
   },
-  "lift_pp": 12.1,
+  "lift_pp": 11.1,
   "ci_pp": [
-   9.8,
-   14.4
+   8.8,
+   13.4
   ],
   "verdict": "works",
   "random_policy": {
@@ -33,76 +34,76 @@
    "stage": "new",
    "treated": {
     "n": 543,
-    "responded": 116,
-    "rate": 0.2136
+    "responded": 117,
+    "rate": 0.2155
    },
    "holdout": {
     "n": 127,
     "responded": 8,
     "rate": 0.063
    },
-   "lift_pp": 15.1,
+   "lift_pp": 15.2,
    "ci_pp": [
-    9.6,
-    20.5
+    9.8,
+    20.7
    ],
    "verdict": "works",
    "best_action": "recommend_product",
    "actions": [
     {
      "action": "send_reminder",
-     "n": 17,
+     "n": 33,
+     "responded": 3,
+     "rate": 0.0909,
+     "rate_ci": [
+      0.0314,
+      0.2357
+     ],
+     "posterior_mean": 0.1143
+    },
+    {
+     "action": "recommend_product",
+     "n": 383,
+     "responded": 100,
+     "rate": 0.2611,
+     "rate_ci": [
+      0.2196,
+      0.3073
+     ],
+     "posterior_mean": 0.2623
+    },
+    {
+     "action": "offer_subscription",
+     "n": 66,
+     "responded": 10,
+     "rate": 0.1515,
+     "rate_ci": [
+      0.0844,
+      0.2569
+     ],
+     "posterior_mean": 0.1618
+    },
+    {
+     "action": "offer_discount",
+     "n": 41,
+     "responded": 4,
+     "rate": 0.0976,
+     "rate_ci": [
+      0.0386,
+      0.2255
+     ],
+     "posterior_mean": 0.1163
+    },
+    {
+     "action": "send_checkin",
+     "n": 20,
      "responded": 0,
      "rate": 0.0,
      "rate_ci": [
       0.0,
-      0.1843
+      0.1611
      ],
-     "posterior_mean": 0.0526
-    },
-    {
-     "action": "recommend_product",
-     "n": 280,
-     "responded": 69,
-     "rate": 0.2464,
-     "rate_ci": [
-      0.1996,
-      0.3001
-     ],
-     "posterior_mean": 0.2482
-    },
-    {
-     "action": "offer_subscription",
-     "n": 24,
-     "responded": 1,
-     "rate": 0.0417,
-     "rate_ci": [
-      0.0074,
-      0.2024
-     ],
-     "posterior_mean": 0.0769
-    },
-    {
-     "action": "offer_discount",
-     "n": 198,
-     "responded": 45,
-     "rate": 0.2273,
-     "rate_ci": [
-      0.1744,
-      0.2905
-     ],
-     "posterior_mean": 0.23
-    },
-    {
-     "action": "send_checkin",
-     "n": 24,
-     "responded": 1,
-     "rate": 0.0417,
-     "rate_ci": [
-      0.0074,
-      0.2024
-     ],
-     "posterior_mean": 0.0769
+     "posterior_mean": 0.0455
     }
    ]
   },
@@ -110,76 +111,76 @@
    "stage": "loyal",
    "treated": {
     "n": 875,
-    "responded": 245,
-    "rate": 0.28
+    "responded": 232,
+    "rate": 0.2651
    },
    "holdout": {
     "n": 234,
     "responded": 47,
     "rate": 0.2009
    },
-   "lift_pp": 7.9,
+   "lift_pp": 6.4,
    "ci_pp": [
-    2.0,
-    13.8
+    0.5,
+    12.3
    ],
    "verdict": "works",
    "best_action": "recommend_product",
    "actions": [
     {
      "action": "send_reminder",
-     "n": 31,
-     "responded": 3,
-     "rate": 0.0968,
+     "n": 20,
+     "responded": 0,
+     "rate": 0.0,
      "rate_ci": [
-      0.0335,
-      0.249
+      0.0,
+      0.1611
      ],
-     "posterior_mean": 0.1212
+     "posterior_mean": 0.0455
     },
     {
      "action": "recommend_product",
-     "n": 704,
-     "responded": 220,
-     "rate": 0.3125,
+     "n": 608,
+     "responded": 185,
+     "rate": 0.3043,
      "rate_ci": [
-      0.2794,
-      0.3477
+      0.269,
+      0.342
      ],
-     "posterior_mean": 0.313
+     "posterior_mean": 0.3049
     },
     {
      "action": "offer_subscription",
-     "n": 53,
-     "responded": 9,
-     "rate": 0.1698,
+     "n": 154,
+     "responded": 35,
+     "rate": 0.2273,
      "rate_ci": [
-      0.092,
-      0.2923
+      0.1682,
+      0.2996
      ],
-     "posterior_mean": 0.1818
+     "posterior_mean": 0.2308
     },
     {
      "action": "offer_discount",
-     "n": 61,
-     "responded": 11,
-     "rate": 0.1803,
+     "n": 56,
+     "responded": 8,
+     "rate": 0.1429,
      "rate_ci": [
-      0.1038,
-      0.2947
+      0.0742,
+      0.2574
      ],
-     "posterior_mean": 0.1905
+     "posterior_mean": 0.1552
     },
     {
      "action": "send_checkin",
-     "n": 26,
-     "responded": 2,
-     "rate": 0.0769,
+     "n": 37,
+     "responded": 4,
+     "rate": 0.1081,
      "rate_ci": [
-      0.0214,
-      0.2414
+      0.0429,
+      0.2471
      ],
-     "posterior_mean": 0.1071
+     "posterior_mean": 0.1282
     }
    ]
   },
@@ -187,76 +188,76 @@
    "stage": "subscriber",
    "treated": {
     "n": 763,
-    "responded": 92,
-    "rate": 0.1206
+    "responded": 85,
+    "rate": 0.1114
    },
    "holdout": {
     "n": 206,
     "responded": 17,
     "rate": 0.0825
    },
-   "lift_pp": 3.8,
+   "lift_pp": 2.9,
    "ci_pp": [
-    -0.6,
-    8.2
+    -1.5,
+    7.3
    ],
    "verdict": "unclear",
    "best_action": "recommend_product",
    "actions": [
     {
      "action": "send_reminder",
-     "n": 26,
+     "n": 28,
      "responded": 0,
      "rate": 0.0,
      "rate_ci": [
       0.0,
-      0.1287
+      0.1206
      ],
-     "posterior_mean": 0.0357
+     "posterior_mean": 0.0333
     },
     {
      "action": "recommend_product",
-     "n": 327,
-     "responded": 53,
-     "rate": 0.1621,
+     "n": 274,
+     "responded": 35,
+     "rate": 0.1277,
      "rate_ci": [
-      0.1261,
-      0.2059
+      0.0933,
+      0.1725
      ],
-     "posterior_mean": 0.1641
+     "posterior_mean": 0.1304
     },
     {
      "action": "offer_subscription",
-     "n": 30,
+     "n": 29,
      "responded": 0,
      "rate": 0.0,
      "rate_ci": [
       0.0,
-      0.1135
+      0.117
      ],
-     "posterior_mean": 0.0312
+     "posterior_mean": 0.0323
     },
     {
      "action": "offer_discount",
-     "n": 176,
-     "responded": 18,
-     "rate": 0.1023,
+     "n": 359,
+     "responded": 45,
+     "rate": 0.1253,
      "rate_ci": [
-      0.0657,
-      0.1559
+      0.095,
+      0.1636
      ],
-     "posterior_mean": 0.1067
+     "posterior_mean": 0.1274
     },
     {
      "action": "send_checkin",
-     "n": 204,
-     "responded": 21,
-     "rate": 0.1029,
+     "n": 73,
+     "responded": 5,
+     "rate": 0.0685,
      "rate_ci": [
-      0.0683,
-      0.1522
+      0.0296,
+      0.1505
      ],
-     "posterior_mean": 0.1068
+     "posterior_mean": 0.08
     }
    ]
   },
@@ -264,43 +265,120 @@
    "stage": "lapsing",
    "treated": {
     "n": 823,
-    "responded": 179,
-    "rate": 0.2175
+    "responded": 176,
+    "rate": 0.2139
    },
    "holdout": {
     "n": 176,
     "responded": 9,
     "rate": 0.0511
    },
-   "lift_pp": 16.6,
+   "lift_pp": 16.3,
    "ci_pp": [
-    12.3,
-    20.9
+    12.0,
+    20.6
    ],
    "verdict": "works",
    "best_action": "offer_discount",
    "actions": [
     {
      "action": "send_reminder",
-     "n": 57,
-     "responded": 7,
-     "rate": 0.1228,
+     "n": 21,
+     "responded": 0,
+     "rate": 0.0,
      "rate_ci": [
-      0.0608,
-      0.2325
+      0.0,
+      0.1546
      ],
-     "posterior_mean": 0.1356
+     "posterior_mean": 0.0435
     },
     {
      "action": "recommend_product",
-     "n": 65,
+     "n": 63,
      "responded": 8,
-     "rate": 0.1231,
+     "rate": 0.127,
      "rate_ci": [
-      0.0637,
-      0.2245
+      0.0658,
+      0.2311
      ],
-     "posterior_mean": 0.1343
+     "posterior_mean": 0.1385
+    },
+    {
+     "action": "offer_subscription",
+     "n": 22,
+     "responded": 0,
+     "rate": 0.0,
+     "rate_ci": [
+      0.0,
+      0.1487
+     ],
+     "posterior_mean": 0.0417
+    },
+    {
+     "action": "offer_discount",
+     "n": 546,
+     "responded": 138,
+     "rate": 0.2527,
+     "rate_ci": [
+      0.2181,
+      0.2908
+     ],
+     "posterior_mean": 0.2536
+    },
+    {
+     "action": "send_checkin",
+     "n": 171,
+     "responded": 30,
+     "rate": 0.1754,
+     "rate_ci": [
+      0.1257,
+      0.2394
+     ],
+     "posterior_mean": 0.1792
+    }
+   ]
+  },
+  {
+   "stage": "cart_abandoner",
+   "treated": {
+    "n": 606,
+    "responded": 194,
+    "rate": 0.3201
+   },
+   "holdout": {
+    "n": 168,
+    "responded": 17,
+    "rate": 0.1012
+   },
+   "lift_pp": 21.9,
+   "ci_pp": [
+    16.0,
+    27.8
+   ],
+   "verdict": "works",
+   "best_action": "send_reminder",
+   "actions": [
+    {
+     "action": "send_reminder",
+     "n": 328,
+     "responded": 126,
+     "rate": 0.3841,
+     "rate_ci": [
+      0.3331,
+      0.4378
+     ],
+     "posterior_mean": 0.3848
+    },
+    {
+     "action": "recommend_product",
+     "n": 20,
+     "responded": 1,
+     "rate": 0.05,
+     "rate_ci": [
+      0.0089,
+      0.2361
+     ],
+     "posterior_mean": 0.0909
     },
     {
      "action": "offer_subscription",
@@ -315,102 +393,25 @@
     },
     {
      "action": "offer_discount",
-     "n": 544,
-     "responded": 144,
-     "rate": 0.2647,
+     "n": 216,
+     "responded": 66,
+     "rate": 0.3056,
      "rate_ci": [
-      0.2294,
-      0.3033
+      0.248,
+      0.3699
      ],
-     "posterior_mean": 0.2656
+     "posterior_mean": 0.3073
     },
     {
      "action": "send_checkin",
-     "n": 136,
-     "responded": 20,
-     "rate": 0.1471,
+     "n": 21,
+     "responded": 1,
+     "rate": 0.0476,
      "rate_ci": [
-      0.0973,
-      0.2163
+      0.0085,
+      0.2267
      ],
-     "posterior_mean": 0.1522
-    }
-   ]
-  },
-  {
-   "stage": "cart_abandoner",
-   "treated": {
-    "n": 606,
-    "responded": 204,
-    "rate": 0.3366
-   },
-   "holdout": {
-    "n": 168,
-    "responded": 17,
-    "rate": 0.1012
-   },
-   "lift_pp": 23.5,
-   "ci_pp": [
-    17.6,
-    29.5
-   ],
-   "verdict": "works",
-   "best_action": "send_reminder",
-   "actions": [
-    {
-     "action": "send_reminder",
-     "n": 458,
-     "responded": 169,
-     "rate": 0.369,
-     "rate_ci": [
-      0.3261,
-      0.4141
-     ],
-     "posterior_mean": 0.3696
-    },
-    {
-     "action": "recommend_product",
-     "n": 13,
-     "responded": 0,
-     "rate": 0.0,
-     "rate_ci": [
-      0.0,
-      0.2281
-     ],
-     "posterior_mean": 0.0667
-    },
-    {
-     "action": "offer_subscription",
-     "n": 11,
-     "responded": 0,
-     "rate": 0.0,
-     "rate_ci": [
-      0.0,
-      0.2588
-     ],
-     "posterior_mean": 0.0769
-    },
-    {
-     "action": "offer_discount",
-     "n": 105,
-     "responded": 33,
-     "rate": 0.3143,
-     "rate_ci": [
-      0.2334,
-      0.4083
-     ],
-     "posterior_mean": 0.3178
-    },
-    {
-     "action": "send_checkin",
-     "n": 19,
-     "responded": 2,
-     "rate": 0.1053,
-     "rate_ci": [
-      0.0294,
-      0.3139
-     ],
-     "posterior_mean": 0.1429
+     "posterior_mean": 0.087
     }
    ]
   },
@@ -418,76 +419,76 @@
    "stage": "gift_buyer",
    "treated": {
     "n": 390,
-    "responded": 72,
-    "rate": 0.1846
+    "responded": 63,
+    "rate": 0.1615
    },
    "holdout": {
     "n": 89,
     "responded": 8,
     "rate": 0.0899
    },
-   "lift_pp": 9.5,
+   "lift_pp": 7.2,
    "ci_pp": [
-    2.4,
-    16.6
+    0.2,
+    14.1
    ],
    "verdict": "works",
    "best_action": "recommend_product",
    "actions": [
     {
      "action": "send_reminder",
-     "n": 18,
-     "responded": 0,
-     "rate": 0.0,
+     "n": 48,
+     "responded": 4,
+     "rate": 0.0833,
      "rate_ci": [
-      0.0,
-      0.1759
+      0.0329,
+      0.1955
      ],
-     "posterior_mean": 0.05
+     "posterior_mean": 0.1
     },
     {
      "action": "recommend_product",
-     "n": 281,
-     "responded": 67,
-     "rate": 0.2384,
+     "n": 232,
+     "responded": 52,
+     "rate": 0.2241,
      "rate_ci": [
-      0.1923,
-      0.2916
+      0.1752,
+      0.282
      ],
-     "posterior_mean": 0.2403
+     "posterior_mean": 0.2265
     },
     {
      "action": "offer_subscription",
-     "n": 18,
+     "n": 26,
      "responded": 0,
      "rate": 0.0,
      "rate_ci": [
       0.0,
-      0.1759
+      0.1287
      ],
-     "posterior_mean": 0.05
+     "posterior_mean": 0.0357
     },
     {
      "action": "offer_discount",
-     "n": 54,
-     "responded": 5,
-     "rate": 0.0926,
+     "n": 43,
+     "responded": 4,
+     "rate": 0.093,
      "rate_ci": [
-      0.0402,
-      0.1991
+      0.0368,
+      0.216
      ],
-     "posterior_mean": 0.1071
+     "posterior_mean": 0.1111
     },
     {
      "action": "send_checkin",
-     "n": 19,
-     "responded": 0,
-     "rate": 0.0,
+     "n": 41,
+     "responded": 3,
+     "rate": 0.0732,
      "rate_ci": [
-      0.0,
-      0.1682
+      0.0252,
+      0.1943
      ],
-     "posterior_mean": 0.0476
+     "posterior_mean": 0.093
     }
    ]
   }
@@ -495,63 +496,63 @@
  "learning_curve": [
   {
    "round": 0,
-   "treated_rate": 0.1244,
+   "treated_rate": 0.1119,
    "holdout_rate": 0.1224,
-   "best_pick_share": 0.204
+   "best_pick_share": 0.199
   },
   {
    "round": 1,
-   "treated_rate": 0.1553,
+   "treated_rate": 0.1288,
    "holdout_rate": 0.1154,
-   "best_pick_share": 0.4282
+   "best_pick_share": 0.3538
   },
   {
    "round": 2,
-   "treated_rate": 0.1769,
+   "treated_rate": 0.1645,
    "holdout_rate": 0.1115,
-   "best_pick_share": 0.4782
+   "best_pick_share": 0.6286
   },
   {
    "round": 3,
-   "treated_rate": 0.1865,
+   "treated_rate": 0.1746,
    "holdout_rate": 0.0972,
-   "best_pick_share": 0.6025
+   "best_pick_share": 0.5383
   },
   {
    "round": 4,
-   "treated_rate": 0.2046,
+   "treated_rate": 0.1921,
    "holdout_rate": 0.1059,
-   "best_pick_share": 0.68
+   "best_pick_share": 0.5975
   },
   {
    "round": 5,
-   "treated_rate": 0.2072,
+   "treated_rate": 0.1977,
    "holdout_rate": 0.1141,
-   "best_pick_share": 0.7203
+   "best_pick_share": 0.604
   },
   {
    "round": 6,
-   "treated_rate": 0.2134,
+   "treated_rate": 0.2021,
    "holdout_rate": 0.1132,
-   "best_pick_share": 0.7563
+   "best_pick_share": 0.6709
   },
   {
    "round": 7,
-   "treated_rate": 0.2198,
+   "treated_rate": 0.2092,
    "holdout_rate": 0.1073,
-   "best_pick_share": 0.8539
+   "best_pick_share": 0.7154
   },
   {
    "round": 8,
-   "treated_rate": 0.2232,
+   "treated_rate": 0.2138,
    "holdout_rate": 0.1058,
-   "best_pick_share": 0.8756
+   "best_pick_share": 0.7919
   },
   {
    "round": 9,
-   "treated_rate": 0.227,
+   "treated_rate": 0.2167,
    "holdout_rate": 0.106,
-   "best_pick_share": 0.8945
+   "best_pick_share": 0.8291
   }
  ],
  "twin_truth": {

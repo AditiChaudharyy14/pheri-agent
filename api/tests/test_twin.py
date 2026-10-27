@@ -87,13 +87,15 @@ def test_verdict_follows_the_interval():
 
 @pytest.mark.parametrize("business", ["brightdesk", "kettle"])
 def test_thompson_beats_random_and_learns_on_every_seed(business):
+    from pheri.twin import min_tries_for
+
     """1,000 customers and five seeds: whether it learns is a statistical claim, and 200 is too few to test it.
     On a single seed Thompson can still settle on the wrong action for one small stage (seen: Brightdesk stuck
     at 1,000, seed 7, about 127 customers), so the claims are the ones that hold on every seed."""
     stuck_right = 0
     for seed in range(1, 6):
         twin = population(business, n=1000, rounds=10, seed=seed)
-        policy = ThompsonPolicy(seed)
+        policy = ThompsonPolicy(seed, min_tries_for(business, 1000))
         res = report(twin, simulate(twin, policy), policy, simulate(twin, RandomPolicy(seed)))
         o = res["overall"]
         assert o["treated"]["rate"] > o["random_policy"]["rate"], seed  # learning beats picking at random
@@ -132,3 +134,31 @@ def test_the_cli_writes_the_results_file(tmp_path):
                           capture_output=True, text=True, encoding="utf-8", cwd=REPO_ROOT / "api")  # from any cwd
     assert done.returncode == 0, done.stderr
     assert "lift" in done.stdout and json.loads(out.read_text(encoding="utf-8"))["customers"] == 200
+
+
+def test_every_allowed_action_gets_its_minimum_tries_before_thompson_exploits():
+    from pheri.twin import min_tries_for
+
+    assert [min_tries_for("brightdesk", n) for n in (5000, 1000, 200)] == [20, 4, 1]  # a little, at every size
+    assert min_tries_for("kettle", 5000) == 20
+    policy = ThompsonPolicy(seed=1, min_tries=3)
+    allowed = ("a", "b", "c")
+    first = [policy.choose("stuck", allowed) for _ in range(9)]
+    assert sorted(first) == ["a"] * 3 + ["b"] * 3 + ["c"] * 3  # tries count when given, not when answered
+    for _ in range(50):
+        policy.update("stuck", "a", True)  # "a" looks great from here on, "b" and "c" poor
+        policy.update("stuck", "b", False)
+        policy.update("stuck", "c", False)
+    assert {policy.choose("stuck", allowed) for _ in range(20)} == {"a"}  # minimum met: now it exploits
+
+
+def test_the_minimum_fixes_the_healthy_stage_at_full_size():
+    # Brightdesk at 5,000, seed 7: without the minimum, healthy settled on offer_discount (truth: offer_upgrade).
+    from pheri.learn import learned_vs_truth
+
+    twin = population("brightdesk", n=5000, rounds=10, seed=7)
+    for min_tries, healthy_best in ((0, "offer_discount"), (20, "offer_upgrade")):
+        policy = ThompsonPolicy(7, min_tries=min_tries)
+        res = report(twin, simulate(twin, policy), policy)
+        assert next(s for s in res["stages"] if s["stage"] == "healthy")["best_action"] == healthy_best
+    assert all(x["match"] for x in learned_vs_truth(res))

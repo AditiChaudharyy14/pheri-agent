@@ -186,19 +186,46 @@ def simulate(twin: Twin, policy) -> list[Record]:
 
 
 # ---- Thompson sampling ---------------------------------------------------------------
+# A little exploration: before Thompson exploits, each action in a stage gets EXPLORE_SHARE of its even share
+# of the customers (5,000 customers, 6 stages x 5 actions: 20 tries; 1,000: 4; 200: 1). A fixed number
+# would not be "a little" at every size: 20 tries per action is every customer at 200. Swept at 5,000 over
+# five seeds per business: 20 fixed the Brightdesk healthy miss (seed 7) for 0.2 points of response
+# (21.5% -> 21.3%); more cost far more (60: 18.5%, 100: 15.6%) and did not raise the share of stages
+# learned right (about 52/60 at every setting: the misses left are close calls, the runner-up 0.04-0.05
+# behind the best).
+EXPLORE_SHARE = 0.12
+
+
+def min_tries_for(business: str, n: int) -> int:
+    return max(1, round(EXPLORE_SHARE * n / (len(STAGES[business]) * len(ACTIONS[business]))))
+
+
 class ThompsonPolicy:
     """One Beta(1, 1) prior per seen stage x action. For each customer it draws once from every allowed
-    action's posterior and picks the highest draw; outcomes update the posteriors at the end of a round."""
+    action's posterior and picks the highest draw; outcomes update the posteriors at the end of a round.
 
-    def __init__(self, seed: int = 0):
+    min_tries: until every allowed action has been tried that many times in a stage, the least-tried one
+    goes first. Tries count when an action is given, not when its result comes back, so one round's
+    customers spread over the untried actions. Without it, one unlucky start can starve the best action
+    (seen: Brightdesk healthy at 5,000, offer_upgrade 8 of 131, settled on the second-best discount)."""
+
+    def __init__(self, seed: int = 0, min_tries: int = 0):
         self.rng = random.Random(f"{seed}:thompson")
         self.ab: dict[tuple[str, str], list[int]] = {}
+        self.tries: dict[tuple[str, str], int] = {}
+        self.min_tries = min_tries
 
     def _beta(self, stage: str, action: str) -> list[int]:
         return self.ab.setdefault((stage, action), [1, 1])
 
     def choose(self, seen_stage: str, allowed: tuple[str, ...]) -> str:
-        return max(allowed, key=lambda a: self.rng.betavariate(*self._beta(seen_stage, a)))
+        fewest = min(self.tries.get((seen_stage, a), 0) for a in allowed)
+        if fewest < self.min_tries:
+            pick = self.rng.choice([a for a in allowed if self.tries.get((seen_stage, a), 0) == fewest])
+        else:
+            pick = max(allowed, key=lambda a: self.rng.betavariate(*self._beta(seen_stage, a)))
+        self.tries[(seen_stage, pick)] = self.tries.get((seen_stage, pick), 0) + 1
+        return pick
 
     def update(self, seen_stage: str, action: str, responded: bool) -> None:
         self._beta(seen_stage, action)[0 if responded else 1] += 1
@@ -285,16 +312,18 @@ def report(twin: Twin, records: list[Record], policy: ThompsonPolicy,
     if random_records is not None:
         overall["random_policy"] = _group([r for r in random_records if not r.holdout])
     return {"business": b, "customers": len(twin.customers), "rounds": twin.rounds, "seed": twin.seed,
-            "holdout_share": round(len(holdout) / len(records), 4), "policy": "thompson", "overall": overall,
+            "holdout_share": round(len(holdout) / len(records), 4), "policy": "thompson",
+            "min_tries": policy.min_tries, "overall": overall,
             "stages": stages, "learning_curve": curve,
             "twin_truth": {"note": "the twin's hidden ground truth, never shown to the policy",
                            "response": RESPONSE[b], "baseline": BASELINE[b]}}
 
 
-def run(business: str, n: int = 200, rounds: int = 10, seed: int = 7) -> dict:
-    """Thompson sampling on a fresh twin, plus the random policy on the same twin and luck for comparison."""
+def run(business: str, n: int = 200, rounds: int = 10, seed: int = 7, min_tries: int | None = None) -> dict:
+    """Thompson sampling on a fresh twin, plus the random policy on the same twin and luck for comparison.
+    min_tries: None scales it to the twin's size (min_tries_for); 0 is plain Thompson."""
     twin = population(business, n, rounds, seed)
-    policy = ThompsonPolicy(seed)
+    policy = ThompsonPolicy(seed, min_tries_for(business, n) if min_tries is None else min_tries)
     records = simulate(twin, policy)
     return report(twin, records, policy, simulate(twin, RandomPolicy(seed)))
 

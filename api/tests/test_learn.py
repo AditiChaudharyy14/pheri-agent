@@ -21,7 +21,9 @@ def llm(tmp_path, monkeypatch):
 
 @pytest.fixture(scope="module")
 def results():
-    return run("brightdesk", n=200)  # stuck and at-risk work, overall and the rest unclear
+    # The exact results Muse Wonder reported on live (plain Thompson, before the exploration minimum):
+    # stuck and at-risk work, overall and the rest unclear. These tests check learn.py, not the twin.
+    return run("brightdesk", n=200, min_tries=0)
 
 
 def _model(monkeypatch, report: dict):

@@ -5,21 +5,22 @@
  "seed": 7,
  "holdout_share": 0.2,
  "policy": "thompson",
+ "min_tries": 20,
  "overall": {
   "treated": {
    "n": 4000,
-   "responded": 800,
-   "rate": 0.2
+   "responded": 851,
+   "rate": 0.2127
   },
   "holdout": {
    "n": 1000,
    "responded": 74,
    "rate": 0.074
   },
-  "lift_pp": 12.6,
+  "lift_pp": 13.9,
   "ci_pp": [
-   10.6,
-   14.6
+   11.8,
+   15.9
   ],
   "verdict": "works",
   "random_policy": {
@@ -33,65 +34,65 @@
    "stage": "onboarding",
    "treated": {
     "n": 525,
-    "responded": 139,
-    "rate": 0.2648
+    "responded": 132,
+    "rate": 0.2514
    },
    "holdout": {
     "n": 126,
     "responded": 15,
     "rate": 0.119
    },
-   "lift_pp": 14.6,
+   "lift_pp": 13.2,
    "ci_pp": [
-    7.8,
-    21.4
+    6.5,
+    20.0
    ],
    "verdict": "works",
    "best_action": "send_help",
    "actions": [
     {
      "action": "send_help",
-     "n": 435,
-     "responded": 128,
-     "rate": 0.2943,
+     "n": 391,
+     "responded": 110,
+     "rate": 0.2813,
      "rate_ci": [
-      0.2534,
-      0.3387
+      0.2391,
+      0.3279
      ],
-     "posterior_mean": 0.2952
+     "posterior_mean": 0.2824
     },
     {
      "action": "book_call",
-     "n": 50,
-     "responded": 8,
-     "rate": 0.16,
+     "n": 63,
+     "responded": 15,
+     "rate": 0.2381,
      "rate_ci": [
-      0.0834,
-      0.2851
+      0.1499,
+      0.3564
      ],
-     "posterior_mean": 0.1731
+     "posterior_mean": 0.2462
     },
     {
      "action": "send_checkin",
-     "n": 25,
-     "responded": 3,
-     "rate": 0.12,
+     "n": 49,
+     "responded": 7,
+     "rate": 0.1429,
      "rate_ci": [
-      0.0417,
-      0.2996
+      0.071,
+      0.2667
      ],
-     "posterior_mean": 0.1481
+     "posterior_mean": 0.1569
     },
     {
      "action": "offer_upgrade",
-     "n": 15,
+     "n": 22,
      "responded": 0,
      "rate": 0.0,
      "rate_ci": [
       0.0,
-      0.2039
+      0.1487
      ],
-     "posterior_mean": 0.0588
+     "posterior_mean": 0.0417
     },
     {
      "action": "offer_discount",
@@ -125,58 +126,58 @@
    "actions": [
     {
      "action": "send_help",
-     "n": 475,
-     "responded": 183,
-     "rate": 0.3853,
+     "n": 467,
+     "responded": 178,
+     "rate": 0.3812,
      "rate_ci": [
-      0.3426,
-      0.4298
+      0.3382,
+      0.426
      ],
-     "posterior_mean": 0.3857
+     "posterior_mean": 0.3817
     },
     {
      "action": "book_call",
-     "n": 38,
-     "responded": 6,
-     "rate": 0.1579,
+     "n": 26,
+     "responded": 4,
+     "rate": 0.1538,
      "rate_ci": [
-      0.0744,
-      0.3042
+      0.0615,
+      0.3353
      ],
-     "posterior_mean": 0.175
+     "posterior_mean": 0.1786
     },
     {
      "action": "send_checkin",
-     "n": 15,
-     "responded": 0,
-     "rate": 0.0,
+     "n": 21,
+     "responded": 2,
+     "rate": 0.0952,
      "rate_ci": [
-      0.0,
-      0.2039
+      0.0265,
+      0.2891
      ],
-     "posterior_mean": 0.0588
+     "posterior_mean": 0.1304
     },
     {
      "action": "offer_upgrade",
-     "n": 18,
+     "n": 22,
      "responded": 1,
-     "rate": 0.0556,
+     "rate": 0.0455,
      "rate_ci": [
-      0.0099,
-      0.2576
+      0.0081,
+      0.218
      ],
-     "posterior_mean": 0.1
+     "posterior_mean": 0.0833
     },
     {
      "action": "offer_discount",
-     "n": 38,
-     "responded": 7,
-     "rate": 0.1842,
+     "n": 48,
+     "responded": 12,
+     "rate": 0.25,
      "rate_ci": [
-      0.0922,
-      0.3342
+      0.1492,
+      0.3878
      ],
-     "posterior_mean": 0.2
+     "posterior_mean": 0.26
     }
    ]
   },
@@ -184,76 +185,76 @@
    "stage": "quiet",
    "treated": {
     "n": 547,
-    "responded": 79,
-    "rate": 0.1444
+    "responded": 92,
+    "rate": 0.1682
    },
    "holdout": {
     "n": 137,
     "responded": 3,
     "rate": 0.0219
    },
-   "lift_pp": 12.3,
+   "lift_pp": 14.6,
    "ci_pp": [
-    8.4,
-    16.1
+    10.7,
+    18.6
    ],
    "verdict": "works",
    "best_action": "send_checkin",
    "actions": [
     {
      "action": "send_help",
-     "n": 95,
-     "responded": 12,
-     "rate": 0.1263,
+     "n": 32,
+     "responded": 2,
+     "rate": 0.0625,
      "rate_ci": [
-      0.0738,
-      0.2079
+      0.0173,
+      0.2015
      ],
-     "posterior_mean": 0.134
+     "posterior_mean": 0.0882
     },
     {
      "action": "book_call",
-     "n": 47,
-     "responded": 4,
-     "rate": 0.0851,
+     "n": 32,
+     "responded": 3,
+     "rate": 0.0938,
      "rate_ci": [
-      0.0336,
-      0.1993
+      0.0324,
+      0.2422
      ],
-     "posterior_mean": 0.102
+     "posterior_mean": 0.1176
     },
     {
      "action": "send_checkin",
-     "n": 156,
-     "responded": 26,
-     "rate": 0.1667,
+     "n": 368,
+     "responded": 75,
+     "rate": 0.2038,
      "rate_ci": [
-      0.1163,
-      0.233
+      0.1658,
+      0.2479
      ],
-     "posterior_mean": 0.1709
+     "posterior_mean": 0.2054
     },
     {
      "action": "offer_upgrade",
-     "n": 19,
-     "responded": 0,
-     "rate": 0.0,
+     "n": 30,
+     "responded": 1,
+     "rate": 0.0333,
      "rate_ci": [
-      0.0,
-      0.1682
+      0.0059,
+      0.1667
      ],
-     "posterior_mean": 0.0476
+     "posterior_mean": 0.0625
     },
     {
      "action": "offer_discount",
-     "n": 230,
-     "responded": 37,
-     "rate": 0.1609,
+     "n": 85,
+     "responded": 11,
+     "rate": 0.1294,
      "rate_ci": [
-      0.119,
-      0.2139
+      0.0738,
+      0.217
      ],
-     "posterior_mean": 0.1638
+     "posterior_mean": 0.1379
     }
    ]
   },
@@ -261,76 +262,76 @@
    "stage": "healthy",
    "treated": {
     "n": 1298,
-    "responded": 117,
-    "rate": 0.0901
+    "responded": 129,
+    "rate": 0.0994
    },
    "holdout": {
     "n": 307,
     "responded": 14,
     "rate": 0.0456
    },
-   "lift_pp": 4.5,
+   "lift_pp": 5.4,
    "ci_pp": [
-    1.6,
-    7.3
+    2.5,
+    8.2
    ],
    "verdict": "works",
-   "best_action": "offer_discount",
+   "best_action": "offer_upgrade",
    "actions": [
     {
      "action": "send_help",
-     "n": 90,
-     "responded": 4,
-     "rate": 0.0444,
+     "n": 142,
+     "responded": 10,
+     "rate": 0.0704,
      "rate_ci": [
-      0.0174,
-      0.1088
+      0.0387,
+      0.1248
      ],
-     "posterior_mean": 0.0543
+     "posterior_mean": 0.0764
     },
     {
      "action": "book_call",
-     "n": 456,
-     "responded": 42,
-     "rate": 0.0921,
+     "n": 115,
+     "responded": 6,
+     "rate": 0.0522,
      "rate_ci": [
-      0.0689,
-      0.1222
+      0.0241,
+      0.1092
      ],
-     "posterior_mean": 0.0939
+     "posterior_mean": 0.0598
     },
     {
      "action": "send_checkin",
-     "n": 41,
-     "responded": 0,
-     "rate": 0.0,
+     "n": 160,
+     "responded": 13,
+     "rate": 0.0813,
      "rate_ci": [
-      0.0,
-      0.0857
+      0.0481,
+      0.134
      ],
-     "posterior_mean": 0.0233
+     "posterior_mean": 0.0864
     },
     {
      "action": "offer_upgrade",
-     "n": 131,
-     "responded": 8,
-     "rate": 0.0611,
+     "n": 825,
+     "responded": 98,
+     "rate": 0.1188,
      "rate_ci": [
-      0.0313,
-      0.1159
+      0.0985,
+      0.1427
      ],
-     "posterior_mean": 0.0677
+     "posterior_mean": 0.1197
     },
     {
      "action": "offer_discount",
-     "n": 580,
-     "responded": 63,
-     "rate": 0.1086,
+     "n": 56,
+     "responded": 2,
+     "rate": 0.0357,
      "rate_ci": [
-      0.0858,
-      0.1366
+      0.0098,
+      0.1212
      ],
-     "posterior_mean": 0.11
+     "posterior_mean": 0.0517
     }
    ]
   },
@@ -338,76 +339,76 @@
    "stage": "expanding",
    "treated": {
     "n": 392,
-    "responded": 116,
-    "rate": 0.2959
+    "responded": 127,
+    "rate": 0.324
    },
    "holdout": {
     "n": 109,
     "responded": 18,
     "rate": 0.1651
    },
-   "lift_pp": 13.1,
+   "lift_pp": 15.9,
    "ci_pp": [
-    4.8,
-    21.4
+    7.5,
+    24.3
    ],
    "verdict": "works",
    "best_action": "offer_upgrade",
    "actions": [
     {
      "action": "send_help",
-     "n": 19,
-     "responded": 1,
-     "rate": 0.0526,
+     "n": 21,
+     "responded": 2,
+     "rate": 0.0952,
      "rate_ci": [
-      0.0094,
-      0.2464
+      0.0265,
+      0.2891
      ],
-     "posterior_mean": 0.0952
+     "posterior_mean": 0.1304
     },
     {
      "action": "book_call",
-     "n": 37,
-     "responded": 7,
-     "rate": 0.1892,
+     "n": 21,
+     "responded": 2,
+     "rate": 0.0952,
      "rate_ci": [
-      0.0948,
-      0.3421
+      0.0265,
+      0.2891
      ],
-     "posterior_mean": 0.2051
+     "posterior_mean": 0.1304
     },
     {
      "action": "send_checkin",
-     "n": 38,
-     "responded": 5,
-     "rate": 0.1316,
+     "n": 25,
+     "responded": 3,
+     "rate": 0.12,
      "rate_ci": [
-      0.0575,
-      0.2733
+      0.0417,
+      0.2996
      ],
-     "posterior_mean": 0.15
+     "posterior_mean": 0.1481
     },
     {
      "action": "offer_upgrade",
-     "n": 280,
-     "responded": 102,
-     "rate": 0.3643,
+     "n": 303,
+     "responded": 118,
+     "rate": 0.3894,
      "rate_ci": [
-      0.3101,
-      0.4221
+      0.3362,
+      0.4454
      ],
-     "posterior_mean": 0.3652
+     "posterior_mean": 0.3902
     },
     {
      "action": "offer_discount",
-     "n": 18,
-     "responded": 1,
-     "rate": 0.0556,
+     "n": 22,
+     "responded": 2,
+     "rate": 0.0909,
      "rate_ci": [
-      0.0099,
-      0.2576
+      0.0253,
+      0.2782
      ],
-     "posterior_mean": 0.1
+     "posterior_mean": 0.125
     }
    ]
   },
@@ -415,43 +416,43 @@
    "stage": "at_risk_renewal",
    "treated": {
     "n": 654,
-    "responded": 152,
-    "rate": 0.2324
+    "responded": 174,
+    "rate": 0.2661
    },
    "holdout": {
     "n": 162,
     "responded": 13,
     "rate": 0.0802
    },
-   "lift_pp": 15.2,
+   "lift_pp": 18.6,
    "ci_pp": [
-    9.9,
-    20.5
+    13.2,
+    24.0
    ],
    "verdict": "works",
    "best_action": "book_call",
    "actions": [
     {
      "action": "send_help",
-     "n": 45,
-     "responded": 7,
-     "rate": 0.1556,
+     "n": 20,
+     "responded": 0,
+     "rate": 0.0,
      "rate_ci": [
-      0.0775,
-      0.2878
+      0.0,
+      0.1611
      ],
-     "posterior_mean": 0.1702
+     "posterior_mean": 0.0455
     },
     {
      "action": "book_call",
-     "n": 236,
-     "responded": 61,
-     "rate": 0.2585,
+     "n": 471,
+     "responded": 146,
+     "rate": 0.31,
      "rate_ci": [
-      0.2068,
-      0.3179
+      0.2699,
+      0.3531
      ],
-     "posterior_mean": 0.2605
+     "posterior_mean": 0.3108
     },
     {
      "action": "send_checkin",
@@ -466,25 +467,25 @@
     },
     {
      "action": "offer_upgrade",
-     "n": 28,
-     "responded": 2,
-     "rate": 0.0714,
+     "n": 33,
+     "responded": 4,
+     "rate": 0.1212,
      "rate_ci": [
-      0.0198,
-      0.2265
+      0.0482,
+      0.2733
      ],
-     "posterior_mean": 0.1
+     "posterior_mean": 0.1429
     },
     {
      "action": "offer_discount",
-     "n": 314,
-     "responded": 79,
-     "rate": 0.2516,
+     "n": 99,
+     "responded": 21,
+     "rate": 0.2121,
      "rate_ci": [
-      0.2068,
-      0.3024
+      0.1431,
+      0.3026
      ],
-     "posterior_mean": 0.2532
+     "posterior_mean": 0.2178
     }
    ]
   }
@@ -492,63 +493,63 @@
  "learning_curve": [
   {
    "round": 0,
-   "treated_rate": 0.1244,
+   "treated_rate": 0.1443,
    "holdout_rate": 0.0714,
-   "best_pick_share": 0.199
+   "best_pick_share": 0.2114
   },
   {
    "round": 1,
-   "treated_rate": 0.1326,
+   "treated_rate": 0.1402,
    "holdout_rate": 0.0769,
-   "best_pick_share": 0.3205
+   "best_pick_share": 0.3692
   },
   {
    "round": 2,
-   "treated_rate": 0.1611,
+   "treated_rate": 0.1736,
    "holdout_rate": 0.0676,
-   "best_pick_share": 0.415
+   "best_pick_share": 0.6602
   },
   {
    "round": 3,
-   "treated_rate": 0.1746,
+   "treated_rate": 0.1877,
    "holdout_rate": 0.0614,
-   "best_pick_share": 0.5111
+   "best_pick_share": 0.7605
   },
   {
    "round": 4,
-   "treated_rate": 0.1852,
+   "treated_rate": 0.1976,
    "holdout_rate": 0.0733,
-   "best_pick_share": 0.4325
+   "best_pick_share": 0.7225
   },
   {
    "round": 5,
-   "treated_rate": 0.1877,
+   "treated_rate": 0.201,
    "holdout_rate": 0.0801,
-   "best_pick_share": 0.4307
+   "best_pick_share": 0.7178
   },
   {
    "round": 6,
-   "treated_rate": 0.1896,
+   "treated_rate": 0.2017,
    "holdout_rate": 0.0769,
-   "best_pick_share": 0.4497
+   "best_pick_share": 0.7864
   },
   {
    "round": 7,
-   "treated_rate": 0.1933,
+   "treated_rate": 0.2054,
    "holdout_rate": 0.0783,
-   "best_pick_share": 0.4912
+   "best_pick_share": 0.7909
   },
   {
    "round": 8,
-   "treated_rate": 0.1977,
+   "treated_rate": 0.2096,
    "holdout_rate": 0.0757,
-   "best_pick_share": 0.4848
+   "best_pick_share": 0.8173
   },
   {
    "round": 9,
-   "treated_rate": 0.2,
+   "treated_rate": 0.2127,
    "holdout_rate": 0.074,
-   "best_pick_share": 0.4648
+   "best_pick_share": 0.7789
   }
  ],
  "twin_truth": {

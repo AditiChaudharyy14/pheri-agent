@@ -11,6 +11,11 @@ Protocols (checked against https://dev.meta.ai/docs on 27 Oct 2026):
              structured output in `text.format`, effort in `reasoning.effort`,
              usage in `input_tokens` / `input_tokens_details.cached_tokens` / `output_tokens`.
   baseten -> Muse Spark Open (open weights), Chat Completions, top-level `reasoning_effort`.
+             Checked on https://docs.baseten.co/inference/model-apis/reasoning (27 Oct 2026): it always
+             reasons; `reasoning_effort` low/medium/high/xhigh is used as sent (none/minimal run at low);
+             the default is xhigh, so we always send one; there is no reasoning budget
+             (`reasoning.max_tokens` is not enforced for it), so `max_tokens` is the only length control
+             and it caps reasoning + answer together. Reasoning text comes back in `reasoning_content`.
   modal   -> Muse Glimmer (open weights), Chat Completions.
 Reasoning tokens are billed as output, so `max_tokens` bounds reasoning + answer together.
 
@@ -38,6 +43,7 @@ import os
 import random
 import time
 import uuid
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from types import SimpleNamespace
 from typing import Any, Callable
@@ -62,7 +68,10 @@ class DataPolicyError(RuntimeError):
 
 
 class ModelOutputError(RuntimeError):
-    """Raised when a model's output does not match the schema we asked for."""
+    """Raised when a model's output does not match the schema we asked for. `.result` holds the call's
+    LLMResult (tokens, cost, why it stopped) when there was one: a failed answer was still billed."""
+
+    result = None
 
 
 @dataclass
@@ -89,6 +98,8 @@ class LLMResult:
     parse_error: str | None = None  # with tools: the reply was not the JSON we asked for
     incomplete: str | None = None  # why the provider stopped early, e.g. "max_output_tokens"
     output_items: list[dict] = field(default_factory=list)  # stateless: append these to the next input
+    reasoning_tokens: int | None = None  # as the provider reported them, when it does
+    reasoning_chars: int | None = None  # length of the reasoning text returned (Chat: reasoning_content)
 
 
 # Mock responders let tests and offline demos run with zero network and zero spend.
@@ -154,6 +165,7 @@ class LLM:
         self._context_tokens: dict[str, int] = {}  # response id -> tokens the next chained turn re-reads
         self._mock_threads: dict[str, list[dict]] = {}  # mock only: the conversation behind a response id
         self._json_mode: dict[str, str] = {}  # provider -> "instructions" once it refused json_schema
+        self._only: frozenset[str] | None = None  # inside `only(...)`: the providers calls may go to
 
     # ---- providers -------------------------------------------------------
     def _client(self, provider: str):
@@ -178,6 +190,15 @@ class LLM:
         return {"meta": "muse-spark-1.3", "baseten": self.settings.baseten_model,
                 "modal": self.settings.modal_model}[provider]
 
+    @contextmanager
+    def only(self, *providers: str):
+        """Inside this block a call to any other provider is refused before anything is sent or reserved."""
+        before, self._only = self._only, frozenset(providers)
+        try:
+            yield self
+        finally:
+            self._only = before
+
     # ---- the call -------------------------------------------------------
     def complete(
         self,
@@ -196,7 +217,12 @@ class LLM:
         previous_response_id: str | None = None,
         stateless: bool = False,
     ) -> LLMResult:
+        if self._only is not None and provider not in self._only:
+            raise DataPolicyError(f"This business is in full private mode: a {purpose!r} call to {provider!r} was "
+                                  f"refused before sending (allowed: {sorted(self._only)}).")
         model = model or self.default_model(provider)
+        if provider == "baseten" and effort is None:
+            effort = "low"  # Muse Spark Open's default on Baseten is xhigh: never leave it to the default
         if (tools or previous_response_id or stateless) and provider != "meta":
             raise ValueError("Tool loops use the Responses API, which only the meta provider speaks here.")
         if stateless and previous_response_id:
@@ -271,18 +297,20 @@ class LLM:
             incomplete = getattr(getattr(raw, "incomplete_details", None), "reason", None) or "unknown"
         elif getattr((getattr(raw, "choices", None) or [None])[0], "finish_reason", None) == "length":  # Chat
             incomplete = "max_output_tokens"
-        parsed, parse_error = None, None
+        reasoning_tokens, reasoning_chars = _reasoning_usage(raw)
+        result = LLMResult(text, None, provider, model, in_tok, cached_tok, out_tok, actual, latency, resp_id, raw,
+                           calls, None, incomplete, items, reasoning_tokens, reasoning_chars)
         if schema is not None and not calls:
             try:
-                parsed = _parse(text, schema)
+                result.parsed = _parse(text, schema)
             except ModelOutputError as exc:
                 if not tools:
-                    if incomplete:  # say why: the limit, not the model's grasp of the schema
-                        raise ModelOutputError(f"Answer cut off ({incomplete}) before the JSON was complete") from exc
-                    raise
-                parse_error = f"cut off ({incomplete})" if incomplete else str(exc)
-        return LLMResult(text, parsed, provider, model, in_tok, cached_tok, out_tok, actual, latency, resp_id, raw,
-                         calls, parse_error, incomplete, items)
+                    err = (ModelOutputError(f"Answer cut off ({incomplete}) before the JSON was complete")
+                           if incomplete else exc)  # say why: the limit, not the model's grasp of the schema
+                    err.result = result
+                    raise err from (exc if err is not exc else None)
+                result.parse_error = f"cut off ({incomplete})" if incomplete else str(exc)
+        return result
 
     # ---- JSON on any provider ----------------------------------------------
     def json_mode(self, provider: str) -> str:
@@ -377,6 +405,24 @@ class LLM:
         # Like the real API: a reasoning item (encrypted, with a summary) comes first, then the answer.
         items = [{"type": "reasoning", "summary": [], "encrypted_content": "mock-reasoning"}, *out_items]
         return text, usage, calls, resp_id, raw, items
+
+
+def _reasoning_usage(raw) -> tuple[int | None, int | None]:
+    """(reasoning tokens the provider reported, characters of reasoning text it sent back)."""
+    usage = getattr(raw, "usage", None)
+    tokens = None
+    for name in ("output_tokens_details", "completion_tokens_details"):  # Responses, Chat Completions
+        n = getattr(getattr(usage, name, None), "reasoning_tokens", None)
+        if isinstance(n, int):
+            tokens = n
+    chars = None
+    choices = getattr(raw, "choices", None)
+    if choices:
+        msg = getattr(choices[0], "message", None)
+        text = getattr(msg, "reasoning_content", None) or (getattr(msg, "model_extra", None) or {}).get(
+            "reasoning_content")
+        chars = len(text) if isinstance(text, str) else None
+    return tokens, chars
 
 
 def _schema_refused(exc: Exception) -> bool:

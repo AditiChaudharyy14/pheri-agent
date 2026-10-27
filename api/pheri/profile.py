@@ -25,12 +25,14 @@ from typing import Callable, Literal
 from pydantic import BaseModel
 
 from .llm import LLM, register_mock
+from .privacy import PRIVATE_EFFORT, PRIVATE_PROVIDER
 from .synth import OUT, TODAY
 
 PURPOSE = "profile_insights"
 MAX_SOURCES = 12  # most recent text sources sent per customer
 MAX_SOURCE_CHARS = 1500  # per source, in the prompt only; quotes are still checked against the full text
 MAX_OUTPUT_TOKENS = 2000  # reasoning tokens count toward it; 1500 ran out on 2 of 20 live calls
+PRIVATE_MAX_OUTPUT_TOKENS = 4000  # Muse Spark Open always reasons: give it more room than Muse Spark
 MIN_QUOTE_CHARS = 4  # "CSV" alone proves nothing; quote the sentence
 CUSTOMER_WRITTEN = {"ticket", "message"}  # sales notes are written by staff, not by the customer
 RECENT_DAYS = 30  # the window behind every *_30d fact
@@ -468,7 +470,9 @@ class Profile:
         return dataclasses.asdict(self)
 
 
-def build_profile(ds: Dataset, key: str, llm: LLM, today: date = TODAY) -> Profile:
+def build_profile(ds: Dataset, key: str, llm: LLM, today: date = TODAY, private: bool = False) -> Profile:
+    """private: read the messages on Muse Spark Open (Meta's open-weight model, served by a partner,
+    self-hostable) instead of the Meta Model API."""
     c = ds.customers[norm_email(key)]
     facts, fact_prov = compute_facts(c, ds.business, today)
     sources = _recent(c.sources)
@@ -476,9 +480,11 @@ def build_profile(ds: Dataset, key: str, llm: LLM, today: date = TODAY) -> Profi
     dropped: list[dict] = []
     model = None
     if sources:  # no text, nothing to read: skip the call and spend nothing
-        r = llm.complete([{"role": "system", "content": SYSTEM}, {"role": "user", "content": _prompt(c, sources)}],
-                         purpose=PURPOSE, schema=Insights, effort="low", max_tokens=MAX_OUTPUT_TOKENS,
-                         data_class=ds.data_class)
+        messages = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": _prompt(c, sources)}]
+        r = llm.complete_json(messages, schema=Insights, provider=PRIVATE_PROVIDER if private else "meta",
+                              purpose=PURPOSE, effort=PRIVATE_EFFORT if private else "low",
+                              max_tokens=PRIVATE_MAX_OUTPUT_TOKENS if private else MAX_OUTPUT_TOKENS,
+                              data_class=ds.data_class)
         insights, dropped = verify(r.parsed, {s.id: s for s in sources})
         model = r.model
     provenance = {"identity": {"key": c.key, "rows": c.refs, "aliases": sorted(c.aliases)},
@@ -486,9 +492,11 @@ def build_profile(ds: Dataset, key: str, llm: LLM, today: date = TODAY) -> Profi
     return Profile(ds.business, c.key, c.name, c.company, facts, insights, provenance, model)
 
 
-def build_profiles(ds: Dataset, llm: LLM, keys: list[str] | None = None, limit: int = 20) -> list[Profile]:
+def build_profiles(ds: Dataset, llm: LLM, keys: list[str] | None = None, limit: int = 20,
+                   private: bool = False) -> list[Profile]:
     """Small samples by default: develop on <= 20 customers (CLAUDE.md)."""
-    return [build_profile(ds, k, llm) for k in (keys if keys is not None else list(ds.customers)[:limit])]
+    return [build_profile(ds, k, llm, private=private)
+            for k in (keys if keys is not None else list(ds.customers)[:limit])]
 
 
 # ---- offline stand-in for Muse Spark ----------------------------------------------

@@ -17,8 +17,8 @@ Three layers, and the strictest one wins:
 "Stop" (from the model or from code's own stop phrases) sets the customer's do-not-contact flag;
 decide.py then makes no model call for them and the rule check refuses anything customer-facing.
 
-Private mode (per business): guard, and optionally decide, run on Muse Spark Open, Meta's
-open-weight model, served by a partner (Baseten), self-hostable, instead of the Meta Model API.
+Private mode (per business, see privacy.py): the guard runs on Muse Spark Open, Meta's open-weight
+model, served by a partner (Baseten), self-hostable, instead of the Meta Model API.
 """
 
 from __future__ import annotations
@@ -33,16 +33,16 @@ from pydantic import BaseModel
 
 from .autonomy import escalate, open_escalation
 from .llm import LLM, ModelOutputError, register_mock
+from .privacy import PRIVATE_EFFORT, PRIVATE_MODE, private_mode, set_private_mode  # noqa: F401 (re-exported)
 
 PURPOSE = "guard"
 MAX_TEXT_CHARS = 4000  # sent to the model; the code screen always reads the whole text
 MAX_OUTPUT_TOKENS = 1500  # effort low still reasons; Spark Open always does
 MAX_SUMMARY_CHARS = 240
 LABELS = ("question", "complaint", "objection", "stop", "purchase_intent", "attack", "other")
-PRIVATE_MODE = "private_mode"  # business setting: {"guard": bool, "decide": bool}
 PROVIDERS = {  # where each mode runs; effort low = triage (CLAUDE.md)
     "meta": {"provider": "meta", "model": "muse-spark-1.3", "effort": "low"},
-    "private": {"provider": "baseten", "model": None, "effort": "low"},  # model from settings: Muse Spark Open
+    "private": {"provider": "baseten", "model": None, "effort": PRIVATE_EFFORT},  # model: Muse Spark Open
 }
 
 
@@ -250,23 +250,6 @@ def guard(text: str, *, business: str, llm: LLM, source_id: str | None = None, c
         return _settle(source_id, None, hits, stop_phrase, f"model API refused ({status})", provider=provider,
                        model=model)
     return _settle(source_id, r.parsed, hits, stop_phrase, provider=provider, model=r.model, cost_usd=r.cost_usd)
-
-
-# ---- private mode ----------------------------------------------------------------------
-def private_mode(store) -> dict:
-    """{"guard": bool, "decide": bool}. On: those steps run on Muse Spark Open, Meta's open-weight model,
-    served by a partner (Baseten), self-hostable. Off: the Meta Model API."""
-    saved = store.get_setting(PRIVATE_MODE, {}) or {}
-    return {"guard": bool(saved.get("guard")), "decide": bool(saved.get("decide"))}
-
-
-def set_private_mode(store, *, guard: bool, decide: bool = False, by: str) -> dict:
-    with store.tx():
-        before = private_mode(store)
-        after = {"guard": bool(guard), "decide": bool(decide)}
-        store.set_setting(PRIVATE_MODE, after, by)
-        store.audit(by, "private_mode_changed", "setting", PRIVATE_MODE, {"from": before, "to": after})
-    return after
 
 
 # ---- what a reply does --------------------------------------------------------------------

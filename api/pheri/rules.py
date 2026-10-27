@@ -24,10 +24,12 @@ from pydantic import BaseModel, Field, TypeAdapter, ValidationError
 
 from .actions import ALL_CHANNELS, ProposedAction, problems
 from .llm import LLM, register_mock
+from .privacy import PRIVATE_EFFORT, PRIVATE_PROVIDER, private_mode
 
 PURPOSE = "compile_rule"
 MAX_OUTPUT_TOKENS = 3000  # effort high reasons at length; reasoning counts toward the limit
 MAX_RULE_CHARS = 500
+PRIVATE_MAX_OUTPUT_TOKENS = 8000  # Muse Spark Open always reasons
 
 SEED_RULES = {"brightdesk": ["Never offer discounts in a customer's first month."]}
 
@@ -238,13 +240,16 @@ class RuleDraft:
                 "problems": self.problems, "unsupported": self.unsupported}
 
 
-def compile_rule(business: str, text: str, llm: LLM) -> RuleDraft:
+def compile_rule(business: str, text: str, llm: LLM, private: bool = False) -> RuleDraft:
+    """private: compile on Muse Spark Open (Meta's open-weight model, served by a partner, self-hostable)."""
     text = " ".join(text.split())
     if not text or len(text) > MAX_RULE_CHARS:
         raise ValueError(f"A rule is one to {MAX_RULE_CHARS} characters of plain words.")
-    r = llm.complete([{"role": "system", "content": SYSTEM},
-                      {"role": "user", "content": json.dumps({"business": business, "rule": text}, ensure_ascii=False)}],
-                     purpose=PURPOSE, schema=Compiled, effort="high", max_tokens=MAX_OUTPUT_TOKENS)
+    messages = [{"role": "system", "content": SYSTEM},
+                {"role": "user", "content": json.dumps({"business": business, "rule": text}, ensure_ascii=False)}]
+    r = llm.complete_json(messages, schema=Compiled, provider=PRIVATE_PROVIDER if private else "meta", purpose=PURPOSE,
+                          effort=PRIVATE_EFFORT if private else "high",
+                          max_tokens=PRIVATE_MAX_OUTPUT_TOKENS if private else MAX_OUTPUT_TOKENS)
     checks, errs = [], []
     for raw in r.parsed.checks:
         fields = {k: v for k, v in raw.model_dump().items() if v is not None}
@@ -257,7 +262,7 @@ def compile_rule(business: str, text: str, llm: LLM) -> RuleDraft:
 
 # ---- lifecycle: propose -> confirm -> enforced -------------------------------------
 def propose(store, llm: LLM, text: str, actor: str = "owner") -> RuleDraft:
-    draft = compile_rule(store.business, text, llm)
+    draft = compile_rule(store.business, text, llm, private=private_mode(store)["rules"])
     with store.tx():
         draft.id = store.add_rule(name=draft.source_text[:80], source_text=draft.source_text,
                                   compiled=draft.compiled())

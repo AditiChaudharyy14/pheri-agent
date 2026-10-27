@@ -102,8 +102,8 @@ def worst_case(ds, keys, store) -> dict:
         if PRIVATE:  # one call, plus at worst the JSON-instructions retry (a refused schema call is not billed)
             one = tok([{"role": "system", "content": decide_mod.PRIVATE_SYSTEM}]) + view + 400
             price = price_for("baseten", "meta-models/muse-spark-open-1026")
-            out["decisions"] += cost_usd(price, one, decide_mod.MAX_OUTPUT_TOKENS) + cost_usd(
-                price, one + decide_mod.MAX_OUTPUT_TOKENS, decide_mod.MAX_OUTPUT_TOKENS)
+            limit = decide_mod.PRIVATE_MAX_OUTPUT_TOKENS
+            out["decisions"] += cost_usd(price, one, limit) + cost_usd(price, one + limit, limit)
             continue
         for turn in range(decide_mod.MAX_TURNS):
             context = base + (view + per_turn * turn if turn else 0)
@@ -190,6 +190,19 @@ def main() -> int:
         os.environ["PHERI_META_CAP_USD"] = f"{before.committed_usd + BUDGET:.6f}"  # this process only
         os.environ["PHERI_BASETEN_CAP_USD"] = f"{before_bt.committed_usd + BUDGET:.6f}"
     llm = LLM()
+    results = []  # every call's LLMResult, to show where the output tokens went
+    real_complete = llm.complete
+    def recorded(messages, **kw):
+        try:
+            r = real_complete(messages, **kw)
+        except Exception as exc:  # a cut-off answer still used (and billed) its tokens
+            if getattr(exc, "result", None) is not None:
+                results.append(exc.result)
+            raise
+        results.append(r)
+        return r
+
+    llm.complete = recorded
     store = MemoryStore("brightdesk")
 
     maya = None
@@ -233,6 +246,15 @@ def main() -> int:
     after_bt = Ledger().totals("baseten")
     bt_run = after_bt.settled_usd - before_bt.settled_usd
     print(f"Ledger (baseten): settled ${before_bt.settled_usd:.6f} -> ${after_bt.settled_usd:.6f}; this run ${bt_run:.6f}")
+    print("\nOutput tokens per call (reasoning counts as output and is billed):")
+    for r in results:
+        answer_est = round(len(r.text) / 3.5)  # JSON answers run ~3.5 characters a token
+        reasoning = (f"{r.reasoning_tokens} reported" if r.reasoning_tokens is not None
+                     else f"~{max(0, r.output_tokens - answer_est)} (output minus answer estimate)")
+        print(f"  {r.provider:8} {r.model:34} output={r.output_tokens:5}  reasoning={reasoning}  "
+              f"answer~{answer_est} ({len(r.text)} chars)"
+              + (f"  reasoning_text={r.reasoning_chars} chars" if r.reasoning_chars else "")
+              + (f"  CUT OFF ({r.incomplete})" if r.incomplete else ""))
     if maya:
         text = card(*maya, store, after.settled_usd - before.settled_usd, after, before.cap_usd)
         if PRIVATE:

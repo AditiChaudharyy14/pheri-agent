@@ -65,10 +65,14 @@ and Pheri holds off that customer until the owner closes it. "Stop" sets a do-no
 from then on there is no model call for that customer, and the rule check refuses anything that
 would reach them.
 
-**Private mode** is a per-business switch. With it on, the guard (and, if chosen, the decision)
-runs on Muse Spark Open: Meta's open-weight model, served by a partner (Baseten), self-hostable.
-The decision there is a single call: code dry-runs the owner's rules on every allowed action
-first, and checks the answer exactly as it does on the Meta Model API.
+**Private mode** is a per-business switch (`pheri/privacy.py`), step by step: reading replies,
+profiles, decisions and rule compiling can each run on Muse Spark Open: Meta's open-weight model,
+served by a partner (Baseten), self-hostable. In **full** private mode the business sends nothing
+to the Meta Model API: its work runs inside a code fence that refuses any Meta call before it is
+sent. A private decision is a single call: code dry-runs the owner's rules on every allowed action
+first, and checks the answer exactly as it does on the Meta Model API. On Baseten every step runs at
+`reasoning_effort: low` (top-level, as Baseten documents for Muse Spark Open, whose default is
+`xhigh`). The model always reasons, and `max_tokens` covers reasoning and answer together.
 
 ```bash
 python evals/run.py                                    # mock: both providers, every message, $0

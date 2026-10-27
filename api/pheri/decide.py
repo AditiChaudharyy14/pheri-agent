@@ -32,7 +32,9 @@ from pydantic import BaseModel, ValidationError, field_validator
 
 from .actions import ALL_CHANNELS, BUSINESS_ACTIONS, CATALOG, CHANNELS, ESCALATE, ProposedAction
 from .autonomy import escalate, modes, open_escalation, sent_messages, submit
-from .guard import GuardResult, private_mode, screen_history
+from .guard import GuardResult, screen_history
+from .privacy import PRIVATE_EFFORT as _PRIVACY_EFFORT
+from .privacy import private_fence, private_mode
 from .journey import Journey, stage
 from .llm import LLM, LLMResult, ModelOutputError, register_mock, strict_schema
 from .profile import Profile, quote_in_source
@@ -348,7 +350,9 @@ def _decide_with_tools(run: _Run, llm: LLM, now: datetime, data_class: str):
 
 # ---- private mode: one call to Muse Spark Open -------------------------------------
 PRIVATE_PURPOSE = "decide_private"
-# Live, Muse Spark Open at effort medium spent all of 4000 output tokens reasoning before the JSON.
+# Live, Muse Spark Open at effort medium reasoned through all 4000, then all 8000, output tokens and never
+# wrote the JSON. Low is what the private-mode brief asked for; at low the guard finished within 612.
+PRIVATE_EFFORT = _PRIVACY_EFFORT  # "low"
 PRIVATE_MAX_OUTPUT_TOKENS = 8000
 PRIVATE_SYSTEM = SYSTEM.split("\n", 3)[0] + """
 Everything you need is below: the profile, the allowed actions, and a dry run of the owner's rules on
@@ -378,7 +382,7 @@ def _decide_private(run: _Run, llm: LLM, now: datetime, data_class: str):
                 {"role": "user", "content": json.dumps(payload, ensure_ascii=False, default=str)}]
     try:
         r = llm.complete_json(messages, schema=Decision, provider="baseten", purpose=PRIVATE_PURPOSE,
-                              effort="medium", max_tokens=PRIVATE_MAX_OUTPUT_TOKENS, data_class=data_class)
+                              effort=PRIVATE_EFFORT, max_tokens=PRIVATE_MAX_OUTPUT_TOKENS, data_class=data_class)
     except ModelOutputError as exc:
         return None, f"Muse Spark Open's answer was not usable: {str(exc)[:160]}", 1, 0.0
     except Exception as exc:  # noqa: BLE001
@@ -390,16 +394,20 @@ def _decide_private(run: _Run, llm: LLM, now: datetime, data_class: str):
 
 
 def decide_customer(ds, key: str, store, llm: LLM, now: datetime = NOW) -> Outcome:
-    """The whole path for one customer: guard their replies, then (only if that allows it) profile and decide."""
+    """The whole path for one customer: guard their replies, then (only if that allows it) profile and decide.
+    In full private mode the whole path runs inside a fence: code refuses any call to the Meta Model API."""
     from .profile import CUSTOMER_WRITTEN, build_profile, norm_email
 
     c = ds.customers[norm_email(key)]
-    guarded = screen_history(store, llm, c.key, [s for s in c.sources if s.kind in CUSTOMER_WRITTEN], ds.data_class)
-    if store.do_not_contact(c.key) or open_escalation(store, c.key):
-        # No profile call either: nothing would be done with it.
-        thin = Profile(ds.business, c.key, c.name, c.company, {}, {}, {}, None)
-        return decide(thin, store, llm, now, ds.data_class, guarded)
-    return decide(build_profile(ds, c.key, llm, now.date()), store, llm, now, ds.data_class, guarded)
+    with private_fence(store, llm):
+        guarded = screen_history(store, llm, c.key, [s for s in c.sources if s.kind in CUSTOMER_WRITTEN],
+                                 ds.data_class)
+        if store.do_not_contact(c.key) or open_escalation(store, c.key):
+            # No profile call either: nothing would be done with it.
+            thin = Profile(ds.business, c.key, c.name, c.company, {}, {}, {}, None)
+            return decide(thin, store, llm, now, ds.data_class, guarded)
+        p = build_profile(ds, c.key, llm, now.date(), private=private_mode(store)["profile"])
+        return decide(p, store, llm, now, ds.data_class, guarded)
 
 
 # ---- offline stand-in for Muse Spark ------------------------------------------------

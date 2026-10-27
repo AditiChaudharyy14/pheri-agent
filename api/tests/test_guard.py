@@ -234,11 +234,16 @@ def test_older_replies_get_the_free_code_screen_only(brightdesk, llm, monkeypatc
 # ---- private mode ------------------------------------------------------------------------
 @BOTH
 def test_private_mode_is_a_per_business_switch_and_audited(store):
-    assert private_mode(store) == {"guard": False, "decide": False}
+    off = {"guard": False, "profile": False, "decide": False, "rules": False}
+    assert private_mode(store) == off
     set_private_mode(store, guard=True, by="owner:aditi")
-    assert private_mode(store) == {"guard": True, "decide": False}
+    assert private_mode(store) == {**off, "guard": True}
     entry = store.audit_log("private_mode")[-1]
-    assert entry["event"] == "private_mode_changed" and entry["details"]["to"] == {"guard": True, "decide": False}
+    assert entry["event"] == "private_mode_changed" and entry["details"]["to"] == {**off, "guard": True}
+    set_private_mode(store, full=True, by="owner:aditi")
+    assert all(private_mode(store).values())
+    with pytest.raises(ValueError, match="unknown private-mode steps"):
+        set_private_mode(store, billing=True, by="owner")
 
 
 def test_private_guard_runs_on_muse_spark_open_at_low_effort(llm, monkeypatch):
@@ -310,7 +315,9 @@ def test_private_decide_is_one_call_with_every_rule_dry_run(brightdesk, llm, mon
 
 
 def test_private_wording_is_honest():
-    for text in (guard_mod.__doc__, guard_mod.private_mode.__doc__):
+    from pheri import privacy
+
+    for text in (guard_mod.__doc__, privacy.__doc__):
         assert "Meta's open-weight model, served by a partner" in " ".join(text.split())
         assert "self-hostable" in text
 
@@ -330,7 +337,7 @@ def test_a_private_decision_cut_off_at_the_limit_says_so(brightdesk, llm, monkey
     calls = _calls(llm, monkeypatch)
     out = decide(build_profile(brightdesk, MAYA, llm), store, llm)
     assert "cut off (max_output_tokens)" in out.fallback and out.decision["action"] == "task_for_owner"
-    assert calls[-1]["max_tokens"] == 8000
+    assert calls[-1]["max_tokens"] == 8000 and calls[-1]["effort"] == "low"  # as the private-mode brief says
 
 
 def test_chat_finish_reason_length_counts_as_cut_off(tmp_path, monkeypatch):
@@ -343,7 +350,60 @@ def test_chat_finish_reason_length_counts_as_cut_off(tmp_path, monkeypatch):
     live = LLM(Settings())
     raw = SimpleNamespace(choices=[SimpleNamespace(finish_reason="length", message=SimpleNamespace(content=""))])
     monkeypatch.setattr(live, "_chat", lambda provider, req: ("", (100, 0, 4000), raw, "chat_1"))  # no network
-    with pytest.raises(ModelOutputError, match=r"cut off \(max_output_tokens\)"):
+    with pytest.raises(ModelOutputError, match=r"cut off \(max_output_tokens\)") as err:
         live.complete([{"role": "user", "content": "x"}], purpose="guard", provider="baseten",
                       schema=guard_mod.GuardOutput, max_tokens=4000)
+    assert err.value.result.output_tokens == 4000 and err.value.result.incomplete == "max_output_tokens"
     assert live.ledger.totals("baseten").reserved_usd == 0  # settled at the billed tokens, nothing left reserved
+
+
+# ---- full private mode: nothing to the Meta API --------------------------------------------
+def test_full_private_mode_sends_nothing_to_the_meta_api(brightdesk, llm, monkeypatch):
+    from pheri.privacy import private_fence
+
+    store = MemoryStore("brightdesk")
+    set_private_mode(store, full=True, by="owner:aditi")
+    calls = _calls(llm, monkeypatch)
+    with private_fence(store, llm):
+        seed(store, llm)  # the owner's rule is compiled privately too
+    out = decide_customer(brightdesk, MAYA, store, llm)
+    assert {c["purpose"] for c in calls} == {"compile_rule", "guard", "profile_insights", "decide_private"}
+    assert {c["provider"] for c in calls} == {"baseten"}  # every step, Muse Spark Open
+    assert {c["effort"] for c in calls} == {"low"}  # the documented Baseten setting the brief asks for
+    assert out.private and out.decision["action"] == "send_help"
+    assert not {d["action"]: d for d in out.prechecks}["offer_discount"]["allowed"]  # Maya's discount: blocked
+
+
+def test_the_fence_refuses_a_meta_call_before_sending_or_reserving(brightdesk, llm):
+    from pheri.llm import DataPolicyError
+    from pheri.privacy import private_fence
+
+    store = MemoryStore("brightdesk")
+    set_private_mode(store, full=True, by="owner")
+    with private_fence(store, llm):
+        with pytest.raises(DataPolicyError, match="full private mode"):
+            build_profile(brightdesk, MAYA, llm)  # forgot private=True: refused, not sent
+        assert build_profile(brightdesk, MAYA, llm, private=True).model == "meta-models/muse-spark-open-1026"
+    assert llm.ledger.totals("meta").reserved_usd == 0 and llm.ledger.totals("meta").settled_usd == 0
+    assert build_profile(brightdesk, MAYA, llm).model == "muse-spark-1.3"  # outside the fence: back to normal
+
+
+def test_partial_private_mode_has_no_fence(brightdesk, llm, monkeypatch):
+    store = MemoryStore("brightdesk")
+    set_private_mode(store, guard=True, by="owner")  # guard private, the rest on the Meta Model API
+    calls = _calls(llm, monkeypatch)
+    decide_customer(brightdesk, MAYA, store, llm)
+    by_purpose = {c["purpose"]: c.get("provider", "meta") for c in calls}  # meta is the default
+    assert by_purpose["guard"] == "baseten" and by_purpose["profile_insights"] == "meta" and by_purpose["decide"] == "meta"
+
+
+def test_private_profile_and_rule_compile_use_muse_spark_open(brightdesk, llm, monkeypatch):
+    from pheri.rules import compile_rule
+
+    calls = _calls(llm, monkeypatch)
+    p = build_profile(brightdesk, MAYA, llm, private=True)
+    d = compile_rule("brightdesk", "Never offer discounts in a customer's first month.", llm, private=True)
+    assert [c["provider"] for c in calls] == ["baseten", "baseten"]
+    assert calls[0]["max_tokens"] == 4000 and calls[1]["max_tokens"] == 8000
+    assert p.facts["failed_exports"] == 5 and p.insights["blockers"]  # same verified profile, private path
+    assert [c.kind for c in d.checks] == ["no_discount_first_days"]

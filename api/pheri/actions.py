@@ -69,5 +69,5 @@ def problems(business: str, action: ProposedAction) -> list[str]:
     if t.discount and not (action.discount_pct and 0 < action.discount_pct <= 100):
         out.append("a discount needs a percentage between 0 and 100")
     if not t.discount and action.discount_pct:
-        out.append(f"{action.kind} cannot carry a discount")
+        out.append(f"{action.kind} cannot carry a discount: set discount_pct to null, or use offer_discount")
     return out

@@ -28,7 +28,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, field_validator
 
 from .actions import ALL_CHANNELS, BUSINESS_ACTIONS, CATALOG, CHANNELS, ProposedAction
 from .autonomy import modes, sent_messages, submit
@@ -50,10 +50,16 @@ class Evidence(BaseModel):
     value: str  # the fact's exact value, or a quote copied from that source's profile evidence
 
 
+def _none_if_null(v):
+    """Live, the model sometimes writes the string "null" for an empty field."""
+    return None if isinstance(v, str) and v.strip().casefold() in ("null", "none", "") else v
+
+
 class Decision(BaseModel):
     action: Literal[tuple(CATALOG)]
     channel: Literal[ALL_CHANNELS] | None
     discount_pct: float | None
+    _nulls = field_validator("channel", "discount_pct", mode="before")(_none_if_null)
     message: str  # to the customer, or the task for the owner
     why_this: str
     why_now: str
@@ -64,6 +70,7 @@ class CheckRulesArgs(BaseModel):
     action: Literal[tuple(CATALOG)]
     channel: Literal[ALL_CHANNELS] | None = None  # the model may leave optional fields out
     discount_pct: float | None = None
+    _nulls = field_validator("channel", "discount_pct", mode="before")(_none_if_null)
 
 
 class NoArgs(BaseModel):
@@ -82,8 +89,8 @@ TOOLS = [
     _tool("get_profile", "The customer's profile: facts counted in code, verified quotes, journey stage.", NoArgs),
     _tool("list_allowed_actions", "Actions this business allows, their autonomy mode, channels, and the owner's "
                                   "rules in plain words.", NoArgs),
-    _tool("check_rules", "Dry-run the owner's rules on an action before proposing it. Returns allowed and why not.",
-          CheckRulesArgs),
+    _tool("check_rules", "Dry-run the owner's rules on an action before proposing it. Returns allowed and why not. "
+                         "discount_pct is null unless action is offer_discount.", CheckRulesArgs),
 ]
 
 SYSTEM = """You are Pheri. You choose the single next best action for one customer of a business.
@@ -91,7 +98,10 @@ Work like this: call get_profile and list_allowed_actions, choose an action, cal
 and if it is not allowed choose another. Then answer with the decision JSON only.
 
 - action: one of the allowed actions. channel: one of the business's channels (null for task_for_owner
-  and no_action). discount_pct: only for offer_discount, otherwise null.
+  and no_action).
+- discount_pct: a number only when action is offer_discount. For every other action it must be JSON
+  null (not the string "null", not 0): a discount cannot ride along with a call, a help message or an
+  upgrade. If you want to offer money off, the action is offer_discount.
 - message: what the customer receives, short, in their language, signed by the team; or, for
   task_for_owner, what the owner should do.
 - why_this: why this action fits this customer. why_now: why today rather than later.
@@ -114,7 +124,7 @@ def _profile_view(p: Profile, j: Journey) -> dict:
 def _allowed_view(store) -> dict:
     dial = modes(store)
     return {"actions": [{"action": k, "description": CATALOG[k].description, "mode": dial.get(k, "none"),
-                         "discount": CATALOG[k].discount} for k in BUSINESS_ACTIONS[store.business]],
+                         "takes_discount_pct": CATALOG[k].discount} for k in BUSINESS_ACTIONS[store.business]],
             "channels": list(CHANNELS[store.business]),
             "owner_rules": [describe(c) for r in active_rules(store) for c in r.checks]}
 
@@ -238,24 +248,26 @@ def decide(p: Profile, store, llm: LLM, now: datetime = NOW, data_class: str = "
     j = stage(p.business, p.facts, p.provenance.get("facts"))
     run = _Run(p, j, store, context_for(store, p, now))
     user = json.dumps({"customer": p.customer_key, "business": p.business, "today": now.date().isoformat()})
+    # Stateless replay: the whole conversation goes out every turn, so nothing depends on Meta keeping a
+    # stored response (live, ~1 in 8 chains failed with "referenced response not found or expired").
     items: list[dict] = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": user}]
-    prev, decision, fallback, nudged, turns, cost = None, None, None, False, 0, 0.0
+    decision, fallback, nudged, turns, cost = None, None, False, 0, 0.0
     while turns < MAX_TURNS:
         try:
             r: LLMResult = llm.complete(items, purpose=PURPOSE, schema=Decision, effort="medium", tools=TOOLS,
-                                        previous_response_id=prev, max_tokens=MAX_OUTPUT_TOKENS,
-                                        data_class=data_class)
+                                        stateless=True, max_tokens=MAX_OUTPUT_TOKENS, data_class=data_class)
         except Exception as exc:  # noqa: BLE001
             status = getattr(exc, "status_code", None)
             if status is None or not 400 <= status < 500:
                 raise  # spend cap, data policy, outages: stop the run, never paper over them
             fallback = f"the model API refused turn {turns + 1} ({status}: {getattr(exc, 'message', exc)})"
             break
-        turns, cost, prev = turns + 1, cost + r.cost_usd, r.response_id
+        turns, cost = turns + 1, cost + r.cost_usd
+        items = items + r.output_items
         if r.function_calls:
-            items = [{"type": "function_call_output", "call_id": c.call_id,
-                      "output": json.dumps(run.call(c.name, c.arguments), ensure_ascii=False, default=str)}
-                     for c in r.function_calls]
+            items += [{"type": "function_call_output", "call_id": c.call_id,
+                       "output": json.dumps(run.call(c.name, c.arguments), ensure_ascii=False, default=str)}
+                      for c in r.function_calls]
             continue
         if r.parsed is not None:
             decision = r.parsed
@@ -266,7 +278,7 @@ def decide(p: Profile, store, llm: LLM, now: datetime = NOW, data_class: str = "
         if nudged:
             fallback = "the model answered in plain text twice instead of the decision JSON"
             break
-        nudged, items = True, [{"role": "user", "content": NUDGE}]
+        nudged, items = True, items + [{"role": "user", "content": NUDGE}]
     else:
         fallback = f"no decision after {MAX_TURNS} turns"
     if decision is None:
@@ -371,7 +383,13 @@ if __name__ == "__main__":
     from .rules import seed
     from .store import MemoryStore
 
+    import os
+
+    from .config import REPO_ROOT
+
     business, limit = (sys.argv[1] if len(sys.argv) > 1 else "brightdesk"), 5
+    if os.environ.get("PHERI_LLM_MODE", "mock") == "mock":  # $0 rows don't belong in the real ledger
+        os.environ["PHERI_LEDGER_PATH"] = str(REPO_ROOT / ".pheri" / "mock-ledger.sqlite")
     llm = LLM()
     if llm.settings.llm_mode != "mock":
         raise SystemExit("Run this in mock mode. Live decision runs are started on purpose, with a sample size.")

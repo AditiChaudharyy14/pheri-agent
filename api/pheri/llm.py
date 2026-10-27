@@ -14,10 +14,14 @@ Protocols (checked against https://dev.meta.ai/docs on 27 Oct 2026):
   modal   -> Muse Glimmer (open weights), Chat Completions.
 Reasoning tokens are billed as output, so `max_tokens` bounds reasoning + answer together.
 
-Tool loops (meta only): pass `tools` (flat function shape) and, after the first turn,
-`previous_response_id` with the `function_call_output` items. The server re-reads the whole
-conversation on every turn and bills it as input again, so a chained call is estimated against
-everything said so far, not only the new items. `tool_choice` is auto only: a turn may come back
+Tool loops (meta only): pass `tools` (flat function shape). Two ways to carry the conversation:
+  stateless=True   (what decide.py uses) resend the whole conversation every turn: the request has
+                   `store: false` and asks for `reasoning.encrypted_content`, and `output_items` hands
+                   back each response's items ready to append to the next input. Nothing is kept on
+                   Meta's side, so no turn can fail with "referenced response not found or expired".
+  previous_response_id  send only the new items; the server appends them to the stored history.
+Either way the server reads the whole conversation on every turn and bills it as input again, so a
+chained call is estimated against everything said so far, not only the new items. `tool_choice` is auto only: a turn may come back
 as plain text instead of a tool call or JSON, so with tools a bad parse is reported, not raised.
 """
 
@@ -78,6 +82,7 @@ class LLMResult:
     function_calls: list[FunctionCall] = field(default_factory=list)
     parse_error: str | None = None  # with tools: the reply was not the JSON we asked for
     incomplete: str | None = None  # why the provider stopped early, e.g. "max_output_tokens"
+    output_items: list[dict] = field(default_factory=list)  # stateless: append these to the next input
 
 
 # Mock responders let tests and offline demos run with zero network and zero spend.
@@ -102,13 +107,17 @@ def _estimate_input_tokens(messages: list[dict]) -> int:
 
 # ---- request builders (pure functions, unit-tested) ------------------------------
 def build_responses_request(model, messages, max_tokens, schema, effort, cache_key, tools=None,
-                            previous_response_id=None) -> dict:
+                            previous_response_id=None, stateless=False) -> dict:
     req: dict[str, Any] = {"model": model, "input": messages, "max_output_tokens": max_tokens}
     if tools:
         req["tools"] = tools
         req["tool_choice"] = "auto"  # the only value Meta supports
     if previous_response_id:
         req["previous_response_id"] = previous_response_id
+    if stateless:
+        # Meta keeps no copy, and returns the reasoning encrypted so the next turn can replay it.
+        req["store"] = False
+        req["include"] = ["reasoning.encrypted_content"]
     if effort:
         req["reasoning"] = {"effort": effort}
     if schema is not None:
@@ -178,10 +187,14 @@ class LLM:
         temperature: float | None = None,
         tools: list[dict] | None = None,
         previous_response_id: str | None = None,
+        stateless: bool = False,
     ) -> LLMResult:
         model = model or self.default_model(provider)
-        if (tools or previous_response_id) and provider != "meta":
+        if (tools or previous_response_id or stateless) and provider != "meta":
             raise ValueError("Tool loops use the Responses API, which only the meta provider speaks here.")
+        if stateless and previous_response_id:
+            # Meta: include=["reasoning.encrypted_content"] cannot be combined with previous_response_id.
+            raise ValueError("A stateless call resends the conversation; it cannot also use previous_response_id.")
         max_tokens = max(1, min(int(max_tokens), MAX_OUTPUT_TOKENS))
         if effort is not None and effort not in EFFORTS:
             raise ValueError(f"effort must be one of {sorted(EFFORTS)} (Meta rejects 'none').")
@@ -215,15 +228,16 @@ class LLM:
         try:
             calls: list[FunctionCall] = []
             if self.settings.llm_mode == "mock":
-                text, usage, calls, resp_id, raw = self._mock_call(messages, purpose, schema, tools,
-                                                                   previous_response_id)
+                text, usage, calls, resp_id, raw, items = self._mock_call(messages, purpose, schema, tools,
+                                                                          previous_response_id, stateless)
             elif provider == "meta":
                 req = build_responses_request(model, messages, max_tokens, schema, effort, f"pheri-{purpose}",
-                                              tools, previous_response_id)
-                text, usage, raw, resp_id, calls = self._with_retries(lambda: self._responses(req))
+                                              tools, previous_response_id, stateless)
+                text, usage, raw, resp_id, calls, items = self._with_retries(lambda: self._responses(req))
             else:
                 req = build_chat_request(model, messages, max_tokens, schema, effort, temperature)
                 text, usage, raw, resp_id = self._with_retries(lambda: self._chat(provider, req))
+                items = []
         except BaseException as exc:
             status = getattr(exc, "status_code", None)
             maybe_billed = (status is not None and status >= 500) or exc.__class__.__name__ in (
@@ -241,7 +255,7 @@ class LLM:
         in_tok, cached_tok, out_tok = usage
         actual = 0.0 if self.settings.llm_mode == "mock" else cost_usd(price, in_tok, out_tok, cached_tok)
         self.ledger.settle(rid, actual, in_tok, cached_tok, out_tok)
-        if tools and resp_id:
+        if tools and resp_id and not stateless:
             self._context_tokens.pop(previous_response_id or "", None)  # our chains are linear
             self._context_tokens[resp_id] = in_tok + out_tok
 
@@ -257,7 +271,7 @@ class LLM:
                     raise
                 parse_error = f"cut off ({incomplete})" if incomplete else str(exc)
         return LLMResult(text, parsed, provider, model, in_tok, cached_tok, out_tok, actual, latency, resp_id, raw,
-                         calls, parse_error, incomplete)
+                         calls, parse_error, incomplete, items)
 
     # ---- transports -------------------------------------------------------
     def _responses(self, req: dict):
@@ -267,7 +281,8 @@ class LLM:
         cached = (getattr(details, "cached_tokens", 0) or 0) if details is not None else 0
         calls = [FunctionCall(item.name, item.arguments or "{}", item.call_id)
                  for item in (resp.output or []) if getattr(item, "type", None) == "function_call"]
-        return resp.output_text or "", (u.input_tokens or 0, cached, u.output_tokens or 0), resp, resp.id, calls
+        items = [_replayable(item) for item in (resp.output or [])]
+        return resp.output_text or "", (u.input_tokens or 0, cached, u.output_tokens or 0), resp, resp.id, calls, items
 
     def _chat(self, provider: str, req: dict):
         resp = self._client(provider).chat.completions.create(**req)
@@ -290,7 +305,7 @@ class LLM:
                 time.sleep(_retry_delay(exc, attempt))
         raise AssertionError("unreachable")
 
-    def _mock_call(self, messages, purpose, schema, tools=None, previous_response_id=None):
+    def _mock_call(self, messages, purpose, schema, tools=None, previous_response_id=None, stateless=False):
         fn = _mock_responders.get(purpose)
         if fn is None:
             raise RuntimeError(f"No mock responder registered for purpose {purpose!r}.")
@@ -314,10 +329,21 @@ class LLM:
                       for c in calls] or [{"role": "assistant", "content": text}])
         usage = (_estimate_input_tokens(thread), 0, math.ceil(len(json.dumps(out_items, ensure_ascii=False)) / 3))
         resp_id = None
-        if tools:  # only tool loops chain, so only they keep a thread
+        if tools:
             resp_id = f"mock_{uuid.uuid4().hex[:12]}"
-            self._mock_threads[resp_id] = thread + out_items
-        return text, usage, calls, resp_id, raw
+            if not stateless:  # only server-side chains need the mock to remember the thread
+                self._mock_threads[resp_id] = thread + out_items
+        # Like the real API: a reasoning item (encrypted, with a summary) comes first, then the answer.
+        items = [{"type": "reasoning", "summary": [], "encrypted_content": "mock-reasoning"}, *out_items]
+        return text, usage, calls, resp_id, raw, items
+
+
+def _replayable(item) -> dict:
+    """A response output item as an input item for the next stateless turn."""
+    d = item.model_dump(exclude_none=True) if hasattr(item, "model_dump") else dict(item)
+    if d.get("type") == "reasoning":
+        d.setdefault("summary", [])  # Meta requires a summary on every reasoning input item, even []
+    return d
 
 
 def _retry_delay(exc: Exception, attempt: int) -> float:

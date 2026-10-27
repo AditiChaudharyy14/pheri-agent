@@ -94,16 +94,23 @@ def test_without_the_rule_the_same_discount_would_go_to_the_owner(maya, llm):
 
 
 # ---- the loop -------------------------------------------------------------------------
-def test_tool_loop_chains_responses_with_function_call_outputs(maya, store, llm, monkeypatch):
+def test_tool_loop_replays_the_whole_conversation_statelessly(maya, store, llm, monkeypatch):
     calls = []
     real = llm.complete
-    monkeypatch.setattr(llm, "complete", lambda items, **kw: calls.append((items, kw)) or real(items, **kw))
+    monkeypatch.setattr(llm, "complete", lambda items, **kw: calls.append((list(items), kw)) or real(items, **kw))
     decide(maya, store, llm)
-    first_items, first_kw = calls[0]
-    assert first_kw["tools"] == TOOLS and first_kw["effort"] == "medium" and first_kw["previous_response_id"] is None
+    first_items, _ = calls[0]
     assert [i["role"] for i in first_items] == ["system", "user"]
-    for items, kw in calls[1:]:
-        assert kw["previous_response_id"] and all(i["type"] == "function_call_output" for i in items)
+    for items, kw in calls:
+        assert kw["tools"] == TOOLS and kw["effort"] == "medium" and kw["stateless"] is True
+        assert "previous_response_id" not in kw  # nothing depends on Meta keeping a stored response
+    for (before, _), (after, _) in zip(calls, calls[1:]):
+        assert after[:len(before)] == before  # each turn resends everything said so far...
+        new = after[len(before):]
+        assert new[0]["type"] == "reasoning" and new[0]["summary"] == []  # ...the model's reasoning first,
+        call_ids = [i["call_id"] for i in new if i.get("type") == "function_call"]
+        outputs = [i["call_id"] for i in new if i.get("type") == "function_call_output"]
+        assert call_ids and outputs == call_ids  # ...and one output per tool call, in order
     assert {t["name"] for t in TOOLS} == {"get_profile", "list_allowed_actions", "check_rules"}
     assert all(t["type"] == "function" and t["parameters"]["additionalProperties"] is False for t in TOOLS)
 
@@ -238,3 +245,29 @@ def test_repeat_profile_reads_are_answered_briefly_and_optional_args_may_be_left
     assert [t["tool"] for t in out.trace] == ["get_profile", "get_profile", "check_rules"]
     assert '"note"' in out.trace[1]["output"] and len(out.trace[0]["output"]) == 300  # full profile, clipped in trace
     assert out.prechecks[0]["action"] == "send_help" and "not one brightdesk uses" in out.prechecks[0]["violations"][0]
+
+
+def test_the_string_null_means_no_value(maya, store, llm, monkeypatch):
+    # Seen live: check_rules({"action": "send_help", "channel": "email", "discount_pct": "null"}).
+    def model(messages, schema):
+        if not any(m.get("type") == "function_call_output" for m in messages):
+            return {"function_calls": [{"name": "check_rules", "arguments":
+                                        '{"action": "send_help", "channel": "email", "discount_pct": "null"}'}]}
+        return _answer(discount_pct="null", channel="email")
+
+    _model(monkeypatch, model)
+    out = decide(maya, store, llm)
+    assert out.prechecks == [{"action": "send_help", "allowed": True, "violations": []}]
+    assert out.decision["discount_pct"] is None and out.fallback is None
+
+
+def test_a_discount_on_another_action_is_refused_with_what_to_do_instead(maya, store, llm, monkeypatch):
+    # Seen live: book_call with a discount, three times in a row.
+    from pheri.decide import SYSTEM
+
+    _model(monkeypatch, lambda m, s: _answer(action="book_call", discount_pct=10.0))
+    out = decide(maya, store, llm)
+    assert out.action["status"] == "blocked"
+    assert ("book_call cannot carry a discount: set discount_pct to null, or use offer_discount"
+            in out.action["rule_check"]["results"][0]["reason"])
+    assert "a discount cannot ride along" in SYSTEM and "the action is offer_discount" in SYSTEM

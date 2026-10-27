@@ -79,6 +79,23 @@ python evals/run.py                                    # mock: both providers, e
 python evals/run.py --live --sample 20 --budget 0.50   # real calls, budget per provider, refused if the worst case is over
 ```
 
+## Proving what worked
+
+`pheri/twin.py` is a customer twin: synthetic customers whose responses are maths, not a model. Each
+has a hidden true stage. Pheri sees it only through its journey rules' measured mistakes, and the
+chance of a response depends on the hidden stage and the action taken. 20% are held out and get
+nothing. Thompson sampling learns, round by round, which action works for each stage, inside the
+owner's rules. The results show the lift against the holdout for each stage, with a 95% interval
+and a verdict decided in code. `pheri/learn.py` has Muse Wonder write "What Pheri learned" from
+those results. The model can only cite facts by id, and code checks every number and verdict
+before a sentence is kept.
+
+```bash
+cd api
+python -m pheri.twin brightdesk            # 200 customers, $0; writes chart-ready JSON to .pheri/twin/
+python -m pheri.learn ../.pheri/twin/brightdesk-n200-seed7.json   # mock report, checked in code
+```
+
 `evals/attacks.jsonl` holds 52 attacks (direct, indirect, multilingual, semantic) and 27 harmless
 messages that look alarming. `evals/replies.jsonl` holds 60 labelled replies, 12 per language. The
 code screen's patterns were written alongside these sets, so its own catch rate here is an upper

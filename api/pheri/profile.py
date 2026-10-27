@@ -332,7 +332,9 @@ SYSTEM = """You read what one customer wrote, and what staff wrote about them, a
 - blockers: what is stopping them,
 - role: their role in the account or the buying decision (for example "decision maker", "admin", "end user"),
 - sentiment: the customer's overall mood in their own words, from tickets and messages only, never from
-  staff notes: positive, neutral, negative, or mixed when they are both pleased and unhappy,
+  staff notes: positive, neutral, negative, or mixed when they are both pleased and unhappy.
+  An unresolved problem in their own words (a failure, an error, something they cannot do) means
+  negative, or mixed if they also sound pleased. Neutral is only for customers with no complaint,
 - language: the ISO 639-1 code of the language the customer writes in.
 
 Read every source, including staff sales notes: goals and role are often only there.

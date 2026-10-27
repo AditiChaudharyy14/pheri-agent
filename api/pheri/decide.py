@@ -30,10 +30,11 @@ from typing import Literal
 
 from pydantic import BaseModel, ValidationError, field_validator
 
-from .actions import ALL_CHANNELS, BUSINESS_ACTIONS, CATALOG, CHANNELS, ProposedAction
-from .autonomy import modes, sent_messages, submit
+from .actions import ALL_CHANNELS, BUSINESS_ACTIONS, CATALOG, CHANNELS, ESCALATE, ProposedAction
+from .autonomy import escalate, modes, open_escalation, sent_messages, submit
+from .guard import GuardResult, private_mode, screen_history
 from .journey import Journey, stage
-from .llm import LLM, LLMResult, register_mock, strict_schema
+from .llm import LLM, LLMResult, ModelOutputError, register_mock, strict_schema
 from .profile import Profile, quote_in_source
 from .rules import CheckContext, active_rules, check, describe
 from .synth import NOW
@@ -45,6 +46,8 @@ MAX_OUTPUT_TOKENS = 4000
 
 
 # ---- what the model returns ----------------------------------------------------
+MODEL_ACTIONS = tuple(k for k in CATALOG if k != ESCALATE)
+
 class Evidence(BaseModel):
     ref: str  # a fact name from the profile ("days_quiet"), "journey_stage", or a source id ("T0999")
     value: str  # the fact's exact value, or a quote copied from that source's profile evidence
@@ -56,7 +59,7 @@ def _none_if_null(v):
 
 
 class Decision(BaseModel):
-    action: Literal[tuple(CATALOG)]
+    action: Literal[MODEL_ACTIONS]
     channel: Literal[ALL_CHANNELS] | None
     discount_pct: float | None
     _nulls = field_validator("channel", "discount_pct", mode="before")(_none_if_null)
@@ -67,7 +70,7 @@ class Decision(BaseModel):
 
 
 class CheckRulesArgs(BaseModel):
-    action: Literal[tuple(CATALOG)]
+    action: Literal[MODEL_ACTIONS]
     channel: Literal[ALL_CHANNELS] | None = None  # the model may leave optional fields out
     discount_pct: float | None = None
     _nulls = field_validator("channel", "discount_pct", mode="before")(_none_if_null)
@@ -115,10 +118,14 @@ NUDGE = "Reply now with the decision as JSON matching the schema, and nothing el
 
 
 # ---- tools: executed in code ------------------------------------------------------
-def _profile_view(p: Profile, j: Journey) -> dict:
-    return {"customer": p.customer_key, "name": p.name, "company": p.company, "facts": p.facts,
+def _profile_view(p: Profile, j: Journey, latest: GuardResult | None = None) -> dict:
+    view = {"customer": p.customer_key, "name": p.name, "company": p.company, "facts": p.facts,
             "journey": {"stage": j.stage, "because": [{"fact": b["fact"], "value": b["value"]} for b in j.because]},
             "insights": p.insights}
+    if latest is not None and latest.provider is not None:
+        # What the guard made of their newest reply: its label and a safe summary, never the raw text.
+        view["latest_reply"] = {"label": latest.label, "language": latest.language, "summary": latest.summary}
+    return view
 
 
 def _allowed_view(store) -> dict:
@@ -135,6 +142,7 @@ class _Run:
     journey: Journey
     store: object
     ctx: CheckContext
+    latest: GuardResult | None = None
     prechecks: list[dict] = field(default_factory=list)
     trace: list[dict] = field(default_factory=list)  # every tool call and a short view of its result
     _given: set = field(default_factory=set)
@@ -151,7 +159,7 @@ class _Run:
                 return {"note": f"Unchanged: use the {name} result above."}
             self._given.add(name)
         if name == "get_profile":
-            return _profile_view(self.profile, self.journey)
+            return _profile_view(self.profile, self.journey, self.latest)
         if name == "list_allowed_actions":
             return _allowed_view(self.store)
         if name == "check_rules":
@@ -232,6 +240,8 @@ class Outcome:
     prechecks: list[dict] = field(default_factory=list)
     cost_usd: float = 0.0
     trace: list[dict] = field(default_factory=list)
+    skipped: str | None = None  # why no model was asked: do_not_contact | escalated | open_escalation
+    private: bool = False  # decided on Muse Spark Open (Meta's open-weight model, served by a partner)
 
 
 def _fallback(reason: str) -> Decision:
@@ -241,12 +251,64 @@ def _fallback(reason: str) -> Decision:
 
 
 def context_for(store, p: Profile, now: datetime = NOW) -> CheckContext:
-    return CheckContext(store.business, p.facts, now, sent_messages(store, p.customer_key))
+    return CheckContext(store.business, p.facts, now, sent_messages(store, p.customer_key),
+                        do_not_contact=store.do_not_contact(p.customer_key) is not None)
 
 
-def decide(p: Profile, store, llm: LLM, now: datetime = NOW, data_class: str = "synthetic") -> Outcome:
+def _no_model(p: Profile, store, why: str, skipped: str, action: dict | None = None) -> Outcome:
+    d = Decision(action="no_action", channel=None, discount_pct=None, message="", why_this=why, why_now="", evidence=[])
+    store.audit("pheri", "decided", "customer", p.customer_key,
+                {"decision": d.model_dump(), "skipped": skipped, "turns": 0, "cost_usd": 0.0})
+    return Outcome(p.customer_key, d.model_dump(), action, [], [], 0, skipped=skipped)
+
+
+def decide(p: Profile, store, llm: LLM, now: datetime = NOW, data_class: str = "synthetic",
+           guarded: list[GuardResult] | None = None) -> Outcome:
+    """`guarded`: what guard.screen_history made of the customer's replies (decide_customer does that for you)."""
+    guarded = guarded or []
+    # Code first, model never: a customer who said stop, or whose messages look like an attack, gets no
+    # model call and no action. An attack becomes one item in the approval queue for a person.
+    if dnc := store.do_not_contact(p.customer_key):
+        return _no_model(p, store, f"The customer asked not to be contacted ({dnc['source']}).", "do_not_contact")
+    if (open_item := open_escalation(store, p.customer_key)) is not None:
+        return _no_model(p, store, "A person is looking at this customer's messages first.", "open_escalation",
+                         open_item)
+    if attacks := [g for g in guarded if g.attack]:
+        item = escalate(store, p.customer_key, "possible attack: " + ", ".join(attacks[0].screen_before or ["model"]),
+                        {"source_id": attacks[0].source_id, "summary": attacks[0].summary})
+        return _no_model(p, store, "A message from this customer looks like an attack; a person decides.",
+                         "escalated", item)
+
     j = stage(p.business, p.facts, p.provenance.get("facts"))
-    run = _Run(p, j, store, context_for(store, p, now))
+    latest = next((g for g in reversed(guarded) if g.provider is not None), None)
+    run = _Run(p, j, store, context_for(store, p, now), latest)
+    private = private_mode(store)["decide"]
+    if private:
+        decision, fallback, turns, cost = _decide_private(run, llm, now, data_class)
+    else:
+        decision, fallback, turns, cost = _decide_with_tools(run, llm, now, data_class)
+    if decision is None:
+        decision = _fallback(fallback)
+
+    kept, dropped = verify_evidence(decision.evidence, p, j)
+    loose = unsupported_numbers(decision, kept)
+    weak = fallback is not None or not kept or bool(loose)
+    why = f"Why this: {decision.why_this}\nWhy now: {decision.why_now}".strip()
+    store.audit("pheri", "decided", "customer", p.customer_key,
+                {"decision": decision.model_dump(), "journey": j.stage, "turns": turns, "fallback": fallback,
+                 "dropped_evidence": dropped, "unsupported_numbers": loose, "cost_usd": cost, "private": private})
+    action = None
+    if decision.action != "no_action":
+        proposed = ProposedAction(kind=decision.action, channel=decision.channel, discount_pct=decision.discount_pct,
+                                  message=decision.message, send_at=now)
+        action = submit(store, p.customer_key, proposed, run.ctx, why=why, evidence=kept,
+                        cap="ask_owner" if weak else None)
+    return Outcome(p.customer_key, decision.model_dump(), action, kept, dropped, turns, fallback, run.prechecks, cost,
+                   run.trace, private=private)
+
+
+def _decide_with_tools(run: _Run, llm: LLM, now: datetime, data_class: str):
+    p = run.profile
     user = json.dumps({"customer": p.customer_key, "business": p.business, "today": now.date().isoformat()})
     # Stateless replay: the whole conversation goes out every turn, so nothing depends on Meta keeping a
     # stored response (live, ~1 in 8 chains failed with "referenced response not found or expired").
@@ -281,24 +343,61 @@ def decide(p: Profile, store, llm: LLM, now: datetime = NOW, data_class: str = "
         nudged, items = True, items + [{"role": "user", "content": NUDGE}]
     else:
         fallback = f"no decision after {MAX_TURNS} turns"
-    if decision is None:
-        decision = _fallback(fallback)
+    return decision, fallback, turns, cost
 
-    kept, dropped = verify_evidence(decision.evidence, p, j)
-    loose = unsupported_numbers(decision, kept)
-    weak = fallback is not None or not kept or bool(loose)
-    why = f"Why this: {decision.why_this}\nWhy now: {decision.why_now}".strip()
-    store.audit("pheri", "decided", "customer", p.customer_key,
-                {"decision": decision.model_dump(), "journey": j.stage, "turns": turns, "fallback": fallback,
-                 "dropped_evidence": dropped, "unsupported_numbers": loose, "cost_usd": cost})
-    action = None
-    if decision.action != "no_action":
-        proposed = ProposedAction(kind=decision.action, channel=decision.channel, discount_pct=decision.discount_pct,
-                                  message=decision.message, send_at=now)
-        action = submit(store, p.customer_key, proposed, run.ctx, why=why, evidence=kept,
-                        cap="ask_owner" if weak else None)
-    return Outcome(p.customer_key, decision.model_dump(), action, kept, dropped, turns, fallback, run.prechecks, cost,
-                   run.trace)
+
+# ---- private mode: one call to Muse Spark Open -------------------------------------
+PRIVATE_PURPOSE = "decide_private"
+PRIVATE_SYSTEM = SYSTEM.split("\n", 3)[0] + """
+Everything you need is below: the profile, the allowed actions, and a dry run of the owner's rules on
+every allowed action (a discount is dry-run at 10%). Choose an action whose dry run is allowed, and
+answer with the decision JSON only.
+""" + SYSTEM.split("and if it is not allowed choose another. Then answer with the decision JSON only.\n", 1)[1].replace(
+    "from get_profile only", "from the profile below only")
+
+
+def _decide_private(run: _Run, llm: LLM, now: datetime, data_class: str):
+    """Muse Spark Open (Meta's open-weight model, served by a partner, self-hostable) speaks Chat Completions:
+    no tool loop. Code runs every tool up front, so the model gets the same facts in one call."""
+    store, business = run.store, run.store.business
+    dry = []
+    for k in BUSINESS_ACTIONS[business]:
+        t = CATALOG[k]
+        if k == "no_action":
+            continue
+        a = ProposedAction(kind=k, channel=CHANNELS[business][0] if t.customer_facing else None,
+                           discount_pct=10.0 if t.discount else None)
+        r = check(active_rules(store), a, run.ctx)
+        dry.append({"action": k, "allowed": r.allowed, "violations": r.violations})
+    run.prechecks = dry
+    payload = {"today": now.date().isoformat(), "profile": _profile_view(run.profile, run.journey, run.latest),
+               "allowed": _allowed_view(store), "dry_run": dry}
+    messages = [{"role": "system", "content": PRIVATE_SYSTEM},
+                {"role": "user", "content": json.dumps(payload, ensure_ascii=False, default=str)}]
+    try:
+        r = llm.complete_json(messages, schema=Decision, provider="baseten", purpose=PRIVATE_PURPOSE,
+                              effort="medium", max_tokens=MAX_OUTPUT_TOKENS, data_class=data_class)
+    except ModelOutputError as exc:
+        return None, f"Muse Spark Open's answer was not the decision JSON ({str(exc)[:120]})", 1, 0.0
+    except Exception as exc:  # noqa: BLE001
+        status = getattr(exc, "status_code", None)
+        if status is None or not 400 <= status < 500:
+            raise
+        return None, f"the partner API refused the request ({status})", 1, 0.0
+    return r.parsed, None, 1, r.cost_usd
+
+
+def decide_customer(ds, key: str, store, llm: LLM, now: datetime = NOW) -> Outcome:
+    """The whole path for one customer: guard their replies, then (only if that allows it) profile and decide."""
+    from .profile import CUSTOMER_WRITTEN, build_profile, norm_email
+
+    c = ds.customers[norm_email(key)]
+    guarded = screen_history(store, llm, c.key, [s for s in c.sources if s.kind in CUSTOMER_WRITTEN], ds.data_class)
+    if store.do_not_contact(c.key) or open_escalation(store, c.key):
+        # No profile call either: nothing would be done with it.
+        thin = Profile(ds.business, c.key, c.name, c.company, {}, {}, {}, None)
+        return decide(thin, store, llm, now, ds.data_class, guarded)
+    return decide(build_profile(ds, c.key, llm, now.date()), store, llm, now, ds.data_class, guarded)
 
 
 # ---- offline stand-in for Muse Spark ------------------------------------------------
@@ -376,6 +475,20 @@ def _mock_answer(prof: dict, kind: str, channel: str | None, pct: float | None) 
 
 
 register_mock(PURPOSE, _mock_decide)
+
+
+def _mock_decide_private(messages: list[dict], schema: dict | None) -> str:
+    payload = json.loads(messages[-1]["content"])
+    prof, allowed = payload["profile"], payload["allowed"]
+    ok = {d["action"] for d in payload["dry_run"] if d["allowed"]}
+    plan = [(k, pct) for k, pct in _PLAYBOOK.get(prof["journey"]["stage"], []) if k in ok]
+    if not plan:
+        return _mock_answer(prof, "no_action", None, None)
+    kind, pct = plan[0]
+    return _mock_answer(prof, kind, allowed["channels"][0], pct)
+
+
+register_mock(PRIVATE_PURPOSE, _mock_decide_private)
 
 
 if __name__ == "__main__":

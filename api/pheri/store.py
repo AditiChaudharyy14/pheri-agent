@@ -41,16 +41,21 @@ class MemoryStore:
         self._actions: dict[str, dict] = {}
         self._approvals: dict[str, dict] = {}
         self._autonomy: dict[str, dict] = {}
+        self._settings: dict[str, dict] = {}
+        self._dnc: dict[str, dict] = {}
         self._audit: list[dict] = []
+
+    _STATE = ("_rules", "_actions", "_approvals", "_autonomy", "_settings", "_dnc", "_audit")
 
     @contextmanager
     def tx(self):
         """All or nothing, like a database transaction: on error every change in the block is undone."""
-        saved = copy.deepcopy((self._rules, self._actions, self._approvals, self._autonomy, self._audit))
+        saved = copy.deepcopy([getattr(self, k) for k in self._STATE])
         try:
             yield self
         except BaseException:
-            self._rules, self._actions, self._approvals, self._autonomy, self._audit = saved
+            for k, v in zip(self._STATE, saved):
+                setattr(self, k, v)
             raise
 
     # ---- audit (append-only) ----
@@ -88,6 +93,21 @@ class MemoryStore:
 
     def set_autonomy(self, kind: str, mode: str, by: str) -> None:
         self._autonomy[kind] = {"mode": mode, "updated_by": by, "updated_at": self.clock()}
+
+    # ---- business settings ----
+    def get_setting(self, key: str, default=None):
+        return copy.deepcopy(self._settings[key]["value"]) if key in self._settings else default
+
+    def set_setting(self, key: str, value, by: str) -> None:
+        self._settings[key] = {"value": copy.deepcopy(value), "updated_by": by, "updated_at": self.clock()}
+
+    # ---- do not contact ----
+    def set_do_not_contact(self, customer_key: str, source_id: str | None) -> None:
+        self._dnc.setdefault(customer_key, {"at": self.clock(), "source": source_id})
+
+    def do_not_contact(self, customer_key: str) -> dict | None:
+        """{"at", "source"} if the customer asked not to be contacted, else None."""
+        return copy.deepcopy(self._dnc.get(customer_key))
 
     # ---- actions ----
     def add_action(self, customer_key: str, kind: str, payload: dict, why: str, evidence: list, mode: str | None,
@@ -243,6 +263,29 @@ class PgStore:
         self._q("INSERT INTO autonomy (business_id, action_kind, mode, updated_by) VALUES (%s, %s, %s, %s) "
                 "ON CONFLICT (business_id, action_kind) DO UPDATE SET mode = EXCLUDED.mode, "
                 "updated_by = EXCLUDED.updated_by, updated_at = now()", (self.business_id, kind, mode, by))
+
+    # ---- business settings ----
+    def get_setting(self, key, default=None):
+        rows = self._q("SELECT value FROM business_settings WHERE key = %s", (key,))
+        return rows[0]["value"] if rows else default
+
+    def set_setting(self, key, value, by) -> None:
+        self._q("INSERT INTO business_settings (business_id, key, value, updated_by) VALUES (%s, %s, %s, %s) "
+                "ON CONFLICT (business_id, key) DO UPDATE SET value = EXCLUDED.value, "
+                "updated_by = EXCLUDED.updated_by, updated_at = now()", (self.business_id, key, self._json(value), by))
+
+    # ---- do not contact ----
+    def set_do_not_contact(self, customer_key, source_id) -> None:
+        with self.tx():
+            cid = self._customer_id(customer_key)
+            # The first "stop" is the one on record; asking again does not move the date.
+            self._q("UPDATE customers SET do_not_contact = true, do_not_contact_at = COALESCE(do_not_contact_at, now()), "
+                    "do_not_contact_source = COALESCE(do_not_contact_source, %s) WHERE id = %s", (source_id, cid))
+
+    def do_not_contact(self, customer_key) -> dict | None:
+        rows = self._q("SELECT do_not_contact_at AS at, do_not_contact_source AS source FROM customers "
+                       "WHERE email = %s AND do_not_contact", (customer_key,))
+        return rows[0] if rows else None
 
     # ---- actions ----
     def _customer_id(self, key: str) -> str:

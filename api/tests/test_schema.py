@@ -26,7 +26,7 @@ def _columns(sql: str, table: str) -> list[str]:
 # ---- static -------------------------------------------------------------------------
 def test_all_tables_exist():
     assert set(TABLES) == {"businesses", "customers", "events", "messages", "profiles", "rules", "actions",
-                           "approvals", "autonomy", "audit_log", "spend_ledger"}
+                           "approvals", "autonomy", "business_settings", "audit_log", "spend_ledger"}
 
 
 @pytest.mark.parametrize("table", TENANT_TABLES)

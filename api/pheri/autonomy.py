@@ -16,7 +16,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Callable
 
-from .actions import BUSINESS_ACTIONS, CATALOG, ProposedAction
+from .actions import BUSINESS_ACTIONS, CATALOG, ESCALATE, ProposedAction
 from .rules import CheckContext, active_rules, check
 
 MODES = ("suggest", "ask_owner", "act_alone")  # from least to most autonomous
@@ -81,6 +81,22 @@ def submit(store, customer_key: str, action: ProposedAction, ctx: CheckContext, 
         return store.get_action(aid)
 
 
+def escalate(store, customer_key: str, reason: str, details: dict, actor: str = "pheri") -> dict:
+    """Put a person in the loop: an item in the approval queue, never an action toward the customer."""
+    with store.tx():
+        aid = store.add_action(customer_key, ESCALATE, {"reason": reason, **details}, reason, [], "ask_owner",
+                               {"allowed": True, "results": []}, "awaiting_approval")
+        pid = store.add_approval(aid)
+        store.audit(actor, "escalated", "action", aid, {"customer": customer_key, "approval_id": pid, "reason": reason})
+        return store.get_action(aid)
+
+
+def open_escalation(store, customer_key: str) -> dict | None:
+    """An escalation the owner has not dealt with yet: Pheri holds off this customer until then."""
+    return next((a for a in store.actions(customer_key)
+                 if a["kind"] == ESCALATE and a["status"] == "awaiting_approval"), None)
+
+
 def _execute(store, action_id: str, now: datetime, actor: str) -> None:
     store.set_action(action_id, "executed", executed_at=now)
     store.audit(actor, "executed", "action", action_id, {"delivery": "simulated"})
@@ -92,12 +108,16 @@ def approve(store, approval_id: str, by: str, context_for: Callable[[str], Check
         approval = store.get_approval(approval_id)
         action = store.get_action(approval["action_id"])
         p = action["payload"]
-        proposed = ProposedAction(kind=action["kind"], channel=p["channel"], discount_pct=p["discount_pct"],
-                                  message=p["message"])  # sent now, not at the time first planned
-        ctx = context_for(action["customer_key"])
-        result = check(active_rules(store), proposed, ctx)
+        proposed = ProposedAction(kind=action["kind"], channel=p.get("channel"), discount_pct=p.get("discount_pct"),
+                                  message=p.get("message", ""))  # sent now, not at the time first planned
         store.decide_approval(approval_id, "approved", by)
         store.audit(by, "approved", "action", action["id"], {"approval_id": approval_id})
+        if action["kind"] == ESCALATE:  # the owner has read it and dealt with it; nothing goes out
+            store.set_action(action["id"], "executed", executed_at=context_for(action["customer_key"]).now)
+            store.audit(by, "escalation_closed", "action", action["id"], {})
+            return store.get_action(action["id"])
+        ctx = context_for(action["customer_key"])
+        result = check(active_rules(store), proposed, ctx)
         if result.allowed:
             store.set_action(action["id"], "approved", rule_check=result.as_dict())
             _execute(store, action["id"], ctx.now, by)

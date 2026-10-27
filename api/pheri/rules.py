@@ -103,6 +103,7 @@ class CheckContext:
     facts: dict  # the customer's profile facts
     now: datetime
     sent: list[tuple[str, datetime]] = field(default_factory=list)  # (channel, when) already sent to them
+    do_not_contact: bool = False  # they asked us to stop: nothing customer-facing, whatever the rules say
 
 
 @dataclass
@@ -168,6 +169,10 @@ def _violation(c: Check, a: ProposedAction, ctx: CheckContext) -> str | None:
 def check(rules: list[Rule], action: ProposedAction, ctx: CheckContext) -> CheckResult:
     results = [{"rule_id": "catalog", "check": "catalog", "passed": not (p := problems(ctx.business, action)),
                 "reason": "; ".join(p) or None}]
+    t = action.type
+    if ctx.do_not_contact and t and t.customer_facing:
+        results.append({"rule_id": "consent", "check": "do_not_contact", "passed": False,
+                        "reason": "the customer asked not to be contacted"})
     for rule in rules:
         for c in rule.checks:
             reason = _violation(c, action, ctx)

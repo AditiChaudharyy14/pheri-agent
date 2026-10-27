@@ -31,7 +31,11 @@ CATALOG: dict[str, ActionType] = {a.kind: a for a in (
     ActionType("offer_subscription", "Invite them to a monthly subscription."),
     ActionType("task_for_owner", "Ask the owner or the team to handle something by hand.", customer_facing=False),
     ActionType("no_action", "Do nothing now; say why.", customer_facing=False),
+    # Created by code only (never offered to the model): a reply that looks like an attack goes to a person.
+    ActionType("escalate_to_human", "A person reads this customer's message before Pheri does anything.",
+               customer_facing=False),
 )}
+ESCALATE = "escalate_to_human"
 
 BUSINESS_ACTIONS: dict[str, tuple[str, ...]] = {
     "brightdesk": ("send_help", "book_call", "send_checkin", "offer_upgrade", "offer_discount", "task_for_owner",

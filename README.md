@@ -47,6 +47,39 @@ python -m pheri.journey            # stage accuracy against the hidden truth in 
 python -m pheri.decide brightdesk  # five mock decisions, no network
 ```
 
+## Every reply is read safely first
+
+`pheri/guard.py` reads each inbound customer reply before anything else happens:
+
+1. A **code screen** looks for injection patterns (rule overrides, "system override", "reveal all
+   customer emails", "refund everything", false owner authority, prompt markup, encoded payloads) in
+   English, Spanish, Portuguese, Hindi and Nepali.
+2. The **model** labels the reply (question, complaint, objection, stop, purchase intent, attack,
+   other) and gives its language and a short safe summary. The customer's text goes in as escaped
+   JSON inside a delimited block, as data, never as instructions.
+3. **Code checks the answer**: an attack seen by either side is an attack, an unsafe summary is
+   rewritten, and an unreadable reply goes to a person.
+
+An attack never produces an action: it becomes one "escalate to human" item in the approval queue,
+and Pheri holds off that customer until the owner closes it. "Stop" sets a do-not-contact flag;
+from then on there is no model call for that customer, and the rule check refuses anything that
+would reach them.
+
+**Private mode** is a per-business switch. With it on, the guard (and, if chosen, the decision)
+runs on Muse Spark Open: Meta's open-weight model, served by a partner (Baseten), self-hostable.
+The decision there is a single call: code dry-runs the owner's rules on every allowed action
+first, and checks the answer exactly as it does on the Meta Model API.
+
+```bash
+python evals/run.py                                    # mock: both providers, every message, $0
+python evals/run.py --live --sample 20 --budget 0.50   # real calls, budget per provider, refused if the worst case is over
+```
+
+`evals/attacks.jsonl` holds 52 attacks (direct, indirect, multilingual, semantic) and 27 harmless
+messages that look alarming. `evals/replies.jsonl` holds 60 labelled replies, 12 per language. The
+code screen's patterns were written alongside these sets, so its own catch rate here is an upper
+bound; the semantic attacks are the ones it is not meant to catch.
+
 Keys go in `.env` (see `.env.example`), never in the repo. Every model call passes through
 `api/pheri/llm.py`, which enforces the spend caps and allows only synthetic data.
 

@@ -4,7 +4,7 @@ from datetime import timedelta
 
 import pytest
 
-from conftest import PG_URL, throwaway_schema
+from conftest import BOTH, PG_URL
 from pheri.actions import ProposedAction
 from pheri.autonomy import approve, modes, queue, reject, sent_messages, set_mode, submit
 from pheri.rules import ChannelLimit, CheckContext
@@ -12,39 +12,8 @@ from pheri.store import MemoryStore, PgStore
 from pheri.synth import BUSINESS_IDS, NOW
 
 MAYA = "maya.okafor@pinecrest.example"
-# Postgres round trips are slow from here (up to ~0.8 s each), so the real-database run covers the
-# flows where the backend matters: writes, the approval round trip, history, rollback, the dial upsert.
-BOTH = pytest.mark.parametrize("store", ["memory", "pg"], indirect=True)
 HELP = ProposedAction(kind="send_help", channel="email", message="Here are the steps that fix the export.")
 EVIDENCE = [{"ref": "failed_exports_30d", "value": "5"}]
-
-
-@pytest.fixture(scope="module")
-def pg_schema():
-    if not PG_URL:
-        pytest.skip("PHERI_TEST_DATABASE_URL not set: Postgres store tests skipped (memory store still ran)")
-    pytest.importorskip("psycopg")
-    with throwaway_schema() as pg:
-        yield pg
-
-
-@pytest.fixture
-def store(request):
-    """The memory store; tests marked with BOTH also run on real Postgres."""
-    if getattr(request, "param", "memory") == "memory":
-        yield MemoryStore("brightdesk")
-        return
-    psycopg, schema = request.getfixturevalue("pg_schema")
-    # One schema per module (creating one takes seconds on Neon); each test starts with empty tables.
-    # The audit log is append-only even here, so tests read it by subject id.
-    with psycopg.connect(PG_URL) as con:
-        con.execute(f'SET LOCAL search_path TO "{schema}"')
-        con.execute("SELECT set_config('app.business_id', %s, true)", (BUSINESS_IDS["brightdesk"],))
-        for table in ("approvals", "actions", "autonomy", "rules"):
-            con.execute(f"DELETE FROM {table}")
-    pg_store = PgStore("brightdesk", PG_URL, schema=schema)
-    yield pg_store
-    pg_store.close()
 
 
 def ctx(store, key=MAYA, now=NOW):

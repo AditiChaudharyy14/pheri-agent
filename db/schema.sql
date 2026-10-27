@@ -58,6 +58,9 @@ CREATE TABLE customers (
     company      text,
     attrs        jsonb NOT NULL DEFAULT '{}',   -- plan, seats, country, ...
     identities   jsonb NOT NULL DEFAULT '[]',   -- every raw spelling seen, with its source
+    do_not_contact         boolean NOT NULL DEFAULT false,  -- they said stop: no customer-facing action
+    do_not_contact_at      timestamptz,
+    do_not_contact_source  text,                -- the reply that asked, e.g. M0123
     created_at   timestamptz NOT NULL DEFAULT now(),
     PRIMARY KEY (id),
     UNIQUE (business_id, id),                   -- lets child tables pin rows to one tenant
@@ -152,6 +155,16 @@ CREATE TABLE approvals (
     decided_at    timestamptz,
     UNIQUE (business_id, action_id),            -- one approval per action
     FOREIGN KEY (business_id, action_id) REFERENCES actions (business_id, id)
+);
+
+-- Per-business switches, e.g. private_mode = {"guard": true, "decide": false}.
+CREATE TABLE business_settings (
+    business_id  uuid NOT NULL REFERENCES businesses (id),
+    key          text NOT NULL,
+    value        jsonb NOT NULL,
+    updated_by   text NOT NULL,
+    updated_at   timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (business_id, key)
 );
 
 -- The autonomy dial, per action type. No row means the default in pheri/autonomy.py.
@@ -254,6 +267,11 @@ ALTER TABLE autonomy FORCE ROW LEVEL SECURITY;
 CREATE POLICY tenant_isolation ON autonomy
     USING (business_id = app_business_id()) WITH CHECK (business_id = app_business_id());
 
+ALTER TABLE business_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE business_settings FORCE ROW LEVEL SECURITY;
+CREATE POLICY tenant_isolation ON business_settings
+    USING (business_id = app_business_id()) WITH CHECK (business_id = app_business_id());
+
 ALTER TABLE audit_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_log FORCE ROW LEVEL SECURITY;
 CREATE POLICY tenant_isolation ON audit_log
@@ -276,6 +294,7 @@ GRANT SELECT, INSERT, UPDATE ON rules TO pheri_app;
 GRANT SELECT, INSERT, UPDATE ON actions TO pheri_app;
 GRANT SELECT, INSERT, UPDATE ON approvals TO pheri_app;
 GRANT SELECT, INSERT, UPDATE ON autonomy TO pheri_app;
+GRANT SELECT, INSERT, UPDATE ON business_settings TO pheri_app;
 GRANT SELECT, INSERT ON audit_log TO pheri_app;
 GRANT SELECT, INSERT, UPDATE ON spend_ledger TO pheri_app;
 

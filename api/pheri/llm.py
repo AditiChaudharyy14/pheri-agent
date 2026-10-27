@@ -14,6 +14,11 @@ Protocols (checked against https://dev.meta.ai/docs on 27 Oct 2026):
   modal   -> Muse Glimmer (open weights), Chat Completions.
 Reasoning tokens are billed as output, so `max_tokens` bounds reasoning + answer together.
 
+JSON on every provider: `complete_json` asks for `json_schema` first. If a Chat Completions partner
+refuses that (a 400 naming the schema or response_format), it switches that provider to JSON
+instructions in the prompt + Pydantic validation, with one corrective retry, and remembers the
+switch for the rest of the process. PHERI_<PROVIDER>_JSON=schema|instructions forces a mode.
+
 Tool loops (meta only): pass `tools` (flat function shape). Two ways to carry the conversation:
   stateless=True   (what decide.py uses) resend the whole conversation every turn: the request has
                    `store: false` and asks for `reasoning.encrypted_content`, and `output_items` hands
@@ -29,6 +34,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import random
 import time
 import uuid
@@ -147,6 +153,7 @@ class LLM:
         self._clients: dict[str, Any] = {}
         self._context_tokens: dict[str, int] = {}  # response id -> tokens the next chained turn re-reads
         self._mock_threads: dict[str, list[dict]] = {}  # mock only: the conversation behind a response id
+        self._json_mode: dict[str, str] = {}  # provider -> "instructions" once it refused json_schema
 
     # ---- providers -------------------------------------------------------
     def _client(self, provider: str):
@@ -273,6 +280,36 @@ class LLM:
         return LLMResult(text, parsed, provider, model, in_tok, cached_tok, out_tok, actual, latency, resp_id, raw,
                          calls, parse_error, incomplete, items)
 
+    # ---- JSON on any provider ----------------------------------------------
+    def json_mode(self, provider: str) -> str:
+        if provider == "meta":
+            return "schema"
+        forced = os.environ.get(f"PHERI_{provider.upper()}_JSON", "").strip().lower()
+        return forced if forced in ("schema", "instructions") else self._json_mode.get(provider, "schema")
+
+    def complete_json(self, messages: list[dict], *, schema: type[BaseModel], provider: str = "meta",
+                      **kw) -> LLMResult:
+        """A validated `schema` instance in .parsed, whatever the provider supports. Raises ModelOutputError."""
+        if self.json_mode(provider) == "schema":
+            try:
+                return self.complete(messages, schema=schema, provider=provider, **kw)
+            except Exception as exc:  # noqa: BLE001
+                if provider == "meta" or not _schema_refused(exc):
+                    raise
+                self._json_mode[provider] = "instructions"  # that request was refused, not billed
+        asked = _with_json_instructions(messages, schema)
+        r = self.complete(asked, provider=provider, **kw)
+        try:
+            r.parsed = _parse(_json_object(r.text), schema)
+        except ModelOutputError as err:
+            # One corrective retry, then give up: a reply we cannot validate is never used.
+            fix = asked + [{"role": "assistant", "content": r.text[:4000]},
+                           {"role": "user", "content": f"That was not valid JSON for the schema ({str(err)[:300]}). "
+                                                       "Reply with only the JSON object."}]
+            r = self.complete(fix, provider=provider, **kw)
+            r.parsed = _parse(_json_object(r.text), schema)
+        return r
+
     # ---- transports -------------------------------------------------------
     def _responses(self, req: dict):
         resp = self._client("meta").responses.create(**req)
@@ -336,6 +373,26 @@ class LLM:
         # Like the real API: a reasoning item (encrypted, with a summary) comes first, then the answer.
         items = [{"type": "reasoning", "summary": [], "encrypted_content": "mock-reasoning"}, *out_items]
         return text, usage, calls, resp_id, raw, items
+
+
+def _schema_refused(exc: Exception) -> bool:
+    status = getattr(exc, "status_code", None)
+    text = str(getattr(exc, "message", "") or exc).lower()
+    return status in (400, 422) and any(w in text for w in ("response_format", "json_schema", "schema"))
+
+
+def _with_json_instructions(messages: list[dict], schema: type[BaseModel]) -> list[dict]:
+    rule = ("Reply with one JSON object only, no prose and no code fences, matching this JSON schema exactly:\n"
+            + json.dumps(strict_schema(schema), ensure_ascii=False))
+    if messages and messages[0].get("role") == "system":
+        return [{**messages[0], "content": messages[0]["content"] + "\n\n" + rule}, *messages[1:]]
+    return [{"role": "system", "content": rule}, *messages]
+
+
+def _json_object(text: str) -> str:
+    """The outermost {...} in a reply that may carry prose or a fence around it."""
+    start, end = text.find("{"), text.rfind("}")
+    return text[start:end + 1] if 0 <= start < end else text
 
 
 def _replayable(item) -> dict:

@@ -36,6 +36,16 @@ def kettle():
     return load("kettle")
 
 
+def _write_crm(folder, rows):
+    """A minimal Brightdesk CRM export: rows of (name, email, company)."""
+    with (folder / "crm_export.csv").open("w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["Customer Name", "E-mail", "Company", "Plan", "Seats", "Signed Up", "Country", "MRR (USD)",
+                    "Renewal"])
+        for name, email, company in rows:
+            w.writerow([name, email, company, "Team", 5, "2026-10-01", "UK", 195, "2026-11-01"])
+
+
 def _model_replies(monkeypatch, reply):
     """Swap the mock model for one call shape; `reply` is a dict or a function of the messages."""
     fn = reply if callable(reply) else (lambda messages: reply)
@@ -57,8 +67,10 @@ def test_maya_is_stuck_on_csv_exports_and_12_days_quiet(brightdesk, llm):
     assert csv_blockers, p.insights["blockers"]
     assert {b["source_id"] for b in csv_blockers} == {"T0999"}
     assert p.insights["sentiment"]["label"] == "negative"
+    assert p.insights["sentiment"]["source_id"] in {"T0999", "T1001"}  # her own tickets, not the sales note
     assert p.insights["language"]["code"] == "en"
     assert p.provenance["dropped"] == []
+    assert all(g["source_id"] == NOTE for g in p.insights["goals"])  # never a ticket subject line
     # The sales note names her without an email, still lands on her profile, and gives her goal and role.
     assert NOTE in p.provenance["sources"]
     assert any("weekly client reports" in g["quote"] and g["source_id"] == NOTE for g in p.insights["goals"])
@@ -114,12 +126,7 @@ def test_sales_notes_match_names_or_stay_unresolved(tmp_path):
             ("Ana Lima", "ana@harbor.example", "Harbor Labs"),
             ("Ana Lima", "ana.lima@harbor.example", "Harbor Media"),
             ("Ben Ode", "ben@kestrel.example", "Kestrel Labs")]
-    with (tmp_path / "crm_export.csv").open("w", newline="", encoding="utf-8") as f:
-        w = csv.writer(f)
-        w.writerow(["Customer Name", "E-mail", "Company", "Plan", "Seats", "Signed Up", "Country", "MRR (USD)",
-                    "Renewal"])
-        for name, email, company in rows:
-            w.writerow([name, email, company, "Team", 5, "2026-10-01", "UK", 195, "2026-11-01"])
+    _write_crm(tmp_path, rows)
     (tmp_path / "sales_notes.txt").write_text("\n".join([
         "2026-10-10 - Kickoff call with Maya Okafor (Pinecrest). Asked about CSV export.",
         "2026-10-11 - Call with Maya Okafor (Harbor). Wants SSO.",
@@ -216,6 +223,53 @@ def test_customer_with_nothing_to_read_costs_no_call(brightdesk, llm, monkeypatc
     p = build_profile(brightdesk, quiet, llm)
     assert p.insights == EMPTY and p.model is None
     assert p.facts["failed_exports"] >= 0
+
+
+def test_sentiment_must_come_from_the_customer_and_may_be_mixed(brightdesk, llm, monkeypatch):
+    _model_replies(monkeypatch, {**EMPTY, "sentiment": {"label": "positive", "quote": "Decision maker.",
+                                                         "source_id": NOTE}})
+    p = build_profile(brightdesk, MAYA, llm)
+    assert p.insights["sentiment"] is None
+    assert p.provenance["dropped"][0]["reason"] == f"{NOTE} was not written by the customer"
+
+    _model_replies(monkeypatch, {**EMPTY, "sentiment": {"label": "mixed", "quote": "it fails at 90%",
+                                                         "source_id": "T0999"}})
+    assert build_profile(brightdesk, MAYA, llm).insights["sentiment"]["label"] == "mixed"
+
+
+def test_goal_from_a_ticket_subject_line_is_dropped(brightdesk, llm, monkeypatch):
+    _model_replies(monkeypatch, {**EMPTY, "goals": [
+        {"label": "Exports", "quote": "Exports keep failing", "source_id": "T0999"},  # the subject line
+        {"label": "Monday review", "quote": "We need this for our Monday review.", "source_id": "T0999"},  # the body
+    ]})
+    p = build_profile(brightdesk, MAYA, llm)
+    assert [g["quote"] for g in p.insights["goals"]] == ["We need this for our Monday review."]
+    assert p.provenance["dropped"][0]["reason"] == "goal quoted from the subject line of T0999"
+
+
+def test_mock_mood_ignores_staff_notes_and_can_be_mixed(tmp_path, llm):
+    _write_crm(tmp_path, [("Ana Lima", "ana@harbor.example", "Harbor Labs"),
+                          ("Ben Ode", "ben@kestrel.example", "Kestrel Labs")])
+    (tmp_path / "tickets.json").write_text(json.dumps([
+        {"id": "T1", "from": "ana@harbor.example", "subject": "Goal: exports", "lang": "en", "status": "open",
+         "created_at": "2026-10-20T10:00:00Z", "body": "Exports fail every time. Otherwise everything works great!"},
+    ]), encoding="utf-8")
+    (tmp_path / "sales_notes.txt").write_text(
+        "2026-10-10 - Call with Ana Lima (Harbor). Happy with inbox speed.\n"
+        "2026-10-11 - Call with Ben Ode (Kestrel). Happy with inbox speed.\n", encoding="utf-8")
+    ds = load_brightdesk(tmp_path)
+
+    ana = build_profile(ds, "ana@harbor.example", llm)
+    assert ana.insights["sentiment"] == {"label": "mixed", "quote": "Exports fail every time.", "source_id": "T1"}
+    assert ana.insights["goals"] == []  # "Goal: exports" is only a subject line
+    ben = build_profile(ds, "ben@kestrel.example", llm)
+    assert ben.insights["sentiment"] is None  # only a staff note says he is happy
+
+
+def test_staff_praise_does_not_hide_a_customer_complaint(brightdesk, llm):
+    # Noah's ticket says Gmail is broken; only the sales note says "Happy with inbox speed."
+    p = build_profile(brightdesk, "noah.karimi@amberlane.example", llm)
+    assert p.insights["sentiment"]["label"] == "negative" and p.insights["sentiment"]["source_id"] == "T1024"
 
 
 # ---- Kettle & Co --------------------------------------------------------------------

@@ -323,7 +323,11 @@ _MOCK_WORDS = {
                         "pedido", "assinar", "खरीद", "ऑर्डर", "किन्न", "अर्डर", "how do i pay"),
 }
 _DEVANAGARI = re.compile(r"[ऀ-ॿ]")
-_NE_MARKS = ("छ", "हुँदैन", "गर्नुहोस्", "मेरो", "भयो", "हुन्छ", "छैन", "पठाउ", "कहिले", "तपाईं", "हजुर")
+# Whole words, scored: a lone letter like "छ" also appears inside Hindi words ("छूट", discount).
+_NE_MARKS = ("छ", "हुँदैन", "गर्नुहोस्", "मेरो", "भयो", "हुन्छ", "छैन", "पठाउ", "कहिले", "तपाईं", "हजुर", "हाम्रो",
+             "भएन", "मलाई", "धेरै")
+_NE_ENDINGS = ("नुहोस्", "हरू", "हरूको", "लाई", "न्छ", "न्छु", "न्छौं", "छौं", "ुहोस्")  # Nepali attaches these
+_HI_MARKS = ("है", "हैं", "क्या", "नहीं", "मुझे", "मेरा", "की", "का", "को", "हम", "आप", "गई", "दें", "करें")
 _ES_MARKS = ("¿", "¡", "ñ", " el ", " los ", " las ", " por favor", "gracias", "quiero", " usted", " pedido", " es ")
 _PT_MARKS = ("não", "você", "obrigad", "ção", "ções", " meu ", " minha ", " vocês", " está", " pedido")
 
@@ -331,7 +335,9 @@ _PT_MARKS = ("não", "você", "obrigad", "ção", "ções", " meu ", " minha ", 
 def _mock_language(text: str) -> str:
     t = f" {text.casefold()} "
     if _DEVANAGARI.search(t):
-        return "ne" if any(m in t for m in _NE_MARKS) else "hi"
+        words = set(re.findall(r"[ऀ-ॣ०-ॿ]+", t))  # letters, not the danda (U+0964)
+        ne = sum(w in _NE_MARKS or w.endswith(_NE_ENDINGS) for w in words)
+        return "ne" if ne > sum(w in _HI_MARKS for w in words) else "hi"
     pt, es = sum(m in t for m in _PT_MARKS), sum(m in t for m in _ES_MARKS)
     return "pt" if pt > es else "es" if es else "en"
 

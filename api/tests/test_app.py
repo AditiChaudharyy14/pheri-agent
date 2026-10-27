@@ -184,3 +184,43 @@ def test_spend_summary(client):
     meta = s["providers"]["meta"]
     assert meta["settled_usd"] == 0 and meta["cap_usd"] > 0  # mock mode spends nothing
     assert meta["remaining_usd"] == pytest.approx(max(0.0, meta["cap_usd"] - meta["offset_usd"]))
+
+
+# ---- what the web app reads --------------------------------------------------------------
+def test_next_steps_one_card_per_showcase_customer(client):
+    cards = client.get(f"{BD}/next-steps").json()
+    assert cards[0]["customer"]["key"] == MAYA and cards[0]["decision"]["action"] == "send_help"
+    stages_shown = [x["customer"]["stage"] for x in cards]
+    assert len(stages_shown) == len(set(stages_shown)) == 6  # one per stage, Maya the stuck one
+    maya = cards[0]
+    assert maya["approval"]["decision"] == "pending" and maya["action"]["mode"] == "ask_owner"
+    assert {e["kind"] for e in maya["evidence"]} == {"fact", "quote"} and maya["cost_usd"] == 0
+    client.post(f"{BD}/approvals/{maya['approval']['id']}/approve", json={"by": "owner:aditi"})
+    again = client.get(f"{BD}/next-steps").json()[0]
+    assert again["action"]["status"] == "executed" and again["approval"]["decision"] == "approved"  # live status
+
+
+def test_replies_with_label_language_and_escalations(client):
+    replies = client.get(f"{BD}/replies").json()
+    by_id = {r["source_id"]: r for r in replies}
+    assert by_id["T1098"]["label"] == "attack" and by_id["T1098"]["escalation"]["status"] == "awaiting_approval"
+    assert "override_rules" in by_id["T1098"]["screen_before"]
+    assert {r["language"] for r in replies} >= {"en", "es", "hi", "ne", "pt"}  # every language in the data
+    assert all(r["text"] and r["summary"] for r in replies)
+
+
+def test_runs_on_names_the_model_for_each_step(client):
+    meta = client.get(f"{BD}/private-mode/runs-on").json()
+    assert meta["full_private"] is False and meta["steps"]["decide"]["model"] == "muse-spark-1.3"
+    client.put(f"{BD}/private-mode", json={"by": "owner", "full": True})
+    private = client.get(f"{BD}/private-mode/runs-on").json()
+    assert private["full_private"] and private["steps"]["guard"]["model"] == "meta-models/muse-spark-open-1026"
+    assert "open-weight model, served by a partner" in private["steps"]["guard"]["label"]
+
+
+def test_the_discount_refusal_comes_with_the_rules_plain_words(client):
+    out = client.post(f"{c(MAYA)}/discount-check", json={"discount_pct": 10}).json()
+    assert out["refused_by"] == [{"rule_id": out["refused_by"][0]["rule_id"],
+                                  "source_text": "Never offer discounts in a customer's first month.",
+                                  "described": ["Block any discount for customers in their first 30 days."],
+                                  "reason": FIRST_MONTH}]

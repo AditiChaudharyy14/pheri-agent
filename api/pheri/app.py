@@ -37,12 +37,13 @@ from .actions import ProposedAction
 from .autonomy import approve, queue, reject, sent_messages
 from .config import REPO_ROOT, get_settings
 from .decide import decide_customer
-from .journey import stage, stages
+from .journey import STAGES, stage, stages
+from .guard import handle_reply
 from .learn import write_report
 from .llm import LLM
 from .privacy import private_mode, set_private_mode
 from .profile import Profile, build_profile, compute_facts, load, norm_email
-from .rules import CheckContext, active_rules, check, confirm, propose, seed
+from .rules import CheckContext, active_rules, check, confirm, describe, propose, seed
 from .store import MemoryStore, NotFound, PgStore
 from .synth import BUSINESS_NAMES, NOW
 
@@ -88,6 +89,7 @@ class State:
         self.stores = {b: PgStore(b, url) if url else MemoryStore(b) for b in BUSINESSES}
         self.profiles: dict[tuple[str, str], Profile] = {}
         self.learned: dict[tuple[str, int, int], dict] = {}
+        self.decided: dict[str, dict[str, dict]] = {b: {} for b in BUSINESSES}  # business -> key -> Outcome
         self.lock = threading.RLock()  # the memory store is not thread-safe: one request at a time touches it
         if self.settings.llm_mode == "mock":
             for b in BUSINESSES:  # the demo's starting rules (Brightdesk: no discounts in the first month)
@@ -184,7 +186,16 @@ def create_app(llm: LLM | None = None) -> FastAPI:
             proposed = ProposedAction(kind="offer_discount", channel=body.channel or CHANNELS[b][0],
                                       discount_pct=body.discount_pct)
             r = check(active_rules(state.stores[b]), proposed, ctx_for(b, key))
-        return {"allowed": r.allowed, "violations": r.violations, "results": r.results}
+            by_id = {x.id: x for x in active_rules(state.stores[b])}
+            refused_by = []
+            for res in r.results:
+                if res["passed"]:
+                    continue
+                rule = by_id.get(res["rule_id"])
+                refused_by.append({"rule_id": res["rule_id"], "source_text": rule.source_text if rule else None,
+                                   "described": [describe(x) for x in rule.checks] if rule else [res["reason"]],
+                                   "reason": res["reason"]})
+        return {"allowed": r.allowed, "violations": r.violations, "results": r.results, "refused_by": refused_by}
 
     # ---- the approval queue ----
     @app.get("/businesses/{b}/approvals")
@@ -278,6 +289,93 @@ def create_app(llm: LLM | None = None) -> FastAPI:
                 rep = write_report(twin_results(b, customers, seed_), state.llm)
                 state.learned[k] = {**dataclasses.asdict(rep), "markdown": rep.markdown}
             return state.learned[k]
+
+    # ---- for the web app: next steps, replies, which model runs ----
+    def showcase(b: str) -> list[str]:
+        """The customers the home page shows, the same every run: Maya first, then the first customer (in file
+        order) in each journey stage, then whoever sent the known attack messages (they go to Safety)."""
+        ds, picked = state.data[b], []
+        if b == "brightdesk":
+            picked.append("maya.okafor@pinecrest.example")
+        for st in STAGES[b]:
+            if any(state.stages[b][k].stage == st for k in picked):
+                continue  # already shown (Maya is the stuck one)
+            k = next((k for k, j in state.stages[b].items() if j.stage == st), None)
+            if k:
+                picked.append(k)
+        attacks = json.loads((REPO_ROOT / "data" / "synth" / b / "_truth.json").read_text(encoding="utf-8"))["attacks"]
+        for k, cu in ds.customers.items():
+            if any(src.id in attacks for src in cu.sources) and k not in picked:
+                picked.append(k)
+        return picked
+
+    def warm(b: str) -> None:
+        for k in showcase(b):
+            if k not in state.decided[b]:
+                state.decided[b][k] = dataclasses.asdict(decide_customer(state.data[b], k, state.stores[b], state.llm))
+        # The Safety screen reads replies in every language the data has: the first one in each other language.
+        seen_langs = {"en"}
+        for cu in state.data[b].customers.values():
+            for src in sorted(cu.sources, key=lambda x: x.at or ""):
+                if src.kind in ("ticket", "message") and src.lang and src.lang not in seen_langs:
+                    seen_langs.add(src.lang)
+                    handle_reply(state.stores[b], state.llm, cu.key, src.text, source_id=src.id,
+                                 data_class=state.data[b].data_class)
+
+    def card(b: str, k: str, out: dict) -> dict:
+        store = state.stores[b]
+        cu = state.data[b].customers[k]
+        action = store.get_action(out["action"]["id"]) if out.get("action") else None  # live status, not cached
+        approval = next((a for a in store.approvals(pending_only=False) if action and a["action_id"] == action["id"]),
+                        None)
+        return {"customer": {"key": k, "name": cu.name, "company": cu.company, "stage": state.stages[b][k].stage},
+                "decision": out["decision"], "evidence": out["evidence"], "action": action,
+                "approval": approval, "skipped": out["skipped"], "fallback": out["fallback"],
+                "unsupported_numbers": out["unsupported_numbers"], "message_problems": out["message_problems"],
+                "private": out["private"], "cost_usd": out["cost_usd"], "turns": out["turns"]}
+
+    @app.get("/businesses/{b}/next-steps")
+    def next_steps(b: str = Depends(business)):
+        """One decided next step per showcase customer. Escalations (possible attacks) are on /replies."""
+        with state.lock:
+            warm(b)
+            cards = [card(b, k, state.decided[b][k]) for k in showcase(b)]
+        return [x for x in cards if x["skipped"] not in ("escalated", "open_escalation")]
+
+    @app.get("/businesses/{b}/replies")
+    def replies(b: str = Depends(business)):
+        """Every inbound reply the guard has read, newest decision first, with what code and the model made of it."""
+        with state.lock:
+            warm(b)
+            store, ds = state.stores[b], state.data[b]
+            texts = {src.id: (cu, src) for cu in ds.customers.values() for src in cu.sources}
+            escalated = {a["payload"].get("source_id"): a for a in store.actions() if a["kind"] == "escalate_to_human"}
+            out = []
+            for e in store.audit_log():
+                if e["event"] != "reply_screened" or e["subject_id"] not in texts:
+                    continue
+                cu, src = texts[e["subject_id"]]
+                g = e["details"]
+                esc = escalated.get(e["subject_id"])
+                out.append({"source_id": src.id, "kind": src.kind, "at": src.at, "text": src.text,
+                            "customer": {"key": cu.key, "name": cu.name, "company": cu.company},
+                            "label": g["label"], "language": g["language"], "summary": g["summary"],
+                            "attack": g["attack"], "stop": g["stop"], "screen_before": g["screen_before"],
+                            "screen_after": g["screen_after"], "provider": g["provider"], "model": g["model"],
+                            "escalation": {"id": esc["id"], "status": esc["status"]} if esc else None})
+            return out
+
+    @app.get("/businesses/{b}/private-mode/runs-on")
+    def runs_on(b: str = Depends(business)):
+        """Which model each step runs on right now."""
+        with state.lock:
+            mode = private_mode(state.stores[b])
+        meta = {"provider": "meta", "model": "muse-spark-1.3", "label": "Muse Spark via the Meta Model API"}
+        private = {"provider": "baseten", "model": state.settings.baseten_model,
+                   "label": "Muse Spark Open via Baseten (Meta's open-weight model, served by a partner, "
+                            "self-hostable)"}
+        return {"steps": {step: private if on else meta for step, on in mode.items()},
+                "full_private": all(mode.values())}
 
     @app.get("/businesses/{b}/audit")
     def audit(b: str = Depends(business), subject_id: str | None = None, limit: int = Query(200, ge=1, le=2000)):

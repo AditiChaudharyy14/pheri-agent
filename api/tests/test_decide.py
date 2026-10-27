@@ -282,22 +282,35 @@ LIVE_PRIVATE = {  # close to what Muse Spark Open answered for Maya, live
     "evidence": [{"ref": "journey_stage", "value": "stuck"}, {"ref": "T1001", "value": "Can't connect our email inbox"}]}
 
 
-def test_the_model_is_told_the_business_name_and_to_cite_the_facts_behind_numbers(maya, store, llm, monkeypatch):
-    from pheri.decide import PRIVATE_SYSTEM, SYSTEM
-    from pheri.privacy import set_private_mode
+def test_the_tool_loop_names_the_business_and_asks_for_the_facts_behind_numbers(maya, store, llm, monkeypatch):
+    from pheri.decide import SYSTEM
 
-    for prompt in (" ".join(SYSTEM.split()), " ".join(PRIVATE_SYSTEM.split())):  # wording, not line breaks
-        assert "never as the customer's own company" in prompt
-        assert "Cite the facts behind the numbers you use" in prompt and "At most 8 evidence items" in prompt
+    prompt = " ".join(SYSTEM.split())  # wording, not line breaks
+    assert "never as the customer's own company" in prompt
+    assert "Cite the facts behind the numbers you use" in prompt and "At most 8 evidence items" in prompt
     calls = []
     real = llm.complete
     monkeypatch.setattr(llm, "complete", lambda items, **kw: calls.append(items) or real(items, **kw))
     decide(maya, store, llm)
     assert json.loads(calls[0][1]["content"])["business_name"] == "Brightdesk"
+
+
+def test_the_private_prompt_is_pinned_to_the_run_that_worked(maya, store, llm, monkeypatch):
+    """Live, the newer wording sent Muse Spark Open into whitespace-padded JSON; the private prompt is the one
+    from the 713-token run, word for word, and code (not the prompt) checks signature and numbers."""
+    from pheri.decide import PRIVATE_SYSTEM
+    from pheri.privacy import set_private_mode
+
+    text = " ".join(PRIVATE_SYSTEM.split())
+    assert "signed by the team" in text and "Never use a number that is not in the profile" in text
+    assert "business_name" not in text and "At most 8 evidence items" not in text
     set_private_mode(store, decide=True, by="owner")
-    calls.clear()
+    calls = []
+    real = llm.complete
+    monkeypatch.setattr(llm, "complete", lambda items, **kw: calls.append(items) or real(items, **kw))
     decide(maya, store, llm)
-    assert json.loads(calls[0][-1]["content"])["business_name"] == "Brightdesk"
+    payload = json.loads(calls[0][-1]["content"])
+    assert set(payload) == {"today", "profile", "allowed", "dry_run"} and "business_name" not in payload["allowed"]
 
 
 def test_signed_as_the_customers_company_is_caught_in_code(maya, store, llm, monkeypatch):

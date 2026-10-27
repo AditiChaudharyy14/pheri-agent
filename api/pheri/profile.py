@@ -30,7 +30,7 @@ from .synth import OUT, TODAY
 PURPOSE = "profile_insights"
 MAX_SOURCES = 12  # most recent text sources sent per customer
 MAX_SOURCE_CHARS = 1500  # per source, in the prompt only; quotes are still checked against the full text
-MAX_OUTPUT_TOKENS = 1500
+MAX_OUTPUT_TOKENS = 2000  # reasoning tokens count toward it; 1500 ran out on 2 of 20 live calls
 MIN_QUOTE_CHARS = 4  # "CSV" alone proves nothing; quote the sentence
 CUSTOMER_WRITTEN = {"ticket", "message"}  # sales notes are written by staff, not by the customer
 
@@ -303,18 +303,32 @@ class Language(BaseModel):
 
 
 class Insights(BaseModel):
+    goals: list[Finding]
     needs: list[Finding]
     blockers: list[Finding]
+    role: Finding | None
     sentiment: Sentiment | None
     language: Language | None
 
 
+LIST_FIELDS = ("goals", "needs", "blockers")
+SINGLE_FIELDS = ("role", "sentiment", "language")
+
+
+def empty_insights() -> dict:
+    return {**{k: [] for k in LIST_FIELDS}, **{k: None for k in SINGLE_FIELDS}}
+
+
 # Stable prefix first so the provider's prompt cache can reuse it across customers.
 SYSTEM = """You read what one customer wrote, and what staff wrote about them, and report:
-- needs: what the customer is trying to get done,
+- goals: the outcomes the customer is working toward (for example "weekly client reports"),
+- needs: what the customer is asking for or trying to get done right now,
 - blockers: what is stopping them,
+- role: their role in the account or the buying decision (for example "decision maker", "admin", "end user"),
 - sentiment: their overall mood (positive, neutral, negative or mixed),
 - language: the ISO 639-1 code of the language the customer writes in.
+
+Read every source, including staff sales notes: goals and role are often only there.
 
 Every item needs evidence: a quote copied exactly, character for character, from one source,
 and that source's id. Quote the shortest span that proves the point. Do not translate quotes.
@@ -353,7 +367,7 @@ def quote_in_source(quote: str, text: str) -> bool:
 
 def verify(ins: Insights, sources: dict[str, Source]) -> tuple[dict, list[dict]]:
     """Keep only insights whose quote is really in the source they cite. Return (kept, dropped)."""
-    kept: dict = {"needs": [], "blockers": [], "sentiment": None, "language": None}
+    kept = empty_insights()
     dropped: list[dict] = []
 
     def ok(kind: str, item: BaseModel) -> bool:
@@ -371,14 +385,16 @@ def verify(ins: Insights, sources: dict[str, Source]) -> tuple[dict, list[dict]]
             dropped.append({"kind": kind, **item.model_dump(), "reason": reason})
         return reason is None
 
-    for kind in ("needs", "blockers"):
+    for kind in LIST_FIELDS:
         seen = set()
         for item in getattr(ins, kind):
             if ok(kind, item) and (item.label.casefold(), item.source_id) not in seen:
                 seen.add((item.label.casefold(), item.source_id))
                 kept[kind].append(item.model_dump())
-    if ins.sentiment is not None and ok("sentiment", ins.sentiment):
-        kept["sentiment"] = ins.sentiment.model_dump()
+    for kind in ("role", "sentiment"):
+        item = getattr(ins, kind)
+        if item is not None and ok(kind, item):
+            kept[kind] = item.model_dump()
     if ins.language is not None and ok("language", ins.language):
         kept["language"] = {**ins.language.model_dump(), "code": ins.language.code.strip().lower()}
     return kept, dropped
@@ -404,7 +420,7 @@ def build_profile(ds: Dataset, key: str, llm: LLM, today: date = TODAY) -> Profi
     c = ds.customers[norm_email(key)]
     facts, fact_prov = compute_facts(c, ds.business, today)
     sources = _recent(c.sources)
-    insights: dict = {"needs": [], "blockers": [], "sentiment": None, "language": None}
+    insights = empty_insights()
     dropped: list[dict] = []
     model = None
     if sources:  # no text, nothing to read: skip the call and spend nothing
@@ -429,8 +445,10 @@ def build_profiles(ds: Dataset, llm: LLM, keys: list[str] | None = None, limit: 
 _SENTENCE = re.compile(r"[^.!?।\n]+[.!?।]?")
 _BLOCKER_WORDS = ("fail", "falla", "error", "permission denied", "can't", "cannot", "não funciona",
                   "हुँदैन", "भएन", "confusing", "stale", "expensive", "comparing other tools")
-_NEED_WORDS = ("need", "want", "goal", "asked about", "how do", "can i", "is there", "options", "smaller plan",
+_GOAL_WORDS = ("goal", "aim is", "objective", "trying to")
+_NEED_WORDS = ("need", "want", "asked about", "how do", "can i", "is there", "options", "smaller plan",
                "छूट", "मद्दत", "podem")
+_ROLES = ("decision maker", "champion", "admin", "end user")
 _POSITIVE_WORDS = ("great", "happy", "love", "best")
 _TOPICS = (("csv", "CSV export"), ("export", "CSV export"), ("gmail", "Gmail connection"),
            ("inbox", "Email inbox connection"), ("saml", "SSO setup"), ("sso", "SSO"), ("renewal", "Renewal price"),
@@ -441,7 +459,7 @@ _TOPICS = (("csv", "CSV export"), ("export", "CSV export"), ("gmail", "Gmail con
 
 def _mock_insights(messages: list[dict], schema: dict | None) -> str:
     payload = json.loads(messages[-1]["content"])
-    needs, blockers, sentiment, language = [], [], None, None
+    goals, needs, blockers, role, sentiment, language = [], [], [], None, None, None
     for src in payload["sources"]:
         sentences = [m.group().strip() for m in _SENTENCE.finditer(src["text"])]
         sentences = [s for s in sentences if len(s) >= MIN_QUOTE_CHARS]
@@ -449,7 +467,11 @@ def _mock_insights(messages: list[dict], schema: dict | None) -> str:
             low = sentence.casefold()
             item = {"label": next((t for w, t in _TOPICS if w in low), sentence[:60]),
                     "quote": sentence, "source_id": src["id"]}
-            if any(w in low for w in _BLOCKER_WORDS):
+            if role is None and (found := next((r for r in _ROLES if r in low), None)):
+                role = {"label": found, "quote": sentence, "source_id": src["id"]}
+            if any(w in low for w in _GOAL_WORDS):
+                goals.append(item)
+            elif any(w in low for w in _BLOCKER_WORDS):
                 blockers.append(item)
             elif any(w in low for w in _NEED_WORDS):
                 needs.append(item)
@@ -459,8 +481,8 @@ def _mock_insights(messages: list[dict], schema: dict | None) -> str:
             language = {"code": src["lang"], "quote": sentences[0], "source_id": src["id"]}
     if blockers:
         sentiment = {"label": "negative", "quote": blockers[0]["quote"], "source_id": blockers[0]["source_id"]}
-    return json.dumps({"needs": needs, "blockers": blockers, "sentiment": sentiment, "language": language},
-                      ensure_ascii=False)
+    return json.dumps({"goals": goals, "needs": needs, "blockers": blockers, "role": role,
+                       "sentiment": sentiment, "language": language}, ensure_ascii=False)
 
 
 register_mock(PURPOSE, _mock_insights)

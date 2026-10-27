@@ -14,7 +14,8 @@ from pheri.profile import (PURPOSE, SYSTEM, build_profile, build_profiles, load,
 from pheri.synth import OUT
 
 MAYA = "maya.okafor@pinecrest.example"
-EMPTY = {"needs": [], "blockers": [], "sentiment": None, "language": None}
+EMPTY = {"goals": [], "needs": [], "blockers": [], "role": None, "sentiment": None, "language": None}
+NOTE = "sales_notes.txt#L41"  # Maya's kickoff call: her goal and role are only written here
 
 
 @pytest.fixture
@@ -58,8 +59,10 @@ def test_maya_is_stuck_on_csv_exports_and_12_days_quiet(brightdesk, llm):
     assert p.insights["sentiment"]["label"] == "negative"
     assert p.insights["language"]["code"] == "en"
     assert p.provenance["dropped"] == []
-    # The sales note names her without an email, and still lands on her profile.
-    assert "sales_notes.txt#L41" in p.provenance["sources"]
+    # The sales note names her without an email, still lands on her profile, and gives her goal and role.
+    assert NOTE in p.provenance["sources"]
+    assert any("weekly client reports" in g["quote"] and g["source_id"] == NOTE for g in p.insights["goals"])
+    assert p.insights["role"]["label"] == "decision maker" and p.insights["role"]["source_id"] == NOTE
 
 
 def test_facts_come_from_code_not_the_model(brightdesk, llm, monkeypatch):
@@ -150,6 +153,9 @@ def test_quote_check_is_exact_but_forgives_typography():
 
 def test_quotes_not_really_in_the_source_are_dropped(brightdesk, llm, monkeypatch):
     _model_replies(monkeypatch, {
+        "goals": [{"label": "Weekly client reports", "quote": "main goal is weekly client reports", "source_id": NOTE},
+                  {"label": "Monthly board pack", "quote": "main goal is a monthly board pack", "source_id": NOTE}],
+        "role": {"label": "IT admin", "quote": "Our IT team can't find where to paste", "source_id": "T1013"},
         "needs": [{"label": "Wants a discount", "quote": "Please give us 50% off", "source_id": "T0999"}],
         "blockers": [
             {"label": "CSV export", "quote": "it fails at 90%", "source_id": "T0999"},
@@ -163,11 +169,16 @@ def test_quotes_not_really_in_the_source_are_dropped(brightdesk, llm, monkeypatc
     p = build_profile(brightdesk, MAYA, llm)
 
     assert p.insights["blockers"] == [{"label": "CSV export", "quote": "it fails at 90%", "source_id": "T0999"}]
+    assert p.insights["goals"] == [{"label": "Weekly client reports", "quote": "main goal is weekly client reports",
+                                    "source_id": NOTE}]
+    assert p.insights["role"] is None
     assert p.insights["needs"] == []
     assert p.insights["sentiment"]["label"] == "negative"
     assert p.insights["language"] is None
     reasons = {(d["kind"], d["source_id"]): d["reason"] for d in p.provenance["dropped"]}
     assert reasons == {
+        ("goals", NOTE): f"quote not found in {NOTE}",
+        ("role", "T1013"): "'T1013' is not one of this customer's sources",
         ("needs", "T0999"): "quote not found in T0999",
         ("blockers", "T1001"): "quote not found in T1001",  # real quote, wrong source
         ("blockers", "T1013"): "'T1013' is not one of this customer's sources",  # another customer's ticket

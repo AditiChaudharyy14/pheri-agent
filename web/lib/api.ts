@@ -1,0 +1,136 @@
+// Typed access to the Pheri API (api/pheri/app.py). Server components call it directly; client components
+// call /api/... on this origin, which next.config.ts forwards to the API.
+
+export const API_URL = process.env.PHERI_API_URL ?? "http://127.0.0.1:8000";
+
+export const BUSINESSES = { brightdesk: "Brightdesk", kettle: "Kettle & Co" } as const;
+export type Business = keyof typeof BUSINESSES;
+export const isBusiness = (b: string): b is Business => b in BUSINESSES;
+
+export async function api<T>(path: string): Promise<T> {
+  const res = await fetch(`${API_URL}${path}`);
+  if (!res.ok) throw new Error(`API ${res.status} on ${path}: ${await res.text()}`);
+  return res.json() as Promise<T>;
+}
+
+/** From the browser: same origin, forwarded to the API. */
+export async function call<T>(path: string, init?: { method?: string; body?: unknown }): Promise<T> {
+  const res = await fetch(`/api${path}`, {
+    method: init?.method ?? "POST",
+    headers: { "content-type": "application/json" },
+    body: init?.body === undefined ? undefined : JSON.stringify(init.body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(typeof data?.detail === "string" ? data.detail : `Request failed (${res.status})`);
+  return data as T;
+}
+
+export const customerPath = (b: string, key: string) => `/businesses/${b}/customers/${encodeURIComponent(key)}`;
+
+// ---- shapes ---------------------------------------------------------------------------
+export type Evidence = { kind: "fact" | "quote"; ref: string; value: string; quote_id?: string };
+
+export type Action = {
+  id: string;
+  customer_key: string;
+  kind: string;
+  payload: { channel?: string | null; discount_pct?: number | null; message?: string; reason?: string };
+  why: string;
+  evidence: Evidence[];
+  mode: "suggest" | "ask_owner" | "act_alone" | null;
+  rule_check: { allowed: boolean; results: RuleResult[] };
+  status: string;
+  created_at: string;
+  executed_at: string | null;
+};
+
+export type Approval = { id: string; action_id: string; decision: "pending" | "approved" | "rejected";
+  decided_by: string | null; note: string | null };
+
+export type Decision = { action: string; channel: string | null; discount_pct: number | null; message: string;
+  why_this: string; why_now: string; fact_keys: string[]; quote_ids: string[] };
+
+export type NextStep = {
+  customer: { key: string; name: string; company: string | null; stage: string };
+  decision: Decision;
+  evidence: Evidence[];
+  action: Action | null;
+  approval: Approval | null;
+  skipped: string | null;
+  fallback: string | null;
+  unsupported_numbers: string[];
+  message_problems: string[];
+  private: boolean;
+  cost_usd: number;
+  turns: number;
+};
+
+export type CustomerRow = { key: string; name: string; company: string | null; stage: string;
+  because: { fact: string; value: unknown }[] };
+
+export type Insight = { label?: string; quote: string; source_id: string; code?: string };
+export type Profile = {
+  business: string; customer_key: string; name: string; company: string | null;
+  facts: Record<string, unknown>;
+  insights: { goals: Insight[]; needs: Insight[]; blockers: Insight[]; role: Insight | null;
+    sentiment: (Insight & { label: string }) | null; language: (Insight & { code: string }) | null };
+  provenance: { facts: Record<string, string[]>; sources: string[]; dropped: unknown[] };
+  model: string | null;
+};
+
+export type CustomerDetail = { key: string; name: string; company: string | null; facts: Record<string, unknown>;
+  journey: { stage: string; because: { fact: string; value: unknown; refs: string[] }[] };
+  do_not_contact: { at: string; source: string } | null };
+
+export type RuleResult = { rule_id: string; check: string; passed: boolean; reason: string | null };
+export type DiscountCheck = { allowed: boolean; violations: string[]; results: RuleResult[];
+  refused_by: { rule_id: string; source_text: string | null; described: string[]; reason: string }[] };
+
+export type RuleRow = { id: string; source_text: string; active: boolean; confirmed_by: string | null;
+  confirmed_at: string | null; described: string[]; problems: string[]; unsupported: string[];
+  confirmable?: boolean };
+
+export type Reply = {
+  source_id: string; kind: string; at: string | null; text: string;
+  customer: { key: string; name: string; company: string | null };
+  label: string; language: string; summary: string; attack: boolean; stop: boolean;
+  screen_before: string[]; screen_after: string[]; provider: string | null; model: string | null;
+  escalation: { id: string; status: string } | null;
+};
+
+export type RunsOn = { steps: Record<"guard" | "profile" | "decide" | "rules", { provider: string; model: string;
+  label: string }>; full_private: boolean };
+
+export type Group = { n: number; responded: number; rate: number | null };
+export type StageResult = {
+  stage: string; treated: Group; holdout: Group; lift_pp: number | null; ci_pp: [number, number] | null;
+  verdict: "works" | "hurts" | "unclear"; best_action: string | null; runner_up: string | null;
+  best_call: "clear" | "close call" | null;
+  actions: { action: string; n: number; responded: number; rate: number | null; rate_ci: [number, number] | null;
+    posterior_mean: number }[];
+};
+export type TwinResults = {
+  business: string; customers: number; rounds: number; seed: number; holdout_share: number; min_tries: number;
+  overall: Omit<StageResult, "stage" | "best_action" | "runner_up" | "best_call" | "actions"> & {
+    random_policy?: Group };
+  stages: StageResult[];
+  learning_curve: { round: number; treated_rate: number; holdout_rate: number; best_pick_share: number | null }[];
+};
+
+export type Learned = {
+  headline: string;
+  findings: { stage: string; verdict: string; text: string; fact_ids: string[] }[];
+  caveats: { text: string; fact_ids: string[] }[];
+  rejected: { part: string; text: string; problems: string[] }[];
+  model: string | null; cost_usd: number; markdown: string;
+};
+
+export type Spend = { mode: string; as_of: string; providers: Record<string, { settled_usd: number;
+  reserved_usd: number; offset_usd: number; cap_usd: number; remaining_usd: number }> };
+
+// ---- words for people ---------------------------------------------------------------------
+export const words = (s: string | null | undefined) => (s ?? "").replaceAll("_", " ");
+export const MODE_LABEL: Record<string, string> = { suggest: "Suggest", ask_owner: "Ask owner", act_alone: "Act alone" };
+export const pct = (r: number | null | undefined, digits = 1) => (r == null ? "—" : `${(100 * r).toFixed(digits)}%`);
+export const pp = (v: number | null | undefined) => (v == null ? "—" : `${v > 0 ? "+" : ""}${v.toFixed(1)}`);
+export const usd = (v: number) => `$${v.toFixed(4)}`;

@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+/* Calm, premium, readable on a 1080p screen recording: warm paper, near-black ink, one teal accent.
+   Headings in Newsreader (serif), body in IBM Plex Sans. */
+@theme {
+  --color-paper: #faf8f4;
+  --color-surface: #ffffff;
+  --color-sunk: #f3f0ea;
+  --color-ink: #16191c;
+  --color-ink-2: #3a4148;
+  --color-muted: #6a727c;
+  --color-line: #e6e1d8;
+  --color-line-2: #d6d0c4;
+  --color-teal: #0e7c74;
+  --color-teal-ink: #0a5b55;
+  --color-teal-soft: #e4f1ee;
+  --color-amber: #8a5a00;
+  --color-amber-soft: #faefd6;
+  --color-rose: #a2303a;
+  --color-rose-soft: #f8e5e4;
+  --color-slate-soft: #eceae5;
+
+  --font-serif: var(--font-newsreader), Georgia, serif;
+  --font-sans: var(--font-plex), "Segoe UI", system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+}
+
+html {
+  font-size: 17px;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-serif);
+  letter-spacing: -0.01em;
+}
+
+::selection {
+  background: var(--color-teal-soft);
+}

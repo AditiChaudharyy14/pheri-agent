@@ -14,6 +14,7 @@ any call that would go past the budget. The seed rule is compiled once and the c
 saved in .pheri/ (git-ignored); later runs confirm the saved checks instead of paying to compile again.
 """
 
+import dataclasses
 import json
 import os
 import sys
@@ -43,6 +44,7 @@ from pheri.ledger import Ledger  # noqa: E402
 from pheri.llm import LLM, _estimate_input_tokens  # noqa: E402
 from pheri.pricing import cost_usd, price_for  # noqa: E402
 from pheri.privacy import private_mode, set_private_mode  # noqa: E402
+from pheri.runlog import call_record, save_run  # noqa: E402
 from pheri.store import MemoryStore  # noqa: E402
 
 MAYA = "maya.okafor@pinecrest.example"
@@ -157,6 +159,10 @@ def card(o, prof, proof, store, run_usd: float, total, cap_usd: float) -> str:
         f"WHY NOW:  {d['why_now']}",
         f"BLOCKED:  {attempt}",
         f"          by {rule_text}",
+        f"CHECKS:   evidence kept {len(o.evidence)}, dropped {len(o.dropped_evidence)}"
+        + (f" ({'; '.join(e['reason'] for e in o.dropped_evidence)})" if o.dropped_evidence else "")
+        + f"; numbers not backed: {', '.join(o.unsupported_numbers) or 'none'}"
+        + f"; message: {'; '.join(o.message_problems) or 'ok'}",
         f"MODE:     {MODE_LABELS.get(action.get('mode'), action.get('mode') or 'n/a')}",
         f"COST:     Meta: this run ${run_usd:.4f}; total Meta spend in the ledger ${total.settled_usd:.4f}"
         + (f" (+ ${total.offset_usd:.2f} offset)" if total.offset_usd else "")
@@ -200,15 +206,16 @@ def main() -> int:
             r = real_complete(messages, **kw)
         except Exception as exc:  # a cut-off answer still used (and billed) its tokens
             if getattr(exc, "result", None) is not None:
-                results.append(exc.result)
+                results.append((kw.get("purpose"), exc.result))
             raise
-        results.append(r)
+        results.append((kw.get("purpose"), r))
         return r
 
     llm.complete = recorded
     store = MemoryStore("brightdesk")
 
     maya = None
+    outcomes = []
     drafts, how = seed_once(store, llm)
     if PRIVATE:
         set_private_mode(store, guard=True, decide=True, by="owner:demo")
@@ -219,6 +226,7 @@ def main() -> int:
     for key in keys:
         p = profile_mod.build_profile(ds, key, llm)
         o = decide_mod.decide(p, store, llm)
+        outcomes.append(dataclasses.asdict(o))
         status = o.action["status"] if o.action else "no_action"
         print(f"\n== {p.name} ({key}) stage={stage('brightdesk', p.facts).stage} -> {o.decision['action']} "
               f"[{status}] turns={o.turns} fallback={o.fallback} private={o.private}")
@@ -250,7 +258,7 @@ def main() -> int:
     bt_run = after_bt.settled_usd - before_bt.settled_usd
     print(f"Ledger (baseten): settled ${before_bt.settled_usd:.6f} -> ${after_bt.settled_usd:.6f}; this run ${bt_run:.6f}")
     print("\nOutput tokens per call (reasoning counts as output and is billed):")
-    for r in results:
+    for _, r in results:
         answer_est = round(len(r.text) / 3.5)  # JSON answers run ~3.5 characters a token
         reasoning = (f"{r.reasoning_tokens} reported" if r.reasoning_tokens is not None
                      else f"~{max(0, r.output_tokens - answer_est)} (output minus answer estimate)")
@@ -264,6 +272,14 @@ def main() -> int:
             text += (f"\n          Baseten (Muse Spark Open): this run ${bt_run:.4f}; total ${after_bt.settled_usd:.4f}, "
                      f"cap ${before_bt.cap_usd:.2f} (placeholder prices in pricing.py: an estimate)")
         print("\n" + text)
+    if LIVE:
+        path = save_run("decide", {
+            "args": sys.argv[1:], "budget_usd": BUDGET, "private": private_mode(store), "worst_case": estimate,
+            "outcomes": outcomes, "calls": [call_record(purpose, r) for purpose, r in results],
+            "audit": store.audit_log(),
+            "ledger": {"meta": {"before": before.settled_usd, "after": after.settled_usd},
+                       "baseten": {"before": before_bt.settled_usd, "after": after_bt.settled_usd}}})
+        print(f"\nSaved this run: {path}")
     return 0
 
 

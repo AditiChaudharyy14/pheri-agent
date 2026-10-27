@@ -271,3 +271,79 @@ def test_a_discount_on_another_action_is_refused_with_what_to_do_instead(maya, s
     assert ("book_call cannot carry a discount: set discount_pct to null, or use offer_discount"
             in out.action["rule_check"]["results"][0]["reason"])
     assert "a discount cannot ride along" in SYSTEM and "the action is offer_discount" in SYSTEM
+
+
+# ---- what the private live run showed (signature, numbers), and saving runs ------------------
+LIVE_PRIVATE = {  # close to what Muse Spark Open answered for Maya, live
+    "action": "book_call", "channel": "email", "discount_pct": None,
+    "message": "Hi Maya, would a quick call help with the CSV export? — Pinecrest Team",
+    "why_this": "Blocked with 5 failed exports and 2 open tickets.",
+    "why_now": "Quiet for 12 days with renewal in 8 days.",
+    "evidence": [{"ref": "journey_stage", "value": "stuck"}, {"ref": "T1001", "value": "Can't connect our email inbox"}]}
+
+
+def test_the_model_is_told_the_business_name_and_to_cite_every_number(maya, store, llm, monkeypatch):
+    from pheri.decide import PRIVATE_SYSTEM, SYSTEM
+    from pheri.privacy import set_private_mode
+
+    for prompt in (SYSTEM, PRIVATE_SYSTEM):
+        assert "never as the customer's own company" in prompt
+        assert "Every number you write in why_this" in prompt
+    calls = []
+    real = llm.complete
+    monkeypatch.setattr(llm, "complete", lambda items, **kw: calls.append(items) or real(items, **kw))
+    decide(maya, store, llm)
+    assert json.loads(calls[0][1]["content"])["business_name"] == "Brightdesk"
+    set_private_mode(store, decide=True, by="owner")
+    calls.clear()
+    decide(maya, store, llm)
+    assert json.loads(calls[0][-1]["content"])["business_name"] == "Brightdesk"
+
+
+def test_signed_as_the_customers_company_is_caught_in_code(maya, store, llm, monkeypatch):
+    from pheri.privacy import set_private_mode
+
+    set_private_mode(store, decide=True, by="owner")
+    set_mode(store, "book_call", "act_alone", by="owner")
+    monkeypatch.setitem(llm_module._mock_responders, "decide_private", lambda m, s: json.dumps(LIVE_PRIVATE))
+    out = decide(maya, store, llm)
+    assert out.message_problems == ["signed as the customer's company (Pinecrest), not the business"]
+    assert out.unsupported_numbers == ["12", "2", "5", "8"]  # in the why-text, not in any kept evidence
+    assert out.action["status"] == "awaiting_approval"  # act_alone, capped: a person reads it first
+    logged = [a for a in store.audit_log() if a["event"] == "decided"][-1]["details"]
+    assert logged["message_problems"] and logged["unsupported_numbers"] == ["12", "2", "5", "8"]
+
+
+def test_numbers_cited_as_facts_pass_and_the_business_signature_is_fine(maya, store, llm, monkeypatch):
+    from pheri.privacy import set_private_mode
+
+    set_private_mode(store, decide=True, by="owner")
+    set_mode(store, "book_call", "act_alone", by="owner")
+    fixed = {**LIVE_PRIVATE, "message": "Hi Maya, would a quick call help with the CSV export? — The Brightdesk team",
+             "evidence": LIVE_PRIVATE["evidence"] + [
+                 {"ref": "failed_exports_30d", "value": "5"}, {"ref": "open_tickets", "value": "2"},
+                 {"ref": "days_quiet", "value": "12"}, {"ref": "renewal_in_days", "value": "8"}]}
+    monkeypatch.setitem(llm_module._mock_responders, "decide_private", lambda m, s: json.dumps(fixed))
+    out = decide(maya, store, llm)
+    assert out.message_problems == [] and out.unsupported_numbers == [] and out.dropped_evidence == []
+    assert out.action["status"] == "executed"  # every claim backed: the dial is honoured
+
+
+def test_every_live_run_can_be_saved_in_full(tmp_path, maya, store, llm):
+    import dataclasses
+
+    from pheri.llm import register_mock
+    from pheri.runlog import call_record, save_run
+
+    out = decide(maya, store, llm)
+    register_mock("runlog_probe", lambda m, s: "fine")
+    res = llm.complete([{"role": "user", "content": "secret prompt text"}], purpose="runlog_probe")
+    path = save_run("decide", {"outcomes": [dataclasses.asdict(out)], "calls": [call_record("runlog_probe", res)]},
+                    folder=tmp_path)
+    saved = json.loads(path.read_text(encoding="utf-8"))
+    assert path.parent == tmp_path and "-decide-" in path.name
+    assert saved["kind"] == "decide" and saved["outcomes"][0]["customer_key"] == MAYA
+    assert saved["outcomes"][0]["dropped_evidence"] == out.dropped_evidence  # the detail a printout can lose
+    assert saved["calls"][0]["output_tokens"] == res.output_tokens
+    assert saved["calls"][0]["answer_text"] == "fine"  # what the model wrote, so a failure can be read later
+    assert "secret prompt text" not in path.read_text(encoding="utf-8")  # usage only, never the prompt

@@ -29,6 +29,7 @@ BUSINESS_IDS = {
     "brightdesk": "b5d1e5c0-0000-4000-8000-000000000001",
     "kettle": "ce771e00-0000-4000-8000-000000000002",
 }
+BUSINESS_NAMES = {"brightdesk": "Brightdesk", "kettle": "Kettle & Co"}  # as seeded in db/schema.sql
 
 FIRST = [
     "Maya", "Liam", "Aarav", "Sofia", "Kenji", "Amara", "Lucas", "Priya", "Mateo", "Hana", "Omar", "Elena",

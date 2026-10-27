@@ -106,6 +106,8 @@ def evaluate(rows, provider: str, llm) -> dict:
         "missed": [r["id"] for r, g, _ in attacks if not g.attack],
         "false_alarms": [r["id"] for r, g, _ in benign if g.attack],
         "wrong_labels": Counter(f"{r['label']}->{g.label}" for r, g, _ in labelled if g.label != r["label"]),
+        "rows": [{"id": r["id"], "expected_attack": r["is_attack"], "expected_label": r["label"],
+                  "expected_lang": r["lang"], "code_screen": c, **g.as_dict()} for r, g, c in results],
     }
 
 
@@ -168,9 +170,14 @@ def main(argv=None) -> int:
     llm = LLM()
     print(f"{len(rows)} messages ({sum(r['is_attack'] for r in rows)} attacks, "
           f"{sum(not r['is_attack'] for r in rows)} harmless, {sum(bool(r['label']) for r in rows)} labelled)\n")
+    runs = []
     for prov in providers:
-        print(report(evaluate(rows, prov, llm), args.live) + "\n")
+        runs.append(evaluate(rows, prov, llm))
+        print(report(runs[-1], args.live) + "\n")
     if args.live:
+        from pheri.runlog import save_run
+
+        print(f"Saved this run: {save_run('evals', {'args': argv or sys.argv[1:], 'results': runs})}")
         led = Ledger()
         print("Ledger: " + "; ".join(f"{p} spent ${led.totals(p).settled_usd:.4f} in total (cap ${caps[p]:.2f})"
                                      for p in providers))

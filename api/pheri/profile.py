@@ -36,6 +36,7 @@ PRIVATE_MAX_OUTPUT_TOKENS = 4000  # Muse Spark Open always reasons: give it more
 MIN_QUOTE_CHARS = 4  # "CSV" alone proves nothing; quote the sentence
 CUSTOMER_WRITTEN = {"ticket", "message"}  # sales notes are written by staff, not by the customer
 RECENT_DAYS = 30  # the window behind every *_30d fact
+MIN_USUAL_DAYS = 4  # active days in the 60 before, below which "their usual pace" means nothing
 
 
 # ---- identity --------------------------------------------------------------------
@@ -287,6 +288,16 @@ def compute_facts(c: Customer, business: str, today: date = TODAY) -> tuple[dict
             if recent(e):
                 active.setdefault(_ts_date(e["ts"]), e["_ref"])
         facts["active_days_30d"], prov["active_days_30d"] = len(active), list(active.values())
+        # Their usual pace: active days in the 60 days before that window, scaled to 30 days.
+        before: dict[date, str] = {}
+        for e in sorted(c.events, key=lambda e: e["ts"]):
+            if RECENT_DAYS <= (today - _ts_date(e["ts"])).days < 3 * RECENT_DAYS:
+                before.setdefault(_ts_date(e["ts"]), e["_ref"])
+        facts["active_days_prev_60d"], prov["active_days_prev_60d"] = len(before), list(before.values())
+        usual = len(before) / 2  # per 30 days
+        # Percent change against their usual pace; None when there is too little history to say.
+        facts["usage_change_pct"] = round(100 * (len(active) - usual) / usual) if len(before) >= MIN_USUAL_DAYS else None
+        prov["usage_change_pct"] = prov["active_days_30d"] + prov["active_days_prev_60d"]
         open_tickets = [s.id for s in c.sources if s.kind == "ticket" and s.status == "open"]
         facts["open_tickets"], prov["open_tickets"] = len(open_tickets), open_tickets
         price = [s.id for s in c.sources if s.kind == "ticket" and s.status == "open" and mentions_price(s.text)]

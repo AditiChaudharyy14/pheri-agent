@@ -118,7 +118,51 @@ INJECTIONS = [
 ]
 
 
-def brightdesk(rng: random.Random) -> dict:
+AT_RISK_KEEP = 0.25  # share of an at-risk customer's last-30-day events that remain: usage falls ~75%
+AT_RISK_USUAL_DAYS = (8, 14)  # active days in the 60 days before that: the pace they fall from
+USAGE_WINDOW_DAYS = 30
+FEATURES = ["inbox_opened", "ticket_replied", "report_viewed", "automation_created", "export_started"]
+
+
+def _fall_before_renewal(customers: list[dict], events: list[dict]) -> list[dict]:
+    """At-risk customers use the product less in the 30 days before renewal, as real ones do: a steady
+    pace in the 60 days before, then a fall.
+
+    Runs after every other draw, on its own random stream per at-risk customer, and touches only their
+    events, so no other customer's data (Maya's included) changes by a single value. The most recent
+    active day is always kept: they are fading, not gone (gone is "quiet")."""
+    at_risk = {c["email"]: c for c in customers if c["stage"] == "at_risk_renewal"}
+    start = TODAY - timedelta(days=USAGE_WINDOW_DAYS)
+    streams = {email: random.Random(f"{SEED}:fall-before-renewal:{email}") for email in at_risk}
+    newest: dict[str, str] = {}
+    for e in events:
+        who = e["user"].strip().lower()
+        if who in at_risk and e["ts"][:10] > newest.get(who, ""):
+            newest[who] = e["ts"][:10]
+    out = []
+    for e in events:
+        who, day = e["user"].strip().lower(), e["ts"][:10]
+        if who in at_risk and day >= start.isoformat() and day != newest[who] and e["type"] != "export_failed":
+            if streams[who].random() >= AT_RISK_KEEP:
+                continue
+        out.append(e)
+    for email, c in at_risk.items():  # the usual pace before the fall, 31 to 89 days ago
+        rng = streams[email]
+        earliest = max(USAGE_WINDOW_DAYS + 1, 1)
+        latest = min(3 * USAGE_WINDOW_DAYS - 1, (TODAY - c["signup"]).days)
+        if latest < earliest:
+            continue
+        days = rng.sample(range(earliest, latest + 1), min(rng.randint(*AT_RISK_USUAL_DAYS), latest - earliest + 1))
+        for ago in sorted(days, reverse=True):
+            day = TODAY - timedelta(days=ago)
+            out.append({"ts": _iso(_dt(day, rng)), "user": email, "type": "login"})
+            out.append({"ts": _iso(_dt(day, rng)), "user": email, "type": rng.choice(FEATURES),
+                        "props": {"seats_active": rng.randint(1, c["seats"])}})
+    out.sort(key=lambda e: e["ts"])
+    return out
+
+
+def brightdesk(rng: random.Random, fall_before_renewal: bool = True) -> dict:
     used: set[str] = set()
     customers, events, tickets, notes, truth, attacks = [], [], [], [], {}, []
     plans = {"Starter": 15, "Team": 39, "Business": 79}
@@ -226,6 +270,8 @@ def brightdesk(rng: random.Random) -> dict:
         crm_rows.append(dup)
     rng.shuffle(crm_rows)
     events.sort(key=lambda e: e["ts"])
+    if fall_before_renewal:
+        events = _fall_before_renewal(customers, events)
     return {"crm_export.csv": crm_rows, "events.jsonl": events, "tickets.json": tickets,
             "sales_notes.txt": notes, "_truth.json": {"stages": truth, "attacks": attacks, "hero": maya["email"]}}
 
@@ -331,13 +377,12 @@ def _write(folder: Path, files: dict) -> None:
             path.write_text("\n".join(data) + "\n", encoding="utf-8")
 
 
-def generate(out: Path = OUT, seed: int = SEED) -> dict[str, Path]:
+def generate(out: Path = OUT, seed: int = SEED, fall_before_renewal: bool = True) -> dict[str, Path]:
     rng = random.Random(seed)
     paths = {}
-    for slug, builder in (("brightdesk", brightdesk), ("kettle", kettle)):
-        _write(out / slug, builder(rng))
-        paths[slug] = out / slug
-    return paths
+    _write(out / "brightdesk", brightdesk(rng, fall_before_renewal))
+    _write(out / "kettle", kettle(rng))
+    return {slug: out / slug for slug in ("brightdesk", "kettle")}
 
 
 if __name__ == "__main__":

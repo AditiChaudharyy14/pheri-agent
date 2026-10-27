@@ -24,6 +24,7 @@ STAGES = {"brightdesk": BRIGHTDESK_STAGES, "kettle": KETTLE_STAGES}
 
 ONBOARDING_DAYS = 14  # Brightdesk: the first two weeks are onboarding
 RENEWAL_WINDOW_DAYS = 30
+USAGE_FALL_PCT = -60  # Brightdesk: active days down 60% or more against their usual pace
 NEW_CUSTOMER_DAYS = 30  # Kettle: joined within a month
 LAPSED_AFTER_DAYS = 60  # Kettle: no order in two months
 CART_RECENT_DAYS = 7
@@ -51,6 +52,10 @@ def _brightdesk(f: dict, p: dict) -> Journey:
         return Journey("at_risk_renewal", _why(f, p, "price_complaints", "renewal_in_days"))
     if f["seat_limit_hits_30d"] > 0:
         return Journey("expanding", _why(f, p, "seat_limit_hits_30d", "seats"))
+    change = f.get("usage_change_pct")
+    if (change is not None and change <= USAGE_FALL_PCT and f["active_days_30d"] >= 1
+            and f["renewal_in_days"] <= RENEWAL_WINDOW_DAYS):  # fading before renewal, not gone (that is quiet)
+        return Journey("at_risk_renewal", _why(f, p, "usage_change_pct", "active_days_30d", "renewal_in_days"))
     if f["active_days_30d"] == 0:
         return Journey("quiet", _why(f, p, "active_days_30d", "days_quiet"))
     return Journey("healthy", _why(f, p, "active_days_30d"))

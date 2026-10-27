@@ -61,6 +61,7 @@ MAX_ATTEMPTS = 3
 UNKNOWN_CONTEXT_TOKENS = 16_000
 RETRYABLE_STATUS = {429, 500, 502, 503}
 EFFORTS = {"minimal", "low", "medium", "high", "xhigh", "max"}
+MUSE_SPARK_OPEN_SAMPLING = {"temperature": 1.0, "top_p": 1.0}  # Meta's recommended defaults, 27 Oct 2026
 
 
 class DataPolicyError(RuntimeError):
@@ -145,12 +146,14 @@ def build_responses_request(model, messages, max_tokens, schema, effort, cache_k
     return req
 
 
-def build_chat_request(model, messages, max_tokens, schema, effort, temperature) -> dict:
+def build_chat_request(model, messages, max_tokens, schema, effort, temperature, top_p=None) -> dict:
     req: dict[str, Any] = {"model": model, "messages": messages, "max_tokens": max_tokens}
     if effort:
         req["reasoning_effort"] = effort
     if temperature is not None:
         req["temperature"] = temperature
+    if top_p is not None:
+        req["top_p"] = top_p
     if schema is not None:
         req["response_format"] = {"type": "json_schema",
                                   "json_schema": {"name": schema.__name__, "schema": strict_schema(schema), "strict": True}}
@@ -213,6 +216,7 @@ class LLM:
         data_class: str = "synthetic",
         allow_expensive: bool = False,
         temperature: float | None = None,
+        top_p: float | None = None,
         tools: list[dict] | None = None,
         previous_response_id: str | None = None,
         stateless: bool = False,
@@ -221,8 +225,13 @@ class LLM:
             raise DataPolicyError(f"This business is in full private mode: a {purpose!r} call to {provider!r} was "
                                   f"refused before sending (allowed: {sorted(self._only)}).")
         model = model or self.default_model(provider)
-        if provider == "baseten" and effort is None:
-            effort = "low"  # Muse Spark Open's default on Baseten is xhigh: never leave it to the default
+        if provider == "baseten":
+            if effort is None:
+                effort = "low"  # Muse Spark Open's default on Baseten is xhigh: never leave it to the default
+            # Meta's recommended sampling for Muse Spark Open (dev.meta.ai/docs/muse-spark-open/settings):
+            # temperature 1.0, top_p 1.0. Sent explicitly so no partner default can change it.
+            temperature = MUSE_SPARK_OPEN_SAMPLING["temperature"] if temperature is None else temperature
+            top_p = MUSE_SPARK_OPEN_SAMPLING["top_p"] if top_p is None else top_p
         if (tools or previous_response_id or stateless) and provider != "meta":
             raise ValueError("Tool loops use the Responses API, which only the meta provider speaks here.")
         if stateless and previous_response_id:
@@ -268,7 +277,7 @@ class LLM:
                                               tools, previous_response_id, stateless)
                 text, usage, raw, resp_id, calls, items = self._with_retries(lambda: self._responses(req))
             else:
-                req = build_chat_request(model, messages, max_tokens, schema, effort, temperature)
+                req = build_chat_request(model, messages, max_tokens, schema, effort, temperature, top_p)
                 text, usage, raw, resp_id = self._with_retries(lambda: self._chat(provider, req))
                 items = []
         except BaseException as exc:
@@ -320,8 +329,11 @@ class LLM:
         return forced if forced in ("schema", "instructions") else self._json_mode.get(provider, "schema")
 
     def complete_json(self, messages: list[dict], *, schema: type[BaseModel], provider: str = "meta",
-                      **kw) -> LLMResult:
-        """A validated `schema` instance in .parsed, whatever the provider supports. Raises ModelOutputError."""
+                      schema_only: bool = False, **kw) -> LLMResult:
+        """A validated `schema` instance in .parsed, whatever the provider supports. Raises ModelOutputError.
+        schema_only: strict json_schema or nothing; never fall back to JSON instructions."""
+        if schema_only:
+            return self.complete(messages, schema=schema, provider=provider, **kw)
         if self.json_mode(provider) == "schema":
             try:
                 return self.complete(messages, schema=schema, provider=provider, **kw)

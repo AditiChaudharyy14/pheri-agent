@@ -76,3 +76,22 @@ def test_reasoning_tokens_are_read_from_either_api():
     assert _reasoning_usage(responses) == (900, None)
     assert _reasoning_usage(chat) == (None, 600)
     assert _reasoning_usage(None) == (None, None)
+
+
+def test_baseten_uses_metas_recommended_sampling(tmp_path, monkeypatch):
+    """dev.meta.ai/docs/muse-spark-open/settings: temperature 1.0, top_p 1.0, sent explicitly."""
+    from types import SimpleNamespace
+
+    from pheri.config import Settings
+    from pheri.llm import LLM
+
+    monkeypatch.setenv("PHERI_LLM_MODE", "live")
+    monkeypatch.setenv("PHERI_LEDGER_PATH", str(tmp_path / "l.sqlite"))
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    llm, sent = LLM(Settings()), []
+    raw = SimpleNamespace(choices=[SimpleNamespace(finish_reason="stop", message=SimpleNamespace(content="ok"))])
+    monkeypatch.setattr(llm, "_chat", lambda provider, req: sent.append(req) or ("ok", (10, 0, 5), raw, "c1"))
+    llm.complete([{"role": "user", "content": "x"}], purpose="sampling", provider="baseten")
+    assert sent[0]["temperature"] == 1.0 and sent[0]["top_p"] == 1.0
+    req = build_chat_request("m", [], 10, None, None, None)
+    assert "temperature" not in req and "top_p" not in req  # other partners: only what is asked for

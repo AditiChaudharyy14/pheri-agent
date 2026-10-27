@@ -337,7 +337,7 @@ def test_a_private_decision_cut_off_at_the_limit_says_so(brightdesk, llm, monkey
     calls = _calls(llm, monkeypatch)
     out = decide(build_profile(brightdesk, MAYA, llm), store, llm)
     assert "cut off (max_output_tokens)" in out.fallback and out.decision["action"] == "task_for_owner"
-    assert calls[-1]["max_tokens"] == 8000 and calls[-1]["effort"] == "low"  # as the private-mode brief says
+    assert calls[-1]["max_tokens"] == 3000 and calls[-1]["effort"] == "low"  # as the private-mode brief says
 
 
 def test_chat_finish_reason_length_counts_as_cut_off(tmp_path, monkeypatch):

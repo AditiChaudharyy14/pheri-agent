@@ -282,13 +282,13 @@ LIVE_PRIVATE = {  # close to what Muse Spark Open answered for Maya, live
     "evidence": [{"ref": "journey_stage", "value": "stuck"}, {"ref": "T1001", "value": "Can't connect our email inbox"}]}
 
 
-def test_the_model_is_told_the_business_name_and_to_cite_every_number(maya, store, llm, monkeypatch):
+def test_the_model_is_told_the_business_name_and_to_cite_the_facts_behind_numbers(maya, store, llm, monkeypatch):
     from pheri.decide import PRIVATE_SYSTEM, SYSTEM
     from pheri.privacy import set_private_mode
 
-    for prompt in (SYSTEM, PRIVATE_SYSTEM):
+    for prompt in (" ".join(SYSTEM.split()), " ".join(PRIVATE_SYSTEM.split())):  # wording, not line breaks
         assert "never as the customer's own company" in prompt
-        assert "Every number you write in why_this" in prompt
+        assert "Cite the facts behind the numbers you use" in prompt and "At most 8 evidence items" in prompt
     calls = []
     real = llm.complete
     monkeypatch.setattr(llm, "complete", lambda items, **kw: calls.append(items) or real(items, **kw))
@@ -347,3 +347,30 @@ def test_every_live_run_can_be_saved_in_full(tmp_path, maya, store, llm):
     assert saved["calls"][0]["output_tokens"] == res.output_tokens
     assert saved["calls"][0]["answer_text"] == "fine"  # what the model wrote, so a failure can be read later
     assert "secret prompt text" not in path.read_text(encoding="utf-8")  # usage only, never the prompt
+
+
+def test_evidence_is_capped_at_8_in_code(maya, store, llm, monkeypatch):
+    many = [{"ref": "days_quiet", "value": "12"}] * 30  # a runaway list
+    _model(monkeypatch, lambda m, s: _answer(evidence=many))
+    out = decide(maya, store, llm)
+    assert len(out.evidence) + len(out.dropped_evidence) == 8
+
+
+def test_private_decide_is_strict_json_schema_only(maya, store, llm, monkeypatch):
+    from pheri.privacy import set_private_mode
+
+    class Refused(Exception):
+        status_code = 400
+        message = "response_format json_schema is not supported"
+
+    set_private_mode(store, decide=True, by="owner")
+    schemas = []
+
+    def model(messages, schema):
+        schemas.append(schema)
+        raise Refused()
+
+    monkeypatch.setitem(llm_module._mock_responders, "decide_private", model)
+    out = decide(maya, store, llm)
+    assert schemas and all(s is not None for s in schemas) and len(schemas) == 1  # no instructions fallback
+    assert "refused the request (400)" in out.fallback

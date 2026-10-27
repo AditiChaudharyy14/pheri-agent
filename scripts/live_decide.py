@@ -101,11 +101,11 @@ def worst_case(ds, keys, store) -> dict:
         # The profile and the allowed actions are given once (repeat reads get a one-line note); every turn
         # after that re-reads the full output limit plus a check_rules-sized result.
         per_turn = decide_mod.MAX_OUTPUT_TOKENS + 200
-        if PRIVATE:  # one call, plus at worst the JSON-instructions retry (a refused schema call is not billed)
+        if PRIVATE:  # one call: strict json_schema only, no instructions retry
             one = tok([{"role": "system", "content": decide_mod.PRIVATE_SYSTEM}]) + view + 400
             price = price_for("baseten", "meta-models/muse-spark-open-1026")
             limit = decide_mod.PRIVATE_MAX_OUTPUT_TOKENS
-            out["decisions"] += cost_usd(price, one, limit) + cost_usd(price, one + limit, limit)
+            out["decisions"] += cost_usd(price, one, limit)
             continue
         for turn in range(decide_mod.MAX_TURNS):
             context = base + (view + per_turn * turn if turn else 0)

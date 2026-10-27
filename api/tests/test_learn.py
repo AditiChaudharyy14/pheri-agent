@@ -67,7 +67,7 @@ def test_the_mock_report_passes_every_check(results, llm):
 def test_a_number_not_in_the_cited_facts_is_rejected(results, llm, monkeypatch):
     _model(monkeypatch, {
         "headline": "Pheri lifted responses by 12 points.", "headline_fact_ids": ["overall.lift_pp"],
-        "findings": [_finding("stuck", "works", "Up +20.7 points, best send_help.", ["stuck.lift_pp"]),
+        "findings": [_finding("stuck", "works", "Up +20.7 points.", ["stuck.lift_pp"]),
                      _finding("at_risk_renewal", "works", "Up 45 points.", ["at_risk_renewal.lift_pp"])],
         "caveats": [{"text": "Only 150 customers.", "fact_ids": ["customers"]}]})
     rep = learn.write_report(results, llm)
@@ -150,3 +150,18 @@ def test_learned_vs_truth_flags_a_wrong_best_action(results):
     stuck["best_action"] = "offer_upgrade"  # the twin's truth says send_help
     row = next(x for x in learn.learned_vs_truth(planted) if x["stage"] == "stuck")
     assert row == {**row, "learned": "offer_upgrade", "true_best": "send_help", "match": False}
+
+
+def test_a_close_call_must_be_called_one(llm, monkeypatch):
+    res = run("brightdesk", n=5000)
+    close = next(s for s in res["stages"] if s["best_call"] == "close call" and s["verdict"] == "works")
+    ids = [f"{close['stage']}.lift_pp", f"{close['stage']}.best_action"]
+    lift = learn.catalogue(res)[ids[0]]
+    plain = _finding(close["stage"], "works", f"Up {lift} points; {close['best_action']} works best.", ids)
+    honest = _finding(close["stage"], "works", f"Up {lift} points; {close['best_action']} leads, a close call "
+                                                f"with {close['runner_up']}.", ids)
+    _model(monkeypatch, {"headline": "Results.", "headline_fact_ids": [], "findings": [plain], "caveats": []})
+    rep = learn.write_report(res, llm)
+    assert rep.findings == [] and "close call" in rep.rejected[0]["problems"][0]
+    _model(monkeypatch, {"headline": "Results.", "headline_fact_ids": [], "findings": [honest], "caveats": []})
+    assert learn.write_report(res, llm).findings[0]["stage"] == close["stage"]

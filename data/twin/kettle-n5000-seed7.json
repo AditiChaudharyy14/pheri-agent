@@ -49,6 +49,8 @@
    ],
    "verdict": "works",
    "best_action": "recommend_product",
+   "runner_up": "offer_subscription",
+   "best_call": "clear",
    "actions": [
     {
      "action": "send_reminder",
@@ -126,6 +128,8 @@
    ],
    "verdict": "works",
    "best_action": "recommend_product",
+   "runner_up": "offer_subscription",
+   "best_call": "clear",
    "actions": [
     {
      "action": "send_reminder",
@@ -203,6 +207,8 @@
    ],
    "verdict": "unclear",
    "best_action": "recommend_product",
+   "runner_up": "offer_discount",
+   "best_call": "close call",
    "actions": [
     {
      "action": "send_reminder",
@@ -280,6 +286,8 @@
    ],
    "verdict": "works",
    "best_action": "offer_discount",
+   "runner_up": "send_checkin",
+   "best_call": "clear",
    "actions": [
     {
      "action": "send_reminder",
@@ -357,6 +365,8 @@
    ],
    "verdict": "works",
    "best_action": "send_reminder",
+   "runner_up": "offer_discount",
+   "best_call": "close call",
    "actions": [
     {
      "action": "send_reminder",
@@ -434,6 +444,8 @@
    ],
    "verdict": "works",
    "best_action": "recommend_product",
+   "runner_up": "offer_discount",
+   "best_call": "clear",
    "actions": [
     {
      "action": "send_reminder",

@@ -162,3 +162,17 @@ def test_the_minimum_fixes_the_healthy_stage_at_full_size():
         res = report(twin, simulate(twin, policy), policy)
         assert next(s for s in res["stages"] if s["stage"] == "healthy")["best_action"] == healthy_best
     assert all(x["match"] for x in learned_vs_truth(res))
+
+
+def test_close_call_when_the_difference_between_the_top_two_includes_zero():
+    from pheri.twin import best_call
+
+    def a(k, n):
+        return {"responded": k, "n": n}
+
+    assert best_call([]) is None and best_call([a(5, 10)]) == "clear"
+    assert best_call([a(178, 467), a(12, 48)]) == "clear"  # Brightdesk stuck at 5,000: +13.1 [+0.1, +26.1]
+    assert best_call([a(98, 825), a(13, 160)]) == "close call"  # healthy: +3.8 [-1.0, +8.5]
+    res = run("brightdesk", n=200)
+    assert all(s["best_call"] in ("clear", "close call", None) for s in res["stages"])
+    assert all(s["runner_up"] != s["best_action"] for s in res["stages"] if s["runner_up"])

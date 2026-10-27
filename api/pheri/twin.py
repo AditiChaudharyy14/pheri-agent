@@ -265,6 +265,22 @@ def verdict(ci: tuple[float, float, float] | None) -> str:
     return "works" if ci[1] > 0 else "hurts" if ci[2] < 0 else "unclear"
 
 
+def best_call(tried: list[dict]) -> str | None:
+    """'close call' when the 95% interval of the difference between the best action and the runner-up
+    includes zero: the data cannot yet say which of the two is better. 'clear' otherwise; None when
+    nothing was tried. The difference interval, not "do the two rates' intervals overlap": at 5,000
+    customers overlap called 11 of 12 stages close (the runner-up's few tries make its interval wide),
+    including Brightdesk stuck, whose true gap is 0.24; the difference called 5, all with true gaps of
+    0.04-0.08, and every stage it called clear was."""
+    if not tried:
+        return None
+    if len(tried) == 1:
+        return "clear"
+    top, run = tried[0], tried[1]
+    diff = lift_ci(top["responded"], top["n"], run["responded"], run["n"])
+    return "clear" if diff and diff[1] > 0 else "close call"
+
+
 def _group(records: list[Record]) -> dict:
     n, k = len(records), sum(r.responded for r in records)
     return {"n": n, "responded": k, "rate": round(k / n, 4) if n else None}
@@ -296,10 +312,11 @@ def report(twin: Twin, records: list[Record], policy: ThompsonPolicy,
             g = _group([r for r in st if r.action == a])
             actions.append({"action": a, **g, "rate_ci": wilson(g["responded"], g["n"]),
                             "posterior_mean": round(policy.posterior_mean(s, a), 4)})
-        tried = [x for x in actions if x["n"]]
-        best = max(tried, key=lambda x: x["posterior_mean"])["action"] if tried else None
+        tried = sorted((x for x in actions if x["n"]), key=lambda x: -x["posterior_mean"])
+        best = tried[0]["action"] if tried else None
+        runner_up = tried[1]["action"] if len(tried) > 1 else None
         stages.append({"stage": s, **_lift(st, [r for r in holdout if r.seen_stage == s]), "best_action": best,
-                       "actions": actions})
+                       "runner_up": runner_up, "best_call": best_call(tried), "actions": actions})
     by_id = {c.id: c for c in twin.customers}
     curve = []
     for r in range(twin.rounds):

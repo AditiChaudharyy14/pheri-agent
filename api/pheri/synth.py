@@ -21,6 +21,7 @@ from pathlib import Path
 from .config import REPO_ROOT
 
 TODAY = date(2026, 10, 30)
+NOW = datetime(2026, 10, 30, 10, 0, tzinfo=timezone.utc)  # the demo clock: 10:00 UTC on TODAY
 SEED = 20261027
 OUT = REPO_ROOT / "data" / "synth"
 # Fixed tenant ids, seeded in db/schema.sql, so every demo run is identical.

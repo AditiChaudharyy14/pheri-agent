@@ -33,6 +33,7 @@ MAX_SOURCE_CHARS = 1500  # per source, in the prompt only; quotes are still chec
 MAX_OUTPUT_TOKENS = 2000  # reasoning tokens count toward it; 1500 ran out on 2 of 20 live calls
 MIN_QUOTE_CHARS = 4  # "CSV" alone proves nothing; quote the sentence
 CUSTOMER_WRITTEN = {"ticket", "message"}  # sales notes are written by staff, not by the customer
+RECENT_DAYS = 30  # the window behind every *_30d fact
 
 
 # ---- identity --------------------------------------------------------------------
@@ -257,6 +258,8 @@ def compute_facts(c: Customer, business: str, today: date = TODAY) -> tuple[dict
     if signed := c.attrs.get("signed_up"):
         facts["days_since_signup"] = (today - signed).days
         prov["days_since_signup"] = c.refs[:1]
+    if country := c.attrs.get("country"):
+        facts["country"], prov["country"] = country, c.refs[:1]
 
     activity = [(_ts_date(e["ts"]), e["_ref"]) for e in c.events] + [(o["date"], o["_ref"]) for o in c.orders]
     if activity:
@@ -267,11 +270,25 @@ def compute_facts(c: Customer, business: str, today: date = TODAY) -> tuple[dict
         facts["days_quiet"] = None
         prov["days_quiet"] = []
 
+    def recent(e: dict) -> bool:
+        return 0 <= (today - _ts_date(e["ts"])).days < RECENT_DAYS
+
     if business == "brightdesk":
         failed = [e["_ref"] for e in c.events if e["type"] == "export_failed"]
         facts["failed_exports"], prov["failed_exports"] = len(failed), failed
+        failed_recent = [e["_ref"] for e in c.events if e["type"] == "export_failed" and recent(e)]
+        facts["failed_exports_30d"], prov["failed_exports_30d"] = len(failed_recent), failed_recent
+        seat_hits = [e["_ref"] for e in c.events if e["type"] == "seat_limit_hit" and recent(e)]
+        facts["seat_limit_hits_30d"], prov["seat_limit_hits_30d"] = len(seat_hits), seat_hits
+        active: dict[date, str] = {}
+        for e in sorted(c.events, key=lambda e: e["ts"]):
+            if recent(e):
+                active.setdefault(_ts_date(e["ts"]), e["_ref"])
+        facts["active_days_30d"], prov["active_days_30d"] = len(active), list(active.values())
         open_tickets = [s.id for s in c.sources if s.kind == "ticket" and s.status == "open"]
         facts["open_tickets"], prov["open_tickets"] = len(open_tickets), open_tickets
+        price = [s.id for s in c.sources if s.kind == "ticket" and s.status == "open" and mentions_price(s.text)]
+        facts["price_complaints"], prov["price_complaints"] = len(price), price
         for k in ("plan", "seats", "mrr_usd"):
             facts[k], prov[k] = c.attrs[k], c.refs[:1]
         facts["renewal_in_days"], prov["renewal_in_days"] = (c.attrs["renewal"] - today).days, c.refs[:1]
@@ -285,7 +302,29 @@ def compute_facts(c: Customer, business: str, today: date = TODAY) -> tuple[dict
         else:
             facts["days_since_last_order"], prov["days_since_last_order"] = None, []
         facts["subscription"], prov["subscription"] = c.attrs["subscription"], c.refs[:1]
+        facts["gift_only"], prov["gift_only"] = bool(c.orders) and all(_all_gifts(o["items"]) for o in c.orders), refs
+        carts = sorted((e for e in c.events if e["type"] == "cart_abandoned"), key=lambda e: e["ts"])
+        if carts:
+            facts["days_since_cart_abandoned"] = (today - _ts_date(carts[-1]["ts"])).days
+            prov["days_since_cart_abandoned"] = [carts[-1]["_ref"]]
+        else:
+            facts["days_since_cart_abandoned"], prov["days_since_cart_abandoned"] = None, []
     return facts, prov
+
+
+def _all_gifts(items: str) -> bool:
+    return all("gift" in item.casefold() for item in items.split(";") if item.strip())
+
+
+# Renewal and price worries, in the languages the tickets arrive in. A plain request for a
+# discount is not on the list: asking is not the same as being ready to leave.
+PRICE_WORDS = ("price", "pricing", "expensive", "renewal", "smaller plan", "cancel", "comparing other tools",
+               "precio", "preço", "renovação", "कीमत", "नवीनीकरण", "मूल्य", "महँगो")
+
+
+def mentions_price(text: str) -> bool:
+    low = text.casefold()
+    return any(w in low for w in PRICE_WORDS)
 
 
 # ---- insights: read by the model, checked in code ---------------------------------

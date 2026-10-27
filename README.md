@@ -25,6 +25,28 @@ python scripts/smoke.py           # mock mode, no network
 python scripts/smoke.py --live    # one real call per provider, under $0.01 in total
 ```
 
+## How Pheri decides
+
+Code decides, models explain. For each customer:
+
+1. **Profile** (`pheri/profile.py`): facts counted in code; needs, blockers and mood read by Muse Spark,
+   with every quote checked against its source.
+2. **Journey** (`pheri/journey.py`): a stage chosen in code from the facts, with the rows that decided it.
+3. **Decide** (`pheri/decide.py`): Muse Spark picks the next best action through three tools
+   (`get_profile`, `list_allowed_actions`, `check_rules`) and explains "why this, why now".
+   Code drops any evidence that is not in the profile.
+4. **Rules** (`pheri/rules.py`): the owner writes a rule in plain words, Muse Spark compiles it into
+   typed checks, the owner confirms code's own description of them, and pure code enforces them
+   on every action.
+5. **Autonomy** (`pheri/autonomy.py`): per action type, suggest / ask the owner / act alone.
+   Approving re-runs the rules. Every step goes to the append-only audit log.
+
+```bash
+cd api
+python -m pheri.journey            # stage accuracy against the hidden truth in data/synth/*/_truth.json
+python -m pheri.decide brightdesk  # five mock decisions, no network
+```
+
 Keys go in `.env` (see `.env.example`), never in the repo. Every model call passes through
 `api/pheri/llm.py`, which enforces the spend caps and allows only synthetic data.
 

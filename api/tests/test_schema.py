@@ -1,13 +1,14 @@
 """db/schema.sql. The static checks always run; the real-Postgres checks need PHERI_TEST_DATABASE_URL."""
 
 import re
-import uuid
 
 import pytest
 
 from pheri.config import REPO_ROOT, Settings
 from pheri.ledger import _SCHEMA_SQLITE
 from pheri.synth import BUSINESS_IDS
+
+from conftest import throwaway_schema
 
 SQL = (REPO_ROOT / "db" / "schema.sql").read_text(encoding="utf-8")
 TABLES = re.findall(r"^CREATE TABLE (\w+) \(", SQL, re.M)
@@ -25,7 +26,7 @@ def _columns(sql: str, table: str) -> list[str]:
 # ---- static -------------------------------------------------------------------------
 def test_all_tables_exist():
     assert set(TABLES) == {"businesses", "customers", "events", "messages", "profiles", "rules", "actions",
-                           "approvals", "audit_log", "spend_ledger"}
+                           "approvals", "autonomy", "audit_log", "spend_ledger"}
 
 
 @pytest.mark.parametrize("table", TENANT_TABLES)
@@ -88,22 +89,12 @@ def _tx(pg, sql, params=None, *, role="pheri_app", business=None):
 @pytest.fixture(scope="module")
 def pg():
     psycopg = pytest.importorskip("psycopg")
-    schema = f"pheri_test_{uuid.uuid4().hex[:8]}"  # a throwaway schema, dropped afterwards
-    body = re.sub(r"^(BEGIN|COMMIT);$", "", SQL, flags=re.M)  # we hold the transaction ourselves
     with psycopg.connect(URL) as con:
         con.execute("SET LOCAL ROLE NONE")
         for (old,) in con.execute(r"SELECT nspname FROM pg_namespace WHERE nspname LIKE 'pheri\_test\_%'").fetchall():
             con.execute(f'DROP SCHEMA "{old}" CASCADE')  # left behind by an aborted earlier run
-        con.execute(f'CREATE SCHEMA "{schema}"')
-        con.execute(f'SET LOCAL search_path TO "{schema}"')
-        con.execute(body)
-        con.execute("GRANT pheri_app TO CURRENT_USER")  # so the tests can SET LOCAL ROLE pheri_app
-    try:
-        yield psycopg, schema
-    finally:
-        with psycopg.connect(URL) as con:
-            con.execute("SET LOCAL ROLE NONE")
-            con.execute(f'DROP SCHEMA "{schema}" CASCADE')
+    with throwaway_schema() as pg:
+        yield pg
 
 
 def _emails(pg, business=None):

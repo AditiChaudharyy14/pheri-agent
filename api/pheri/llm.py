@@ -13,6 +13,12 @@ Protocols (checked against https://dev.meta.ai/docs on 27 Oct 2026):
   baseten -> Muse Spark Open (open weights), Chat Completions, top-level `reasoning_effort`.
   modal   -> Muse Glimmer (open weights), Chat Completions.
 Reasoning tokens are billed as output, so `max_tokens` bounds reasoning + answer together.
+
+Tool loops (meta only): pass `tools` (flat function shape) and, after the first turn,
+`previous_response_id` with the `function_call_output` items. The server re-reads the whole
+conversation on every turn and bills it as input again, so a chained call is estimated against
+everything said so far, not only the new items. `tool_choice` is auto only: a turn may come back
+as plain text instead of a tool call or JSON, so with tools a bad parse is reported, not raised.
 """
 
 from __future__ import annotations
@@ -21,6 +27,7 @@ import json
 import math
 import random
 import time
+import uuid
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
@@ -33,6 +40,8 @@ from .pricing import cost_usd, price_for
 MAX_OUTPUT_TOKENS = 8192
 DEFAULT_OUTPUT_TOKENS = 1200
 MAX_ATTEMPTS = 3
+# A chained call whose earlier turns we did not see (another process): assume a long conversation.
+UNKNOWN_CONTEXT_TOKENS = 16_000
 RETRYABLE_STATUS = {429, 500, 502, 503}
 EFFORTS = {"minimal", "low", "medium", "high", "xhigh", "max"}
 
@@ -43,6 +52,13 @@ class DataPolicyError(RuntimeError):
 
 class ModelOutputError(RuntimeError):
     """Raised when a model's output does not match the schema we asked for."""
+
+
+@dataclass
+class FunctionCall:
+    name: str
+    arguments: str  # JSON text, exactly as the model wrote it
+    call_id: str
 
 
 @dataclass
@@ -58,10 +74,14 @@ class LLMResult:
     latency_s: float
     response_id: str | None = None
     raw: Any = field(default=None, repr=False)
+    function_calls: list[FunctionCall] = field(default_factory=list)
+    parse_error: str | None = None  # with tools: the reply was not the JSON we asked for
 
 
 # Mock responders let tests and offline demos run with zero network and zero spend.
-MockFn = Callable[[list[dict], dict | None], str]
+# A responder returns text, or {"function_calls": [{"name": ..., "arguments": {...}}]} to call tools.
+# In a tool loop it receives the whole conversation so far, as the real server sees it.
+MockFn = Callable[[list[dict], dict | None], "str | dict"]
 _mock_responders: dict[str, MockFn] = {}
 
 
@@ -72,15 +92,21 @@ def register_mock(purpose: str, fn: MockFn) -> None:
 def _estimate_input_tokens(messages: list[dict]) -> int:
     chars = 0
     for m in messages:
-        content = m.get("content")
+        content = m.get("content", m)  # tool items (function_call_output, ...) have no "content"
         chars += len(content) if isinstance(content, str) else len(json.dumps(content, ensure_ascii=False))
     # ~3 characters per token is pessimistic for English and fair for Devanagari; overestimating is the safe side.
     return math.ceil(chars / 3) + 16 * len(messages)
 
 
 # ---- request builders (pure functions, unit-tested) ------------------------------
-def build_responses_request(model, messages, max_tokens, schema, effort, cache_key) -> dict:
+def build_responses_request(model, messages, max_tokens, schema, effort, cache_key, tools=None,
+                            previous_response_id=None) -> dict:
     req: dict[str, Any] = {"model": model, "input": messages, "max_output_tokens": max_tokens}
+    if tools:
+        req["tools"] = tools
+        req["tool_choice"] = "auto"  # the only value Meta supports
+    if previous_response_id:
+        req["previous_response_id"] = previous_response_id
     if effort:
         req["reasoning"] = {"effort": effort}
     if schema is not None:
@@ -108,6 +134,8 @@ class LLM:
         self.settings = settings or get_settings()
         self.ledger = ledger or Ledger(self.settings)
         self._clients: dict[str, Any] = {}
+        self._context_tokens: dict[str, int] = {}  # response id -> tokens the next chained turn re-reads
+        self._mock_threads: dict[str, list[dict]] = {}  # mock only: the conversation behind a response id
 
     # ---- providers -------------------------------------------------------
     def _client(self, provider: str):
@@ -146,8 +174,12 @@ class LLM:
         data_class: str = "synthetic",
         allow_expensive: bool = False,
         temperature: float | None = None,
+        tools: list[dict] | None = None,
+        previous_response_id: str | None = None,
     ) -> LLMResult:
         model = model or self.default_model(provider)
+        if (tools or previous_response_id) and provider != "meta":
+            raise ValueError("Tool loops use the Responses API, which only the meta provider speaks here.")
         max_tokens = max(1, min(int(max_tokens), MAX_OUTPUT_TOKENS))
         if effort is not None and effort not in EFFORTS:
             raise ValueError(f"effort must be one of {sorted(EFFORTS)} (Meta rejects 'none').")
@@ -165,7 +197,10 @@ class LLM:
 
         # 2. Estimate and reserve the worst case (reasoning tokens bill as output, bounded by max_tokens).
         price = price_for(provider, model)
-        est = cost_usd(price, _estimate_input_tokens(messages), max_tokens)
+        est_in = _estimate_input_tokens(messages) + math.ceil(len(json.dumps(tools or [])) / 3)
+        if previous_response_id:
+            est_in += self._context_tokens.get(previous_response_id, UNKNOWN_CONTEXT_TOKENS)
+        est = cost_usd(price, est_in, max_tokens)
         if est > self.settings.max_call_usd and not allow_expensive:
             raise SpendCapExceeded(
                 f"Single call estimated at ${est:.4f} > per-call limit ${self.settings.max_call_usd:.2f}. "
@@ -176,11 +211,14 @@ class LLM:
         # 3. Call.
         start = time.monotonic()
         try:
+            calls: list[FunctionCall] = []
             if self.settings.llm_mode == "mock":
-                text, usage, raw, resp_id = *self._mock_call(messages, purpose, schema), None, None
+                text, usage, calls, resp_id = self._mock_call(messages, purpose, schema, tools, previous_response_id)
+                raw = None
             elif provider == "meta":
-                req = build_responses_request(model, messages, max_tokens, schema, effort, f"pheri-{purpose}")
-                text, usage, raw, resp_id = self._with_retries(lambda: self._responses(req))
+                req = build_responses_request(model, messages, max_tokens, schema, effort, f"pheri-{purpose}",
+                                              tools, previous_response_id)
+                text, usage, raw, resp_id, calls = self._with_retries(lambda: self._responses(req))
             else:
                 req = build_chat_request(model, messages, max_tokens, schema, effort, temperature)
                 text, usage, raw, resp_id = self._with_retries(lambda: self._chat(provider, req))
@@ -190,7 +228,7 @@ class LLM:
                 "APIConnectionError", "APITimeoutError")
             if self.settings.llm_mode != "mock" and maybe_billed:
                 # Timeout or server error: the provider may have billed us. Count the worst case.
-                self.ledger.settle(rid, est, _estimate_input_tokens(messages), 0, max_tokens)
+                self.ledger.settle(rid, est, est_in, 0, max_tokens)
             else:
                 # Never sent (missing key, bad config) or refused outright (4xx): nothing was billed.
                 self.ledger.release(rid)
@@ -201,9 +239,20 @@ class LLM:
         in_tok, cached_tok, out_tok = usage
         actual = 0.0 if self.settings.llm_mode == "mock" else cost_usd(price, in_tok, out_tok, cached_tok)
         self.ledger.settle(rid, actual, in_tok, cached_tok, out_tok)
+        if tools and resp_id:
+            self._context_tokens.pop(previous_response_id or "", None)  # our chains are linear
+            self._context_tokens[resp_id] = in_tok + out_tok
 
-        parsed = _parse(text, schema) if schema is not None else None
-        return LLMResult(text, parsed, provider, model, in_tok, cached_tok, out_tok, actual, latency, resp_id, raw)
+        parsed, parse_error = None, None
+        if schema is not None and not calls:
+            try:
+                parsed = _parse(text, schema)
+            except ModelOutputError as exc:
+                if not tools:
+                    raise
+                parse_error = str(exc)
+        return LLMResult(text, parsed, provider, model, in_tok, cached_tok, out_tok, actual, latency, resp_id, raw,
+                         calls, parse_error)
 
     # ---- transports -------------------------------------------------------
     def _responses(self, req: dict):
@@ -211,7 +260,9 @@ class LLM:
         u = resp.usage
         details = getattr(u, "input_tokens_details", None)
         cached = (getattr(details, "cached_tokens", 0) or 0) if details is not None else 0
-        return resp.output_text or "", (u.input_tokens or 0, cached, u.output_tokens or 0), resp, resp.id
+        calls = [FunctionCall(item.name, item.arguments or "{}", item.call_id)
+                 for item in (resp.output or []) if getattr(item, "type", None) == "function_call"]
+        return resp.output_text or "", (u.input_tokens or 0, cached, u.output_tokens or 0), resp, resp.id, calls
 
     def _chat(self, provider: str, req: dict):
         resp = self._client(provider).chat.completions.create(**req)
@@ -234,12 +285,31 @@ class LLM:
                 time.sleep(_retry_delay(exc, attempt))
         raise AssertionError("unreachable")
 
-    def _mock_call(self, messages, purpose, schema):
+    def _mock_call(self, messages, purpose, schema, tools=None, previous_response_id=None):
         fn = _mock_responders.get(purpose)
         if fn is None:
             raise RuntimeError(f"No mock responder registered for purpose {purpose!r}.")
-        text = fn(messages, schema.model_json_schema() if schema else None)
-        return text, (_estimate_input_tokens(messages), 0, math.ceil(len(text) / 3))
+        if previous_response_id and previous_response_id not in self._mock_threads:
+            raise RuntimeError(f"Unknown previous_response_id {previous_response_id!r}.")  # as the server would
+        thread = self._mock_threads.pop(previous_response_id, []) if previous_response_id else []
+        thread = thread + list(messages)
+        reply = fn(thread, schema.model_json_schema() if schema else None)
+        calls: list[FunctionCall] = []
+        if isinstance(reply, dict):
+            calls = [FunctionCall(c["name"], c["arguments"] if isinstance(c["arguments"], str)
+                                  else json.dumps(c["arguments"], ensure_ascii=False), f"call_{uuid.uuid4().hex[:12]}")
+                     for c in reply.get("function_calls", [])]
+            text = reply.get("text", "")
+        else:
+            text = reply
+        out_items = ([{"type": "function_call", "name": c.name, "arguments": c.arguments, "call_id": c.call_id}
+                      for c in calls] or [{"role": "assistant", "content": text}])
+        usage = (_estimate_input_tokens(thread), 0, math.ceil(len(json.dumps(out_items, ensure_ascii=False)) / 3))
+        resp_id = None
+        if tools:  # only tool loops chain, so only they keep a thread
+            resp_id = f"mock_{uuid.uuid4().hex[:12]}"
+            self._mock_threads[resp_id] = thread + out_items
+        return text, usage, calls, resp_id
 
 
 def _retry_delay(exc: Exception, attempt: int) -> float:

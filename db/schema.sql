@@ -113,10 +113,13 @@ CREATE TABLE rules (
     business_id  uuid NOT NULL REFERENCES businesses (id),
     name         text NOT NULL,
     source_text  text NOT NULL,                 -- the owner's own words
-    compiled     jsonb NOT NULL,                -- what code checks
-    active       boolean NOT NULL DEFAULT true,
+    compiled     jsonb NOT NULL,                -- what code checks, and code's own description of it
+    active       boolean NOT NULL DEFAULT false,  -- enforced only once the owner confirms
+    confirmed_by text,
+    confirmed_at timestamptz,
     created_at   timestamptz NOT NULL DEFAULT now(),
-    UNIQUE (business_id, id)
+    UNIQUE (business_id, id),
+    CONSTRAINT rules_active_needs_confirmation CHECK (NOT active OR confirmed_at IS NOT NULL)
 );
 
 CREATE TABLE actions (
@@ -126,9 +129,12 @@ CREATE TABLE actions (
     kind         text NOT NULL,                 -- send_message, offer, task_for_owner, ...
     payload      jsonb NOT NULL DEFAULT '{}',
     why          text,                          -- "why this, why now"
+    evidence     jsonb NOT NULL DEFAULT '[]',   -- the profile facts and quotes behind `why`, checked in code
+    mode         text CHECK (mode IN ('suggest', 'ask_owner', 'act_alone')),  -- autonomy dial when decided
     rule_check   jsonb,                         -- result of the code check, rule by rule
     status       text NOT NULL DEFAULT 'proposed' CHECK (status IN
-                     ('proposed', 'blocked', 'awaiting_approval', 'approved', 'rejected', 'executed', 'failed')),
+                     ('proposed', 'blocked', 'suggested', 'awaiting_approval', 'approved', 'rejected', 'executed',
+                      'failed')),
     created_at   timestamptz NOT NULL DEFAULT now(),
     executed_at  timestamptz,
     UNIQUE (business_id, id),
@@ -144,7 +150,18 @@ CREATE TABLE approvals (
     note          text,
     requested_at  timestamptz NOT NULL DEFAULT now(),
     decided_at    timestamptz,
+    UNIQUE (business_id, action_id),            -- one approval per action
     FOREIGN KEY (business_id, action_id) REFERENCES actions (business_id, id)
+);
+
+-- The autonomy dial, per action type. No row means the default in pheri/autonomy.py.
+CREATE TABLE autonomy (
+    business_id  uuid NOT NULL REFERENCES businesses (id),
+    action_kind  text NOT NULL,
+    mode         text NOT NULL CHECK (mode IN ('suggest', 'ask_owner', 'act_alone')),
+    updated_by   text NOT NULL,
+    updated_at   timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (business_id, action_kind)
 );
 
 -- ---- append-only audit log -------------------------------------------------------
@@ -232,6 +249,11 @@ ALTER TABLE approvals FORCE ROW LEVEL SECURITY;
 CREATE POLICY tenant_isolation ON approvals
     USING (business_id = app_business_id()) WITH CHECK (business_id = app_business_id());
 
+ALTER TABLE autonomy ENABLE ROW LEVEL SECURITY;
+ALTER TABLE autonomy FORCE ROW LEVEL SECURITY;
+CREATE POLICY tenant_isolation ON autonomy
+    USING (business_id = app_business_id()) WITH CHECK (business_id = app_business_id());
+
 ALTER TABLE audit_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_log FORCE ROW LEVEL SECURITY;
 CREATE POLICY tenant_isolation ON audit_log
@@ -253,6 +275,7 @@ GRANT SELECT, INSERT, UPDATE ON profiles TO pheri_app;
 GRANT SELECT, INSERT, UPDATE ON rules TO pheri_app;
 GRANT SELECT, INSERT, UPDATE ON actions TO pheri_app;
 GRANT SELECT, INSERT, UPDATE ON approvals TO pheri_app;
+GRANT SELECT, INSERT, UPDATE ON autonomy TO pheri_app;
 GRANT SELECT, INSERT ON audit_log TO pheri_app;
 GRANT SELECT, INSERT, UPDATE ON spend_ledger TO pheri_app;
 

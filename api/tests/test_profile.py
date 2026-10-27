@@ -1,0 +1,234 @@
+"""Feature 1, any data -> one profile. Mock mode only: no network, no spend."""
+
+import csv
+import json
+from datetime import date
+
+import pytest
+
+from pheri import llm as llm_module
+from pheri.config import Settings
+from pheri.llm import LLM
+from pheri.profile import (PURPOSE, SYSTEM, build_profile, build_profiles, load, load_brightdesk, norm_email,
+                           parse_date, quote_in_source)
+from pheri.synth import OUT
+
+MAYA = "maya.okafor@pinecrest.example"
+EMPTY = {"needs": [], "blockers": [], "sentiment": None, "language": None}
+
+
+@pytest.fixture
+def llm(tmp_path, monkeypatch):
+    monkeypatch.setenv("PHERI_LLM_MODE", "mock")
+    monkeypatch.setenv("PHERI_LEDGER_PATH", str(tmp_path / "ledger.sqlite"))
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    return LLM(Settings())
+
+
+@pytest.fixture(scope="module")
+def brightdesk():
+    return load("brightdesk")
+
+
+@pytest.fixture(scope="module")
+def kettle():
+    return load("kettle")
+
+
+def _model_replies(monkeypatch, reply):
+    """Swap the mock model for one call shape; `reply` is a dict or a function of the messages."""
+    fn = reply if callable(reply) else (lambda messages: reply)
+    monkeypatch.setitem(llm_module._mock_responders, PURPOSE,
+                        lambda messages, schema: json.dumps(fn(messages), ensure_ascii=False))
+
+
+# ---- the hero ---------------------------------------------------------------------
+def test_maya_is_stuck_on_csv_exports_and_12_days_quiet(brightdesk, llm):
+    p = build_profile(brightdesk, MAYA, llm)
+
+    assert p.facts["days_quiet"] == 12
+    assert p.facts["failed_exports"] == 5
+    assert p.facts["open_tickets"] == 2
+    assert p.facts["days_since_signup"] == 22
+    assert len(p.provenance["facts"]["failed_exports"]) == 5
+
+    csv_blockers = [b for b in p.insights["blockers"] if "csv" in (b["label"] + b["quote"]).lower()]
+    assert csv_blockers, p.insights["blockers"]
+    assert {b["source_id"] for b in csv_blockers} == {"T0999"}
+    assert p.insights["sentiment"]["label"] == "negative"
+    assert p.insights["language"]["code"] == "en"
+    assert p.provenance["dropped"] == []
+    # The sales note names her without an email, and still lands on her profile.
+    assert "sales_notes.txt#L41" in p.provenance["sources"]
+
+
+def test_facts_come_from_code_not_the_model(brightdesk, llm, monkeypatch):
+    _model_replies(monkeypatch, EMPTY)
+    p = build_profile(brightdesk, MAYA, llm)
+    assert p.insights == EMPTY
+    assert (p.facts["days_quiet"], p.facts["failed_exports"], p.facts["open_tickets"]) == (12, 5, 2)
+
+
+# ---- identity -----------------------------------------------------------------------
+def test_emails_and_dates_are_normalised():
+    assert norm_email("  Maya.Okafor@Pinecrest.Example ") == MAYA
+    assert norm_email("MAYA.OKAFOR@PINECREST.EXAMPLE") == MAYA
+    assert parse_date("08/10/2026") == date(2026, 10, 8)  # day-first, as the CRM exports it
+    assert parse_date("2026-10-08") == date(2026, 10, 8)
+
+
+def test_brightdesk_resolves_every_record(brightdesk):
+    truth = json.loads((OUT / "brightdesk" / "_truth.json").read_text(encoding="utf-8"))["stages"]
+    assert set(brightdesk.customers) == set(truth)
+    assert len(brightdesk.duplicates) == 8  # the CRM's duplicate rows merged, not double-counted
+    assert brightdesk.unresolved == []
+    assert "  Maya.Okafor@Pinecrest.Example " in brightdesk.customers[MAYA].aliases
+
+
+def test_kettle_resolves_every_record(kettle):
+    truth = json.loads((OUT / "kettle" / "_truth.json").read_text(encoding="utf-8"))["stages"]
+    assert len(truth) == 300
+    assert set(kettle.customers) == set(truth)
+    assert kettle.ambiguous == set()
+    assert kettle.unresolved == []
+
+
+def test_shared_email_with_different_names_is_set_aside_not_merged(tmp_path):
+    (tmp_path / "customers.csv").write_text(
+        "id,email,first_name,last_name,country,joined,subscription,marketing_opt_in\n"
+        "kc_0001,sam7@mail.example,Sam,Rai,NP,2026-01-01,,\n"
+        "kc_0002, SAM7@mail.example ,Sam,Lee,KE,2026-02-01,,\n", encoding="utf-8")
+    (tmp_path / "orders.csv").write_text(
+        "order_id,email,date,items,total_usd,country\n5001,sam7@mail.example,2026-03-01,Sencha,16,NP\n",
+        encoding="utf-8")
+    ds = load("kettle", tmp_path)
+    assert ds.customers == {} and ds.ambiguous == {"sam7@mail.example"}
+    assert {u["ref"] for u in ds.unresolved} == {"customers.csv#L2", "customers.csv#L3", "orders.csv#L2"}
+
+
+def test_sales_notes_match_names_or_stay_unresolved(tmp_path):
+    rows = [("Maya Okafor", "maya@pinecrest.example", "Pinecrest Design Co."),
+            ("Ana Lima", "ana@harbor.example", "Harbor Labs"),
+            ("Ana Lima", "ana.lima@harbor.example", "Harbor Media"),
+            ("Ben Ode", "ben@kestrel.example", "Kestrel Labs")]
+    with (tmp_path / "crm_export.csv").open("w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["Customer Name", "E-mail", "Company", "Plan", "Seats", "Signed Up", "Country", "MRR (USD)",
+                    "Renewal"])
+        for name, email, company in rows:
+            w.writerow([name, email, company, "Team", 5, "2026-10-01", "UK", 195, "2026-11-01"])
+    (tmp_path / "sales_notes.txt").write_text("\n".join([
+        "2026-10-10 - Kickoff call with Maya Okafor (Pinecrest). Asked about CSV export.",
+        "2026-10-11 - Call with Maya Okafor (Harbor). Wants SSO.",
+        "2026-10-12 - Call with Ana Lima (Harbor). Wants SSO.",
+        "2026-10-13 - Call with Zed Nobody (Granite). Wants SSO.",
+        "2026-10-14 - Call with MAYA  OKAFOR (pinecrest). Uses reports daily.",
+        "2026-10-15 - Met Dr Maya Okafor (Pinecrest) again.",
+    ]) + "\n", encoding="utf-8")
+
+    ds = load_brightdesk(tmp_path)
+    maya = ds.customers["maya@pinecrest.example"]
+    assert [s.id for s in maya.sources] == ["sales_notes.txt#L1", "sales_notes.txt#L5", "sales_notes.txt#L6"]
+    reasons = {u["ref"]: u["reason"] for u in ds.unresolved}
+    assert set(reasons) == {"sales_notes.txt#L2", "sales_notes.txt#L3", "sales_notes.txt#L4"}
+    assert "not at" in reasons["sales_notes.txt#L2"]
+    assert "2 customers named" in reasons["sales_notes.txt#L3"]
+    assert "no customer named" in reasons["sales_notes.txt#L4"]
+    assert ds.customers["ben@kestrel.example"].sources == []
+
+
+# ---- evidence ---------------------------------------------------------------------
+def test_quote_check_is_exact_but_forgives_typography():
+    text = "Can't connect our email inbox\nThe Gmail connector says 'permission denied' after login."
+    assert quote_in_source("Can’t connect our  email inbox", text)
+    assert quote_in_source("“permission denied' after login…”", text)
+    assert not quote_in_source("can't connect our email inbox", text)  # case matters
+    assert not quote_in_source("Can't connect our Outlook inbox", text)
+    assert not quote_in_source("The", text)  # too short to prove anything
+    assert quote_in_source("exportación a CSV", "La exportación a CSV falla")  # Unicode form
+
+
+def test_quotes_not_really_in_the_source_are_dropped(brightdesk, llm, monkeypatch):
+    _model_replies(monkeypatch, {
+        "needs": [{"label": "Wants a discount", "quote": "Please give us 50% off", "source_id": "T0999"}],
+        "blockers": [
+            {"label": "CSV export", "quote": "it fails at 90%", "source_id": "T0999"},
+            {"label": "Gmail", "quote": "it fails at 90%", "source_id": "T1001"},
+            {"label": "SSO", "quote": "Our IT team can't find where to paste the SAML metadata.", "source_id": "T1013"},
+            {"label": "Invented", "quote": "Nothing works at all", "source_id": "T4242"},
+        ],
+        "sentiment": {"label": "negative", "quote": "We need this for our Monday review.", "source_id": "T0999"},
+        "language": {"code": "es", "quote": "Exports keep failing", "source_id": "T0999"},
+    })
+    p = build_profile(brightdesk, MAYA, llm)
+
+    assert p.insights["blockers"] == [{"label": "CSV export", "quote": "it fails at 90%", "source_id": "T0999"}]
+    assert p.insights["needs"] == []
+    assert p.insights["sentiment"]["label"] == "negative"
+    assert p.insights["language"] is None
+    reasons = {(d["kind"], d["source_id"]): d["reason"] for d in p.provenance["dropped"]}
+    assert reasons == {
+        ("needs", "T0999"): "quote not found in T0999",
+        ("blockers", "T1001"): "quote not found in T1001",  # real quote, wrong source
+        ("blockers", "T1013"): "'T1013' is not one of this customer's sources",  # another customer's ticket
+        ("blockers", "T4242"): "'T4242' is not one of this customer's sources",
+        ("language", "T0999"): "T0999 is tagged 'en', not 'es'",
+    }
+
+
+def test_language_must_come_from_the_customer(brightdesk, llm, monkeypatch):
+    _model_replies(monkeypatch, {**EMPTY, "language": {
+        "code": "en", "quote": "Kickoff call with Maya Okafor", "source_id": "sales_notes.txt#L41"}})
+    p = build_profile(brightdesk, MAYA, llm)
+    assert p.insights["language"] is None
+    assert p.provenance["dropped"][0]["reason"] == "sales_notes.txt#L41 was not written by the customer"
+
+
+def test_customer_text_is_sent_as_data_never_as_instructions(brightdesk, llm, monkeypatch):
+    seen = []
+    _model_replies(monkeypatch, lambda messages: seen.append(messages) or EMPTY)
+    build_profile(brightdesk, "chen.shrestha@pinecrest.example", llm)
+
+    system, user = seen[0]
+    assert system == {"role": "system", "content": SYSTEM}  # fixed: nothing from the customer
+    sources = json.loads(user["content"])["sources"]
+    attack = next(s for s in sources if s["id"] == "T1099")
+    assert "SYSTEM OVERRIDE" in attack["text"]  # carried inside a JSON string, as data
+
+
+def test_customer_with_nothing_to_read_costs_no_call(brightdesk, llm, monkeypatch):
+    def must_not_run(messages):
+        raise AssertionError("model called with no sources")
+
+    _model_replies(monkeypatch, must_not_run)
+    quiet = next(k for k, c in brightdesk.customers.items() if not c.sources)
+    p = build_profile(brightdesk, quiet, llm)
+    assert p.insights == EMPTY and p.model is None
+    assert p.facts["failed_exports"] >= 0
+
+
+# ---- Kettle & Co --------------------------------------------------------------------
+def test_kettle_profile_counts_orders_across_spellings(kettle, llm):
+    email = "isha.ali35@mail.example"
+    with (OUT / "kettle" / "orders.csv").open(newline="", encoding="utf-8") as f:
+        raw = [r for r in csv.DictReader(f) if r["email"].strip().lower() == email]
+    p = build_profile(kettle, email, llm)
+
+    assert len(raw) >= 2
+    assert p.facts["orders"] == len(raw)
+    assert p.facts["total_spend_usd"] == round(sum(float(r["total_usd"]) for r in raw), 2)
+    assert "  Isha.Ali35@Mail.Example " in p.provenance["identity"]["aliases"]
+    json.dumps(p.as_dict())  # profiles are plain JSON, ready for the profiles table
+
+
+def test_every_kettle_customer_gets_a_profile(kettle, llm):
+    profiles = build_profiles(kettle, llm, limit=len(kettle.customers))
+    assert len(profiles) == 300
+    assert {p.customer_key for p in profiles} == set(kettle.customers)
+    assert all(p.provenance["dropped"] == [] for p in profiles)  # the mock only quotes real text
+
+
+def test_small_sample_by_default(kettle, llm):
+    profiles = build_profiles(kettle, llm)
+    assert len(profiles) == 20
+    assert llm.ledger.totals("meta").settled_usd == 0  # mock mode spends nothing

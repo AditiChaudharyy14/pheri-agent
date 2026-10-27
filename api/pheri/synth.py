@@ -23,6 +23,11 @@ from .config import REPO_ROOT
 TODAY = date(2026, 10, 30)
 SEED = 20261027
 OUT = REPO_ROOT / "data" / "synth"
+# Fixed tenant ids, seeded in db/schema.sql, so every demo run is identical.
+BUSINESS_IDS = {
+    "brightdesk": "b5d1e5c0-0000-4000-8000-000000000001",
+    "kettle": "ce771e00-0000-4000-8000-000000000002",
+}
 
 FIRST = [
     "Maya", "Liam", "Aarav", "Sofia", "Kenji", "Amara", "Lucas", "Priya", "Mateo", "Hana", "Omar", "Elena",
@@ -251,7 +256,9 @@ def kettle(rng: random.Random) -> dict:
     oid = 5000
     for i in range(300):
         first, last = _name(rng, used)
-        email = f"{first.lower()}{rng.randint(1, 99)}@mail.example"
+        # first.last is unique per business (see _name), so the email is too. Same single draw as
+        # before, so every later random number, and every other field, stays exactly the same.
+        email = f"{first.lower()}.{last.lower()}{rng.randint(1, 99)}@mail.example"
         stage = rng.choices(KETTLE_STAGES, weights=[14, 20, 16, 22, 18, 10])[0]
         country = rng.choice(COUNTRIES)
         joined = TODAY - timedelta(days={"new": rng.randint(1, 20)}.get(stage, rng.randint(40, 600)))

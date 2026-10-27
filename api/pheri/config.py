@@ -86,6 +86,8 @@ class Settings:
     # Ledger storage: Postgres when DATABASE_URL is set, else a local SQLite file.
     database_url: str | None = _env("DATABASE_URL")
     ledger_path: str = _env("PHERI_LEDGER_PATH", str(REPO_ROOT / ".pheri" / "ledger.sqlite"))
+    # A throwaway Postgres (Neon test branch) for the real RLS tests. Unset: those tests skip.
+    test_database_url: str | None = _env("PHERI_TEST_DATABASE_URL")
 
     # Data policy: free-credit and contributor-mode content may be used by Meta to improve
     # products, so by default only synthetic data may be sent to any model.

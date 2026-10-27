@@ -1,0 +1,249 @@
+Customer Name,E-mail,Company,Plan,Seats,Signed Up,Country,MRR (USD),Renewal
+Sipho Rao,  Sipho.Rao@Juniper.Example ,Juniper Legal,Starter,8,07/02/2025,JP,120,2026-11-29
+Bikash Rao,bikash.rao@tidewater.example,Tidewater Legal,Starter,4,2025-06-24,UK,60,2026-11-16
+Ravi Costa,  Ravi.Costa@Copperline.Example ,Copperline Travel,Business,78,02/08/2025,AU,6162,2026-11-25
+Sofia Lopez,sofia.lopez@meadowbrook.example,Meadowbrook Robotics,Team,2,07/03/2026,ZA,78,2026-11-02
+Kenji Gupta,kenji.gupta@northgate.example,Northgate Robotics,Business,53,2025-07-20,SE,4187,2026-11-12
+Aarav Silva,aarav.silva@granite.example,Granite Foods,Team,3,27/10/2026,DE,117,2026-11-26
+Diego Weber,diego.weber@brightwater.example,Brightwater Travel,Starter,5,2025-08-18,AE,75,2026-11-11
+Ken Silva,ken.silva@northgate.example,Northgate Travel,Starter,6,01/09/2026,UK,90,2026-10-31
+Maya Asante,maya.asante@harbor.example,Harbor Robotics,Team,3,2026-03-12,NP,117,2026-11-07
+Diego Vargas,DIEGO.VARGAS@SILVERLEAF.EXAMPLE,Silverleaf Retail,Team,10,2025-12-06,CA,390,2026-11-01
+Ethan Berg,ethan.berg@juniper.example,Juniper Studio,Business,64,2026-07-19,NG,5056,2026-11-16
+Kwame Weber,kwame.weber@brightwater.example,Brightwater Architects,Team,9,17/10/2026,NP,351,2026-11-16
+Hana Nasser,hana.nasser@harbor.example,Harbor Analytics,Starter,7,2025-08-16,IN,105,2026-11-09
+Camila Wang,camila.wang@bluefield.example,Bluefield Labs,Business,27,2025-08-15,SE,2133,2026-11-08
+Zara Dlamini,zara.dlamini@harbor.example,Harbor Architects,Starter,6,2026-08-12,BR,90,2026-11-10
+Maya Dlamini,maya.dlamini@copperline.example,Copperline Travel,Business,19,06/12/2025,IN,1501,2026-11-01
+Isha Kim,  Isha.Kim@Northgate.Example ,Northgate Health Supplies,Business,49,18/07/2025,ES,3871,2026-11-10
+Leila Lindqvist,leila.lindqvist@northgate.example,Northgate Logistics,Team,5,12/04/2025,KE,195,2026-11-03
+Noah Karimi,noah.karimi@amberlane.example,Amberlane Labs,Business,57,03/06/2025,AU,4503,2026-11-25
+Ingrid Patel,INGRID.PATEL@NORTHGATE.EXAMPLE,Northgate Legal,Team,8,16/07/2025,ZA,312,2026-11-08
+Tariq Garcia,tariq.garcia@larkspur.example,Larkspur Logistics,Team,4,2025-03-27,KE,156,2026-11-17
+Pablo Rahman,pablo.rahman@saffron.example,Saffron Logistics,Team,12,2026-10-17,US,468,2026-11-16
+Pablo Nasser,  Pablo.Nasser@Brightwater.Example ,Brightwater Labs,Team,11,12/02/2026,JP,429,2026-11-09
+Erik Sato,erik.sato@northgate.example,Northgate Ventures,Starter,12,2026-10-26,SE,180,2026-11-25
+Priya Berg,priya.berg@copperline.example,Copperline Robotics,Team,8,28/08/2026,ES,312,2026-11-26
+Diego Sato,diego.sato@tidewater.example,Tidewater Travel,Starter,9,15/11/2025,ES,135,2026-11-10
+Camila Tanaka,  Camila.Tanaka@Larkspur.Example ,Larkspur Travel,Starter,2,2025-02-01,FR,30,2026-11-23
+Diego Garcia,  Diego.Garcia@Pinecrest.Example ,Pinecrest Health Supplies,Starter,7,24/06/2025,BR,105,2026-11-16
+Isha Owusu,isha.owusu@larkspur.example,Larkspur Labs,Team,9,2026-10-07,FR,351,2026-11-06
+Mateo Lopez,mateo.lopez@juniper.example,Juniper Travel,Team,10,17/10/2026,MX,390,2026-11-16
+Erik Adeyemi,ERIK.ADEYEMI@PINECREST.EXAMPLE,Pinecrest Ventures,Team,10,2026-10-25,KE,390,2026-11-24
+Ravi Novak,ravi.novak@tidewater.example,Tidewater Studio,Team,11,2026-10-23,ZA,429,2026-11-22
+Sita Garcia,SITA.GARCIA@AMBERLANE.EXAMPLE,Amberlane Retail,Team,12,2026-04-27,US,468,2026-11-23
+Kenji Kim,kenji.kim@silverleaf.example,Silverleaf Foods,Team,12,2025-05-31,NG,468,2026-11-22
+Chen Shrestha,chen.shrestha@pinecrest.example,Pinecrest Robotics,Starter,11,23/06/2026,AU,165,2026-11-20
+Lea Gurung,lea.gurung@tidewater.example,Tidewater Media,Business,31,2026-01-22,IN,2449,2026-11-18
+Nadia Dlamini,nadia.dlamini@kestrel.example,Kestrel Health Supplies,Team,3,31/03/2026,NG,117,2026-11-26
+Kwame Asante,kwame.asante@bluefield.example,Bluefield Health Supplies,Starter,6,25/04/2026,ZA,90,2026-11-21
+Priya Silva,priya.silva@northgate.example,Northgate Media,Business,60,2025-01-08,NP,4740,2026-11-29
+Elena Mensah,elena.mensah@silverleaf.example,Silverleaf Legal,Team,3,24/09/2026,NP,117,2026-11-23
+Mateo Nielsen,mateo.nielsen@northgate.example,Northgate Travel,Team,6,2026-10-09,ES,234,2026-11-08
+Kenji Garcia,kenji.garcia@pinecrest.example,Pinecrest Media,Starter,11,13/08/2025,KE,165,2026-11-06
+Lea Joshi,lea.joshi@brightwater.example,Brightwater Design Co.,Starter,5,04/06/2026,MX,75,2026-11-01
+Hana Dlamini,HANA.DLAMINI@BRIGHTWATER.EXAMPLE,Brightwater Studio,Team,4,24/04/2026,SG,156,2026-11-20
+Diego Bello,  Diego.Bello@Riverstone.Example ,Riverstone Travel,Business,71,2025-02-25,MX,5609,2026-11-17
+Chen Nielsen,chen.nielsen@pinecrest.example,Pinecrest Foods,Team,11,27/09/2025,US,429,2026-11-21
+Fatima Haddad,fatima.haddad@granite.example,Granite Labs,Team,6,08/06/2026,SG,234,2026-11-05
+Sita Iyer,  Sita.Iyer@Tidewater.Example ,Tidewater Learning,Business,30,04/06/2025,SG,2370,2026-11-26
+Freya Sharma,freya.sharma@juniper.example,Juniper Health Supplies,Starter,6,23/05/2025,CA,90,2026-11-14
+Omar Rossi,omar.rossi@juniper.example,Juniper Health Supplies,Starter,3,06/07/2025,NG,45,2026-11-28
+Amara Dubois,amara.dubois@brightwater.example,Brightwater Clinics Admin,Team,7,2026-03-12,CA,273,2026-11-07
+Rosa Kim,rosa.kim@copperline.example,Copperline Logistics,Business,13,19/12/2024,ES,1027,2026-11-09
+Marco Brown,  Marco.Brown@Meadowbrook.Example ,Meadowbrook Legal,Starter,2,2026-06-06,ES,30,2026-11-03
+Yuki Gurung,YUKI.GURUNG@TIDEWATER.EXAMPLE,Tidewater Ventures,Starter,7,2026-06-17,BR,105,2026-11-14
+Maya Kim,maya.kim@saffron.example,Saffron Labs,Team,10,2025-11-29,ZA,390,2026-11-24
+Elena Lindqvist,  Elena.Lindqvist@Riverstone.Example ,Riverstone Retail,Starter,10,2026-08-19,MX,150,2026-11-17
+Jonas Lindqvist,jonas.lindqvist@brightwater.example,Brightwater Architects,Starter,9,27/09/2026,CA,135,2026-11-26
+Hana Owusu,  Hana.Owusu@Copperline.Example ,Copperline Media,Starter,9,2025-11-12,BR,135,2026-11-07
+Priya Wang,PRIYA.WANG@AMBERLANE.EXAMPLE,Amberlane Logistics,Team,2,06/08/2026,ZA,78,2026-11-04
+Jonas Rossi,jonas.rossi@amberlane.example,Amberlane Architects,Starter,8,01/06/2025,BR,120,2026-11-23
+Ama Mensah,AMA.MENSAH@BLUEFIELD.EXAMPLE,Bluefield Learning,Starter,2,19/09/2026,ES,30,2026-11-18
+Lucas Adeyemi,lucas.adeyemi@meadowbrook.example,Meadowbrook Travel,Team,12,2025-03-25,NG,468,2026-11-15
+Kenji Lopez,KENJI.LOPEZ@COPPERLINE.EXAMPLE,Copperline Clinics Admin,Business,37,2026-04-06,ZA,2923,2026-11-02
+Kenji Nielsen,KENJI.NIELSEN@LARKSPUR.EXAMPLE,Larkspur Design Co.,Team,6,2026-06-21,JP,234,2026-11-18
+Ethan Brown,ethan.brown@tidewater.example,Tidewater Media,Starter,12,22/04/2026,DE,180,2026-11-18
+Fatima Berg,fatima.berg@amberlane.example,Amberlane Foods,Team,10,06/03/2026,AU,390,2026-11-01
+Tomas Sharma,TOMAS.SHARMA@BRIGHTWATER.EXAMPLE,Brightwater Studio,Starter,2,2025-05-27,DE,30,2026-11-18
+Anjali Sharma,anjali.sharma@larkspur.example,Larkspur Analytics,Business,40,12/02/2026,MX,3160,2026-11-09
+Camila Ali,camila.ali@larkspur.example,Larkspur Design Co.,Starter,3,2026-10-29,NP,45,2026-11-28
+Ken Sharma,  Ken.Sharma@Silverleaf.Example ,Silverleaf Ventures,Starter,10,2026-04-11,IN,150,2026-11-07
+Ama Ruiz,ama.ruiz@silverleaf.example,Silverleaf Design Co.,Starter,9,2025-03-08,SG,135,2026-11-28
+Ingrid Sato,INGRID.SATO@TIDEWATER.EXAMPLE,Tidewater Architects,Business,79,05/09/2025,KE,6241,2026-11-29
+Ravi Bello,ravi.bello@tidewater.example,Tidewater Learning,Team,4,2025-12-13,FR,156,2026-11-08
+Pablo Joshi,pablo.joshi@copperline.example,Copperline Robotics,Team,4,10/07/2025,NP,156,2026-11-02
+Sipho Brown,  Sipho.Brown@Meadowbrook.Example ,Meadowbrook Logistics,Business,58,20/04/2026,AU,4582,2026-11-16
+Anika Moreno,anika.moreno@bluefield.example,Bluefield Foods,Business,70,26/02/2025,BR,5530,2026-11-18
+Nia Larsen,nia.larsen@amberlane.example,Amberlane Foods,Team,9,2025-04-10,UK,351,2026-11-01
+Sofia Ruiz,SOFIA.RUIZ@GRANITE.EXAMPLE,Granite Logistics,Starter,10,2025-04-27,JP,150,2026-11-18
+Nia Kim,nia.kim@granite.example,Granite Media,Starter,6,2026-10-07,AU,90,2026-11-06
+Sunita Vargas,sunita.vargas@northgate.example,Northgate Travel,Business,20,2025-09-29,NP,1580,2026-11-23
+Ravi Vargas,ravi.vargas@granite.example,Granite Health Supplies,Team,6,2026-01-06,ES,234,2026-11-02
+Ingrid Qureshi,ingrid.qureshi@bluefield.example,Bluefield Travel,Starter,12,2025-04-14,ZA,180,2026-11-05
+Kenji Joshi,kenji.joshi@riverstone.example,Riverstone Analytics,Team,8,14/07/2025,ZA,312,2026-11-06
+Diego Novak,  Diego.Novak@Amberlane.Example ,Amberlane Travel,Team,11,2026-10-29,US,429,2026-11-28
+Nia Novak,nia.novak@riverstone.example,Riverstone Health Supplies,Team,8,03/10/2025,NP,312,2026-11-27
+Diego Vargas,  Diego.Vargas@Silverleaf.Example ,Silverleaf Retail,Team,10,2025-12-06,CA,390,2026-11-01
+Amara Dlamini,amara.dlamini@silverleaf.example,Silverleaf Architects,Team,7,2026-10-17,AE,273,2026-11-16
+Zara Shrestha,zara.shrestha@brightwater.example,Brightwater Labs,Starter,9,01/04/2025,AU,135,2026-11-22
+Mei Lindqvist,mei.lindqvist@bluefield.example,Bluefield Logistics,Starter,6,22/07/2026,SE,90,2026-11-19
+Fatima Ali,fatima.ali@tidewater.example,Tidewater Foods,Team,10,2025-10-10,NG,390,2026-11-04
+Maya Garcia,  Maya.Garcia@Tidewater.Example ,Tidewater Foods,Business,75,25/06/2025,SE,5925,2026-11-17
+Anika Mensah,ANIKA.MENSAH@RIVERSTONE.EXAMPLE,Riverstone Health Supplies,Starter,11,14/11/2025,AU,165,2026-11-09
+Ethan Bello,ethan.bello@tidewater.example,Tidewater Health Supplies,Team,5,2026-01-08,ZA,195,2026-11-04
+Camila Joshi,camila.joshi@brightwater.example,Brightwater Health Supplies,Team,12,06/12/2025,ZA,468,2026-11-01
+Marco Patel,marco.patel@pinecrest.example,Pinecrest Health Supplies,Team,2,2026-04-29,AE,78,2026-11-25
+Ethan Garcia,ethan.garcia@amberlane.example,Amberlane Design Co.,Team,3,2025-09-13,FR,117,2026-11-07
+Bikash Ruiz,bikash.ruiz@pinecrest.example,Pinecrest Robotics,Business,38,29/10/2026,ZA,3002,2026-11-28
+Bilal Owusu,bilal.owusu@harbor.example,Harbor Ventures,Team,6,2026-10-27,ES,234,2026-11-26
+Camila Asante,camila.asante@harbor.example,Harbor Foods,Business,71,2026-03-30,SE,5609,2026-11-25
+Kwame Lindqvist,kwame.lindqvist@harbor.example,Harbor Learning,Business,67,16/04/2025,AE,5293,2026-11-07
+Jonas Karimi,  Jonas.Karimi@Tidewater.Example ,Tidewater Clinics Admin,Starter,3,03/03/2025,SE,45,2026-11-23
+Tariq Patel,tariq.patel@larkspur.example,Larkspur Retail,Starter,12,2026-10-28,BR,180,2026-11-27
+Sipho Gurung,sipho.gurung@silverleaf.example,Silverleaf Clinics Admin,Team,5,2025-03-15,KE,195,2026-11-05
+Marco Thapa,MARCO.THAPA@SAFFRON.EXAMPLE,Saffron Robotics,Starter,8,31/10/2025,US,120,2026-11-25
+Maya Gurung,maya.gurung@juniper.example,Juniper Architects,Business,18,2025-08-01,BR,1422,2026-11-24
+Nia Ruiz,nia.ruiz@brightwater.example,Brightwater Logistics,Starter,6,30/11/2024,BR,90,2026-11-20
+Fatima Adeyemi,fatima.adeyemi@amberlane.example,Amberlane Media,Business,11,12/03/2025,IN,869,2026-11-02
+Nadia Thapa,nadia.thapa@riverstone.example,Riverstone Studio,Business,50,2025-10-11,AU,3950,2026-11-05
+Sita Sharma,sita.sharma@granite.example,Granite Labs,Team,5,2025-07-11,BR,195,2026-11-03
+Aarav Berg,  Aarav.Berg@Saffron.Example ,Saffron Studio,Starter,10,08/07/2026,IN,150,2026-11-05
+Ingrid Lin,ingrid.lin@amberlane.example,Amberlane Clinics Admin,Business,65,26/11/2025,SE,5135,2026-11-21
+Amara Nasser,AMARA.NASSER@PINECREST.EXAMPLE,Pinecrest Health Supplies,Business,48,2026-06-21,AU,3792,2026-11-18
+Fatima Karimi,fatima.karimi@kestrel.example,Kestrel Ventures,Business,12,2026-10-20,NG,948,2026-11-19
+Marco Thapa,marco.thapa@saffron.example,Saffron Robotics,Starter,8,31/10/2025,US,120,2026-11-25
+Marco Garcia,marco.garcia@meadowbrook.example,Meadowbrook Foods,Starter,6,2025-02-07,AE,90,2026-11-29
+Ravi Okafor,ravi.okafor@brightwater.example,Brightwater Learning,Starter,9,04/05/2026,CA,135,2026-10-31
+Sofia Haddad,sofia.haddad@copperline.example,Copperline Architects,Starter,8,2026-10-02,SG,120,2026-11-01
+Mateo Garcia,mateo.garcia@kestrel.example,Kestrel Design Co.,Team,12,2026-03-20,DE,468,2026-11-15
+Ama Muller,ama.muller@copperline.example,Copperline Health Supplies,Team,4,2025-11-20,AU,156,2026-11-15
+Jonas Patel,JONAS.PATEL@COPPERLINE.EXAMPLE,Copperline Analytics,Starter,9,2025-06-14,US,135,2026-11-06
+Pablo Sharma,pablo.sharma@saffron.example,Saffron Travel,Team,12,26/08/2025,CA,468,2026-11-19
+Anjali Joshi,anjali.joshi@juniper.example,Juniper Foods,Team,8,2025-05-07,BR,312,2026-11-28
+Liam Lin,  Liam.Lin@Copperline.Example ,Copperline Health Supplies,Team,10,2025-09-22,MX,390,2026-11-16
+Yuki Mensah,yuki.mensah@saffron.example,Saffron Design Co.,Business,10,23/08/2026,ZA,790,2026-11-21
+Lea Thapa,lea.thapa@granite.example,Granite Media,Team,12,24/07/2025,FR,468,2026-11-16
+Fatima Weber,fatima.weber@riverstone.example,Riverstone Design Co.,Business,24,2026-04-13,SG,1896,2026-11-09
+Elena Garcia,ELENA.GARCIA@KESTREL.EXAMPLE,Kestrel Ventures,Team,5,17/10/2025,US,195,2026-11-11
+Anika Gurung,anika.gurung@granite.example,Granite Health Supplies,Team,5,29/10/2026,DE,195,2026-11-28
+Anjali Muller,anjali.muller@copperline.example,Copperline Ventures,Team,10,2026-04-20,MX,390,2026-11-16
+Ravi Patel,  Ravi.Patel@Larkspur.Example ,Larkspur Robotics,Business,76,2026-10-27,MX,6004,2026-11-26
+Lucas Asante,LUCAS.ASANTE@SAFFRON.EXAMPLE,Saffron Travel,Starter,9,19/08/2025,ES,135,2026-11-12
+Bilal Lopez,bilal.lopez@tidewater.example,Tidewater Foods,Starter,8,2025-02-13,DE,120,2026-11-05
+Ethan Asante,ETHAN.ASANTE@TIDEWATER.EXAMPLE,Tidewater Learning,Team,11,2025-06-12,NG,429,2026-11-04
+Bilal Weber,bilal.weber@kestrel.example,Kestrel Architects,Starter,10,13/05/2025,AU,150,2026-11-04
+Erik Gupta,ERIK.GUPTA@PINECREST.EXAMPLE,Pinecrest Studio,Team,2,15/09/2026,UK,78,2026-11-14
+Ken Lindqvist,ken.lindqvist@northgate.example,Northgate Robotics,Starter,4,2026-06-02,DE,60,2026-11-29
+Erik Novak,ERIK.NOVAK@PINECREST.EXAMPLE,Pinecrest Ventures,Team,8,2026-02-23,BR,312,2026-11-20
+Sipho Martin,sipho.martin@saffron.example,Saffron Learning,Starter,10,14/04/2026,FR,150,2026-11-10
+Ken Garcia,ken.garcia@harbor.example,Harbor Clinics Admin,Team,8,14/04/2026,ES,312,2026-11-10
+Isha Karimi,  Isha.Karimi@Riverstone.Example ,Riverstone Clinics Admin,Team,8,28/10/2026,AE,312,2026-11-27
+Chen Brown,chen.brown@bluefield.example,Bluefield Retail,Starter,3,17/10/2026,DE,45,2026-11-16
+Sunita Tanaka,SUNITA.TANAKA@KESTREL.EXAMPLE,Kestrel Legal,Business,59,04/04/2026,DE,4661,2026-10-31
+Ama Kim,ama.kim@kestrel.example,Kestrel Labs,Business,42,2025-10-21,AU,3318,2026-11-15
+Isha Rao,ISHA.RAO@AMBERLANE.EXAMPLE,Amberlane Travel,Starter,4,2025-02-26,JP,60,2026-11-18
+Jonas Nielsen,jonas.nielsen@brightwater.example,Brightwater Logistics,Starter,2,19/08/2025,SG,30,2026-11-12
+Sita Garcia,SITA.GARCIA@AMBERLANE.EXAMPLE,Amberlane Retail,Team,12,2026-04-27,US,468,2026-11-23
+Mateo Thapa,mateo.thapa@amberlane.example,Amberlane Ventures,Starter,6,15/02/2025,UK,90,2026-11-07
+Hana Rossi,hana.rossi@northgate.example,Northgate Foods,Team,10,29/06/2026,UK,390,2026-11-26
+Noah Thapa,noah.thapa@northgate.example,Northgate Retail,Business,54,29/06/2026,DE,4266,2026-11-26
+Mei Shrestha,  Mei.Shrestha@Silverleaf.Example ,Silverleaf Health Supplies,Team,9,2026-05-12,US,351,2026-11-08
+Omar Kim,OMAR.KIM@BLUEFIELD.EXAMPLE,Bluefield Health Supplies,Team,3,09/12/2025,CA,117,2026-11-04
+Sipho Dubois,SIPHO.DUBOIS@HARBOR.EXAMPLE,Harbor Logistics,Business,69,2026-10-23,UK,5451,2026-11-22
+Lucas Asante,LUCAS.ASANTE@SAFFRON.EXAMPLE,Saffron Travel,Starter,9,19/08/2025,ES,135,2026-11-12
+Nia Rahman,NIA.RAHMAN@HARBOR.EXAMPLE,Harbor Health Supplies,Starter,10,2026-03-01,CA,150,2026-11-26
+Tomas Rahman,tomas.rahman@brightwater.example,Brightwater Architects,Starter,2,2025-09-13,SE,30,2026-11-07
+Erik Rao,erik.rao@bluefield.example,Bluefield Media,Starter,11,23/01/2026,NG,165,2026-11-19
+Ethan Martin,ethan.martin@saffron.example,Saffron Labs,Team,8,2025-09-05,AE,312,2026-11-29
+Bilal Martin,bilal.martin@saffron.example,Saffron Retail,Starter,4,2025-09-23,NG,60,2026-11-17
+Mei Kim,MEI.KIM@LARKSPUR.EXAMPLE,Larkspur Travel,Team,11,2026-10-01,MX,429,2026-10-31
+Erik Ruiz,erik.ruiz@harbor.example,Harbor Architects,Starter,10,2025-08-03,MX,150,2026-11-26
+Arjun Larsen,arjun.larsen@bluefield.example,Bluefield Travel,Team,8,2025-09-13,SG,312,2026-11-07
+Leila Wang,leila.wang@pinecrest.example,Pinecrest Labs,Starter,10,28/01/2025,NP,150,2026-11-19
+Tomas Wang,TOMAS.WANG@LARKSPUR.EXAMPLE,Larkspur Ventures,Starter,11,12/08/2025,IN,165,2026-11-05
+Zara Kim,ZARA.KIM@BLUEFIELD.EXAMPLE,Bluefield Labs,Starter,10,2025-07-26,JP,150,2026-11-18
+Priya Bello,priya.bello@harbor.example,Harbor Media,Starter,10,2025-03-14,JP,150,2026-11-04
+Aarav Brown,aarav.brown@harbor.example,Harbor Architects,Starter,2,01/07/2025,NP,30,2026-11-23
+Marco Rahman,marco.rahman@amberlane.example,Amberlane Ventures,Team,3,27/01/2026,JP,117,2026-11-23
+Sofia Ali,sofia.ali@saffron.example,Saffron Ventures,Starter,3,2025-08-09,SE,45,2026-11-02
+Pablo Silva,pablo.silva@juniper.example,Juniper Clinics Admin,Starter,8,2025-10-01,SG,120,2026-11-25
+Rosa Wang,rosa.wang@saffron.example,Saffron Logistics,Business,45,09/12/2025,DE,3555,2026-11-04
+Marco Silva,MARCO.SILVA@GRANITE.EXAMPLE,Granite Learning,Starter,2,15/12/2025,AE,30,2026-11-10
+Sunita Iyer,SUNITA.IYER@KESTREL.EXAMPLE,Kestrel Architects,Starter,9,18/10/2026,ES,135,2026-11-17
+Isha Haddad,isha.haddad@juniper.example,Juniper Ventures,Team,3,27/10/2026,BR,117,2026-11-26
+Ravi Adeyemi,ravi.adeyemi@tidewater.example,Tidewater Studio,Team,11,19/04/2026,UK,429,2026-11-15
+Yuki Nielsen,yuki.nielsen@meadowbrook.example,Meadowbrook Robotics,Business,36,2026-06-05,SG,2844,2026-11-02
+Sunita Tanaka,sunita.tanaka@kestrel.example,Kestrel Legal,Business,59,04/04/2026,DE,4661,2026-10-31
+Sipho Ruiz,SIPHO.RUIZ@NORTHGATE.EXAMPLE,Northgate Labs,Starter,3,2025-02-11,NP,45,2026-11-03
+Aarav Garcia,aarav.garcia@pinecrest.example,Pinecrest Design Co.,Team,8,12/09/2025,NG,312,2026-11-06
+Erik Larsen,ERIK.LARSEN@COPPERLINE.EXAMPLE,Copperline Labs,Starter,8,2026-10-29,US,120,2026-11-28
+Kwame Dlamini,kwame.dlamini@pinecrest.example,Pinecrest Labs,Team,6,26/10/2026,UK,234,2026-11-25
+Elena Bello,elena.bello@meadowbrook.example,Meadowbrook Architects,Team,5,22/08/2025,ZA,195,2026-11-15
+Isha Rossi,isha.rossi@kestrel.example,Kestrel Robotics,Business,26,2026-02-11,SG,2054,2026-11-08
+Zara Ali,zara.ali@brightwater.example,Brightwater Foods,Starter,3,2025-07-09,MX,45,2026-11-01
+Ama Iyer,ama.iyer@juniper.example,Juniper Robotics,Starter,5,17/05/2026,UK,75,2026-11-13
+Ama Silva,ama.silva@copperline.example,Copperline Studio,Business,29,26/01/2026,BR,2291,2026-11-22
+Marco Ruiz,marco.ruiz@riverstone.example,Riverstone Analytics,Team,3,2025-05-05,US,117,2026-11-26
+Anjali Ali,anjali.ali@harbor.example,Harbor Robotics,Team,9,26/10/2026,US,351,2026-11-25
+Anjali Wang,anjali.wang@tidewater.example,Tidewater Retail,Starter,11,24/05/2025,SG,165,2026-11-15
+Fatima Patel,FATIMA.PATEL@HARBOR.EXAMPLE,Harbor Labs,Team,2,2026-10-18,NG,78,2026-11-17
+Tomas Sharma,tomas.sharma@brightwater.example,Brightwater Studio,Starter,2,2025-05-27,DE,30,2026-11-18
+Jonas Vargas,jonas.vargas@riverstone.example,Riverstone Clinics Admin,Team,9,2026-10-29,IN,351,2026-11-28
+Marco Dlamini,marco.dlamini@granite.example,Granite Robotics,Starter,9,01/10/2025,ZA,135,2026-11-25
+Nia Iyer,  Nia.Iyer@Kestrel.Example ,Kestrel Media,Business,19,23/08/2026,NP,1501,2026-11-21
+Aarav Costa,aarav.costa@northgate.example,Northgate Clinics Admin,Team,11,2025-10-22,BR,429,2026-11-16
+Camila Ali,CAMILA.ALI@LARKSPUR.EXAMPLE,Larkspur Design Co.,Starter,3,2026-10-29,NP,45,2026-11-28
+Ken Rao,ken.rao@granite.example,Granite Design Co.,Team,8,2026-02-11,KE,312,2026-11-08
+Ken Novak,KEN.NOVAK@BLUEFIELD.EXAMPLE,Bluefield Analytics,Team,8,2025-02-24,KE,312,2026-11-16
+Sofia Martin,sofia.martin@granite.example,Granite Learning,Starter,5,2026-09-16,UK,75,2026-11-15
+Omar Nielsen,omar.nielsen@juniper.example,Juniper Retail,Starter,4,26/10/2025,SE,60,2026-11-20
+Hugo Kim,  Hugo.Kim@Amberlane.Example ,Amberlane Clinics Admin,Business,76,02/10/2026,SG,6004,2026-11-01
+Zara Iyer,zara.iyer@pinecrest.example,Pinecrest Analytics,Team,9,10/04/2025,MX,351,2026-11-01
+Hugo Nielsen,HUGO.NIELSEN@COPPERLINE.EXAMPLE,Copperline Studio,Starter,6,04/11/2025,ES,90,2026-11-29
+Hana Patel,hana.patel@juniper.example,Juniper Architects,Starter,6,2025-11-12,IN,90,2026-11-07
+Elena Kim,elena.kim@saffron.example,Saffron Media,Team,2,2026-02-05,FR,78,2026-11-02
+Omar Owusu,omar.owusu@meadowbrook.example,Meadowbrook Health Supplies,Starter,5,2026-10-03,NP,75,2026-11-02
+Zara Bello,zara.bello@riverstone.example,Riverstone Analytics,Team,4,2026-04-20,DE,156,2026-11-16
+Hana Okafor,hana.okafor@brightwater.example,Brightwater Robotics,Starter,4,10/10/2026,BR,60,2026-11-09
+Noah Ruiz,  Noah.Ruiz@Copperline.Example ,Copperline Analytics,Business,70,2026-10-22,FR,5530,2026-11-21
+Bikash Sharma,bikash.sharma@granite.example,Granite Media,Starter,12,2025-08-15,FR,180,2026-11-08
+Nia Silva,nia.silva@pinecrest.example,Pinecrest Architects,Team,9,2026-10-01,KE,351,2026-10-31
+Anjali Gupta,anjali.gupta@juniper.example,Juniper Foods,Business,40,2025-04-08,JP,3160,2026-11-29
+Elena Patel,elena.patel@kestrel.example,Kestrel Design Co.,Team,3,23/12/2025,ZA,117,2026-11-18
+Camila Nielsen,CAMILA.NIELSEN@TIDEWATER.EXAMPLE,Tidewater Ventures,Starter,5,2025-02-06,AU,75,2026-11-28
+Ravi Moreno,ravi.moreno@bluefield.example,Bluefield Foods,Team,8,11/10/2025,UK,312,2026-11-05
+Hana Bello,HANA.BELLO@SILVERLEAF.EXAMPLE,Silverleaf Analytics,Starter,9,2025-09-07,US,135,2026-11-01
+Zara Silva,  Zara.Silva@Granite.Example ,Granite Media,Team,6,2026-10-26,AE,234,2026-11-25
+Hana Joshi,hana.joshi@copperline.example,Copperline Labs,Team,4,2025-12-03,UK,156,2026-11-28
+Sita Shrestha,sita.shrestha@meadowbrook.example,Meadowbrook Travel,Team,2,2025-07-02,AE,78,2026-11-24
+Sunita Lopez,SUNITA.LOPEZ@RIVERSTONE.EXAMPLE,Riverstone Clinics Admin,Business,69,06/05/2026,ZA,5451,2026-11-02
+Noah Mensah,noah.mensah@copperline.example,Copperline Health Supplies,Starter,8,2026-10-19,BR,120,2026-11-18
+Erik Wang,erik.wang@pinecrest.example,Pinecrest Ventures,Starter,3,2026-06-25,UK,45,2026-11-22
+Hugo Gurung,hugo.gurung@riverstone.example,Riverstone Studio,Team,6,2025-06-25,CA,234,2026-11-17
+Maya Thapa,maya.thapa@juniper.example,Juniper Labs,Business,21,16/03/2025,DE,1659,2026-11-06
+Lucas Joshi,lucas.joshi@meadowbrook.example,Meadowbrook Architects,Team,12,06/05/2026,ES,468,2026-11-02
+Lucas Weber,lucas.weber@juniper.example,Juniper Design Co.,Team,8,2024-12-18,CA,312,2026-11-08
+Ama Novak,ama.novak@granite.example,Granite Foods,Team,6,12/02/2026,DE,234,2026-11-09
+Tomas Bello,tomas.bello@bluefield.example,Bluefield Architects,Starter,9,24/03/2026,AE,135,2026-11-19
+Kwame Qureshi,kwame.qureshi@brightwater.example,Brightwater Architects,Starter,9,2026-10-26,DE,135,2026-11-25
+Yuki Sato,yuki.sato@brightwater.example,Brightwater Media,Starter,10,2025-04-25,ZA,150,2026-11-16
+Arjun Gupta,arjun.gupta@bluefield.example,Bluefield Learning,Team,10,2024-12-24,ES,390,2026-11-14
+Rosa Sato,rosa.sato@pinecrest.example,Pinecrest Learning,Team,10,2025-05-13,ES,390,2026-11-04
+Isha Novak,isha.novak@juniper.example,Juniper Legal,Starter,5,2026-03-29,ZA,75,2026-11-24
+Ama Thapa,ama.thapa@harbor.example,Harbor Architects,Team,8,17/07/2026,KE,312,2026-11-14
+Hana Sato,hana.sato@brightwater.example,Brightwater Media,Business,78,08/10/2025,ES,6162,2026-11-02
+Maya Okafor,maya.okafor@pinecrest.example,Pinecrest Design Co.,Team,8,08/10/2026,UK,312,2026-11-07
+Tariq Silva,tariq.silva@silverleaf.example,Silverleaf Travel,Team,12,2025-06-19,AU,468,2026-11-11
+Priya Lin,  Priya.Lin@Brightwater.Example ,Brightwater Legal,Team,5,14/06/2025,DE,195,2026-11-06
+Lea Weber,LEA.WEBER@SAFFRON.EXAMPLE,Saffron Robotics,Business,78,2026-08-27,KE,6162,2026-11-25
+Mei Gurung,mei.gurung@larkspur.example,Larkspur Studio,Starter,9,2026-10-25,NG,135,2026-11-24
+Chen Adeyemi,  Chen.Adeyemi@Brightwater.Example ,Brightwater Legal,Business,27,04/12/2025,UK,2133,2026-11-29
+Tariq Novak,tariq.novak@pinecrest.example,Pinecrest Foods,Team,5,2026-02-04,NP,195,2026-11-01
+Arjun Joshi,ARJUN.JOSHI@BLUEFIELD.EXAMPLE,Bluefield Architects,Starter,5,29/05/2026,UK,75,2026-11-25
+Elena Lindqvist,ELENA.LINDQVIST@RIVERSTONE.EXAMPLE,Riverstone Retail,Starter,10,2026-08-19,MX,150,2026-11-17
+Aarav Adeyemi,aarav.adeyemi@saffron.example,Saffron Foods,Starter,4,20/10/2026,NG,60,2026-11-19
+Isha Dubois,ISHA.DUBOIS@GRANITE.EXAMPLE,Granite Labs,Team,12,16/11/2025,AU,468,2026-11-11
+Bikash Lindqvist,  Bikash.Lindqvist@Brightwater.Example ,Brightwater Retail,Team,8,05/08/2026,FR,312,2026-11-03
+Lucas Moreno,lucas.moreno@northgate.example,Northgate Architects,Starter,12,2025-03-03,CA,180,2026-11-23
+Sunita Garcia,SUNITA.GARCIA@MEADOWBROOK.EXAMPLE,Meadowbrook Design Co.,Team,10,18/03/2025,ES,390,2026-11-08

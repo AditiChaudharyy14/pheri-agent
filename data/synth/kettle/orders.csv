@@ -1,0 +1,1057 @@
+order_id,email,date,items,total_usd,country
+5001,pablo31@mail.example,2026-06-05,Himalayan First Flush; Earl Grey Classic,29,AE
+5002,pablo31@mail.example,2026-05-10,Sencha; Rooibos Vanilla; Masala Chai Blend,41,AE
+5003,pablo31@mail.example,2026-03-31,Jasmine Pearls; Earl Grey Classic; Sencha,49,AE
+5004,isha35@mail.example,2026-09-26,Rooibos Vanilla,13,KE
+5005,  Isha35@Mail.Example ,2026-08-24,Rooibos Vanilla,13,KE
+5006,isha35@mail.example,2026-08-03,Masala Chai Blend; Tea Taster Gift Box,51,KE
+5007,isha35@mail.example,2026-06-04,Masala Chai Blend; Earl Grey Classic,23,KE
+5008,isha35@mail.example,2026-05-13,Masala Chai Blend; Ilam Green,26,KE
+5009,isha35@mail.example,2026-04-19,Rooibos Vanilla,13,KE
+5010,ZARA88@MAIL.EXAMPLE,2026-10-17,Earl Grey Classic; Himalayan First Flush; Jasmine Pearls,51,AU
+5011,zara88@mail.example,2026-09-26,Tea Taster Gift Box; Rooibos Vanilla,52,AU
+5012,zara88@mail.example,2026-07-29,Rooibos Vanilla; Sencha,29,AU
+5013,zara88@mail.example,2026-06-22,Earl Grey Classic; Rooibos Vanilla,24,AU
+5014,zara88@mail.example,2026-07-05,Sencha; Himalayan First Flush; Jasmine Pearls,56,AU
+5015,zara88@mail.example,2026-06-19,Rooibos Vanilla,13,AU
+5016,  Zara88@Mail.Example ,2026-04-14,Ilam Green; Masala Chai Blend; Sencha,42,AU
+5017,zara88@mail.example,2026-03-28,Tea Taster Gift Box; Ilam Green,53,AU
+5018,zara88@mail.example,2026-05-02,Masala Chai Blend; Rooibos Vanilla; Ilam Green,39,AU
+5019,isha55@mail.example,2026-10-24,Rooibos Vanilla; Sencha; Ilam Green,43,SG
+5020,isha55@mail.example,2026-09-28,Himalayan First Flush,18,SG
+5021,isha55@mail.example,2026-08-15,Tea Taster Gift Box; Ilam Green; Earl Grey Classic,64,SG
+5022,isha55@mail.example,2026-07-11,Masala Chai Blend; Sencha; Rooibos Vanilla,41,SG
+5023,lucas89@mail.example,2026-10-25,Himalayan First Flush; Earl Grey Classic,29,ES
+5024,lucas89@mail.example,2026-09-15,Ilam Green; Himalayan First Flush,32,ES
+5025,lucas89@mail.example,2026-09-05,Tea Taster Gift Box,39,ES
+5026,lucas89@mail.example,2026-07-15,Masala Chai Blend; Tea Taster Gift Box; Ilam Green,65,ES
+5027,lucas89@mail.example,2026-07-29,Masala Chai Blend; Earl Grey Classic; Tea Taster Gift Box,62,ES
+5028,lucas89@mail.example,2026-05-13,Tea Taster Gift Box; Sencha,55,ES
+5029,lucas89@mail.example,2026-05-10,Sencha; Jasmine Pearls; Ilam Green,52,ES
+5030,lucas89@mail.example,2026-02-01,Sencha,16,ES
+5031,  Lucas89@Mail.Example ,2025-12-25,Sencha; Himalayan First Flush,34,ES
+5032,  Lucas89@Mail.Example ,2026-01-28,Masala Chai Blend; Himalayan First Flush; Rooibos Vanilla,43,ES
+5033,ravi59@mail.example,2026-07-03,Ilam Green,14,US
+5034,ravi59@mail.example,2026-06-07,Ilam Green,14,US
+5035,chen11@mail.example,2026-10-16,Rooibos Vanilla; Himalayan First Flush; Masala Chai Blend,43,KE
+5036,erik13@mail.example,2026-08-08,Tea Taster Gift Box; Masala Chai Blend; Earl Grey Classic,62,NG
+5037,erik13@mail.example,2026-07-13,Sencha; Earl Grey Classic,27,NG
+5038,erik13@mail.example,2026-06-29,Himalayan First Flush; Jasmine Pearls; Sencha,56,NG
+5039,erik13@mail.example,2026-04-16,Ilam Green; Himalayan First Flush; Sencha,48,NG
+5040,nadia95@mail.example,2026-10-27,Himalayan First Flush; Earl Grey Classic,29,ES
+5041,lucas67@mail.example,2026-08-05,Himalayan First Flush,18,NG
+5042,  Lucas67@Mail.Example ,2026-07-15,Masala Chai Blend; Ilam Green; Jasmine Pearls,48,NG
+5043,lucas67@mail.example,2026-06-04,Jasmine Pearls,22,NG
+5044,lucas67@mail.example,2026-05-07,Himalayan First Flush,18,NG
+5045,  Lucas67@Mail.Example ,2026-04-03,Earl Grey Classic,11,NG
+5046,yuki50@mail.example,2026-09-15,Masala Chai Blend,12,SG
+5047,sita26@mail.example,2026-09-16,Himalayan First Flush,18,ZA
+5048,  Sita26@Mail.Example ,2026-08-20,Rooibos Vanilla; Ilam Green; Himalayan First Flush,45,ZA
+5049,sita26@mail.example,2026-08-03,Ilam Green; Sencha,30,ZA
+5050,  Sita26@Mail.Example ,2026-06-27,Ilam Green; Tea Taster Gift Box,53,ZA
+5051,sita26@mail.example,2026-05-07,Earl Grey Classic; Jasmine Pearls,33,ZA
+5052,sita26@mail.example,2026-06-08,Earl Grey Classic,11,ZA
+5053,sita26@mail.example,2026-05-13,Masala Chai Blend; Himalayan First Flush; Ilam Green,44,ZA
+5054,sita26@mail.example,2026-03-18,Himalayan First Flush,18,ZA
+5055,anjali49@mail.example,2026-10-11,Masala Chai Blend; Rooibos Vanilla,25,IN
+5056,  Anjali49@Mail.Example ,2026-09-03,Masala Chai Blend; Tea Taster Gift Box,51,IN
+5057,anjali49@mail.example,2026-08-26,Masala Chai Blend; Earl Grey Classic,23,IN
+5058,anjali49@mail.example,2026-07-04,Ilam Green; Himalayan First Flush,32,IN
+5059,anjali49@mail.example,2026-07-23,Rooibos Vanilla; Masala Chai Blend; Ilam Green,39,IN
+5060,anjali49@mail.example,2026-07-03,Ilam Green; Masala Chai Blend; Himalayan First Flush,44,IN
+5061,anjali49@mail.example,2026-06-13,Masala Chai Blend,12,IN
+5062,sunita49@mail.example,2026-09-23,Masala Chai Blend; Ilam Green,26,IN
+5063,sunita49@mail.example,2026-08-22,Tea Taster Gift Box,39,IN
+5064,sunita49@mail.example,2026-07-13,Jasmine Pearls,22,IN
+5065,sunita49@mail.example,2026-07-19,Ilam Green,14,IN
+5066,sunita49@mail.example,2026-04-24,Ilam Green; Tea Taster Gift Box,53,IN
+5067,sunita49@mail.example,2026-05-06,Tea Taster Gift Box; Masala Chai Blend; Rooibos Vanilla,64,IN
+5068,sunita49@mail.example,2026-04-02,Masala Chai Blend; Earl Grey Classic; Sencha,39,IN
+5069,aarav83@mail.example,2026-10-01,Jasmine Pearls; Masala Chai Blend; Rooibos Vanilla,47,AE
+5070,AARAV83@MAIL.EXAMPLE,2026-08-25,Jasmine Pearls; Sencha; Tea Taster Gift Box,77,AE
+5071,AARAV83@MAIL.EXAMPLE,2026-07-21,Rooibos Vanilla; Jasmine Pearls,35,AE
+5072,aarav83@mail.example,2026-06-21,Tea Taster Gift Box; Masala Chai Blend,51,AE
+5073,aarav83@mail.example,2026-04-28,Jasmine Pearls; Masala Chai Blend; Earl Grey Classic,45,AE
+5074,maya22@mail.example,2026-09-27,Sencha,16,IN
+5075,  Maya22@Mail.Example ,2026-08-31,Himalayan First Flush; Rooibos Vanilla; Ilam Green,45,IN
+5076,maya22@mail.example,2026-08-08,Masala Chai Blend; Himalayan First Flush; Tea Taster Gift Box,69,IN
+5077,maya22@mail.example,2026-07-23,Himalayan First Flush; Masala Chai Blend; Jasmine Pearls,52,IN
+5078,maya22@mail.example,2026-04-28,Ilam Green,14,IN
+5079,maya22@mail.example,2026-05-15,Tea Taster Gift Box; Sencha; Jasmine Pearls,77,IN
+5080,  Maya22@Mail.Example ,2026-05-12,Sencha; Earl Grey Classic,27,IN
+5081,maya22@mail.example,2026-02-08,Sencha; Masala Chai Blend; Tea Taster Gift Box,67,IN
+5082,maya22@mail.example,2026-02-23,Sencha; Masala Chai Blend; Earl Grey Classic,39,IN
+5083,  Maya22@Mail.Example ,2025-12-13,Earl Grey Classic; Ilam Green; Himalayan First Flush,43,IN
+5084,maya22@mail.example,2026-01-20,Masala Chai Blend; Himalayan First Flush; Tea Taster Gift Box,69,IN
+5085,sunita57@mail.example,2026-10-14,Himalayan First Flush; Jasmine Pearls,40,MX
+5086,sunita57@mail.example,2026-09-12,Earl Grey Classic; Rooibos Vanilla; Jasmine Pearls,46,MX
+5087,isha47@mail.example,2026-10-21,Masala Chai Blend; Sencha; Jasmine Pearls,50,ES
+5088,AMARA48@MAIL.EXAMPLE,2026-10-12,Earl Grey Classic; Himalayan First Flush; Sencha,45,UK
+5089,camila42@mail.example,2026-10-20,Jasmine Pearls; Tea Taster Gift Box,61,NP
+5090,camila42@mail.example,2026-09-17,Rooibos Vanilla; Earl Grey Classic; Jasmine Pearls,46,NP
+5091,elena78@mail.example,2026-10-08,Ilam Green; Himalayan First Flush; Sencha,48,AU
+5092,elena78@mail.example,2026-09-15,Tea Taster Gift Box; Sencha; Rooibos Vanilla,68,AU
+5093,elena78@mail.example,2026-08-23,Himalayan First Flush; Earl Grey Classic,29,AU
+5094,elena78@mail.example,2026-08-09,Earl Grey Classic; Sencha; Jasmine Pearls,49,AU
+5095,  Priya96@Mail.Example ,2026-09-18,Rooibos Vanilla,13,AU
+5096,  Lucas80@Mail.Example ,2026-07-07,Sencha,16,ES
+5097,lucas80@mail.example,2026-06-08,Earl Grey Classic,11,ES
+5098,lucas80@mail.example,2026-05-10,Earl Grey Classic; Masala Chai Blend; Himalayan First Flush,41,ES
+5099,lucas80@mail.example,2026-04-14,Ilam Green; Sencha,30,ES
+5100,lucas80@mail.example,2026-04-06,Earl Grey Classic,11,ES
+5101,lucas80@mail.example,2026-02-22,Himalayan First Flush; Sencha,34,ES
+5102,ethan1@mail.example,2026-10-29,Tea Taster Gift Box,39,KE
+5103,amara98@mail.example,2026-10-11,Ilam Green; Earl Grey Classic; Jasmine Pearls,47,UK
+5104,amara98@mail.example,2026-09-04,Jasmine Pearls; Earl Grey Classic; Sencha,49,UK
+5105,amara98@mail.example,2026-08-22,Sencha; Earl Grey Classic,27,UK
+5106,amara98@mail.example,2026-07-04,Sencha; Himalayan First Flush,34,UK
+5107,  Amara98@Mail.Example ,2026-05-16,Rooibos Vanilla,13,UK
+5108,amara98@mail.example,2026-04-19,Tea Taster Gift Box; Rooibos Vanilla,52,UK
+5109,amara98@mail.example,2026-02-13,Ilam Green,14,UK
+5110,amara98@mail.example,2026-03-29,Earl Grey Classic; Ilam Green; Masala Chai Blend,37,UK
+5111,yuki77@mail.example,2026-08-04,Sencha; Earl Grey Classic; Masala Chai Blend,39,CA
+5112,  Yuki77@Mail.Example ,2026-06-30,Jasmine Pearls,22,CA
+5113,yuki77@mail.example,2026-05-18,Rooibos Vanilla,13,CA
+5114,sunita6@mail.example,2026-10-17,Earl Grey Classic; Masala Chai Blend; Rooibos Vanilla,36,NP
+5115,sunita6@mail.example,2026-09-27,Tea Taster Gift Box; Earl Grey Classic,50,NP
+5116,sunita6@mail.example,2026-08-20,Rooibos Vanilla,13,NP
+5117,SUNITA6@MAIL.EXAMPLE,2026-07-13,Sencha; Masala Chai Blend; Earl Grey Classic,39,NP
+5118,sunita6@mail.example,2026-07-01,Masala Chai Blend,12,NP
+5119,sunita6@mail.example,2026-07-09,Earl Grey Classic; Jasmine Pearls,33,NP
+5120,sunita6@mail.example,2026-06-19,Jasmine Pearls; Masala Chai Blend; Rooibos Vanilla,47,NP
+5121,hana94@mail.example,2026-10-23,Sencha,16,UK
+5122,hana94@mail.example,2026-09-23,Earl Grey Classic; Tea Taster Gift Box; Sencha,66,UK
+5123,hana94@mail.example,2026-08-20,Ilam Green; Rooibos Vanilla; Sencha,43,UK
+5124,  Hana94@Mail.Example ,2026-07-19,Himalayan First Flush; Ilam Green,32,UK
+5125,hana94@mail.example,2026-07-07,Himalayan First Flush; Jasmine Pearls,40,UK
+5126,hana94@mail.example,2026-05-26,Himalayan First Flush; Ilam Green,32,UK
+5127,hana94@mail.example,2026-04-02,Sencha; Ilam Green,30,UK
+5128,yuki41@mail.example,2026-09-29,Jasmine Pearls; Masala Chai Blend,34,AE
+5129,yuki41@mail.example,2026-09-09,Earl Grey Classic; Rooibos Vanilla; Jasmine Pearls,46,AE
+5130,YUKI41@MAIL.EXAMPLE,2026-07-31,Himalayan First Flush; Sencha; Ilam Green,48,AE
+5131,YUKI41@MAIL.EXAMPLE,2026-07-19,Ilam Green,14,AE
+5132,yuki41@mail.example,2026-04-30,Rooibos Vanilla; Sencha; Tea Taster Gift Box,68,AE
+5133,yuki41@mail.example,2026-06-11,Jasmine Pearls; Rooibos Vanilla; Tea Taster Gift Box,74,AE
+5134,YUKI41@MAIL.EXAMPLE,2026-03-21,Ilam Green; Jasmine Pearls,36,AE
+5135,YUKI41@MAIL.EXAMPLE,2026-02-17,Earl Grey Classic; Himalayan First Flush; Masala Chai Blend,41,AE
+5136,yuki41@mail.example,2026-04-14,Masala Chai Blend,12,AE
+5137,  Yuki41@Mail.Example ,2025-11-09,Jasmine Pearls; Rooibos Vanilla,35,AE
+5138,yuki41@mail.example,2026-02-21,Jasmine Pearls; Ilam Green,36,AE
+5139,rosa8@mail.example,2026-09-19,Rooibos Vanilla,13,UK
+5140,  Sita74@Mail.Example ,2026-09-22,Masala Chai Blend; Jasmine Pearls; Ilam Green,48,NP
+5141,sita16@mail.example,2026-06-17,Himalayan First Flush,18,NP
+5142,sita16@mail.example,2026-05-14,Sencha,16,NP
+5143,sita16@mail.example,2026-04-28,Rooibos Vanilla; Ilam Green,27,NP
+5144,  Sita16@Mail.Example ,2026-04-03,Earl Grey Classic; Sencha,27,NP
+5145,marco55@mail.example,2026-10-30,Ilam Green; Rooibos Vanilla,27,AU
+5146,omar43@mail.example,2026-10-08,Tea Taster Gift Box,39,NG
+5147,  Omar43@Mail.Example ,2026-09-14,Earl Grey Classic; Masala Chai Blend,23,NG
+5148,MATEO16@MAIL.EXAMPLE,2026-09-20,Tea Taster Gift Box,39,CA
+5149,MATEO16@MAIL.EXAMPLE,2026-08-16,Tea Taster Gift Box,39,CA
+5150,mateo16@mail.example,2026-07-04,Tea Taster Gift Box,39,CA
+5151,camila58@mail.example,2026-10-29,Earl Grey Classic,11,NG
+5152,ingrid15@mail.example,2026-10-19,Ilam Green; Earl Grey Classic; Jasmine Pearls,47,ZA
+5153,ingrid15@mail.example,2026-09-14,Tea Taster Gift Box; Rooibos Vanilla; Sencha,68,ZA
+5154,ingrid15@mail.example,2026-07-31,Ilam Green; Jasmine Pearls; Sencha,52,ZA
+5155,ingrid15@mail.example,2026-07-21,Sencha,16,ZA
+5156,INGRID15@MAIL.EXAMPLE,2026-07-15,Ilam Green,14,ZA
+5157,isha41@mail.example,2026-10-06,Tea Taster Gift Box; Sencha; Rooibos Vanilla,68,UK
+5158,  Anjali96@Mail.Example ,2026-10-17,Ilam Green,14,US
+5159,anjali96@mail.example,2026-09-10,Masala Chai Blend; Earl Grey Classic,23,US
+5160,  Anjali96@Mail.Example ,2026-08-10,Sencha; Himalayan First Flush,34,US
+5161,ravi68@mail.example,2026-09-30,Earl Grey Classic; Ilam Green,25,FR
+5162,  Ravi68@Mail.Example ,2026-09-10,Jasmine Pearls; Tea Taster Gift Box,61,FR
+5163,ravi68@mail.example,2026-07-14,Earl Grey Classic; Sencha; Rooibos Vanilla,40,FR
+5164,RAVI68@MAIL.EXAMPLE,2026-06-29,Sencha; Jasmine Pearls,38,FR
+5165,ravi68@mail.example,2026-05-13,Himalayan First Flush; Sencha,34,FR
+5166,ravi68@mail.example,2026-05-08,Earl Grey Classic,11,FR
+5167,  Ravi68@Mail.Example ,2026-05-15,Himalayan First Flush,18,FR
+5168,ravi68@mail.example,2026-02-11,Earl Grey Classic; Rooibos Vanilla,24,FR
+5169,ZARA40@MAIL.EXAMPLE,2026-09-29,Himalayan First Flush; Masala Chai Blend; Jasmine Pearls,52,KE
+5170,zara40@mail.example,2026-08-22,Himalayan First Flush; Masala Chai Blend,30,KE
+5171,zara40@mail.example,2026-08-12,Himalayan First Flush; Earl Grey Classic,29,KE
+5172,ZARA40@MAIL.EXAMPLE,2026-07-16,Sencha; Earl Grey Classic; Jasmine Pearls,49,KE
+5173,zara40@mail.example,2026-06-25,Jasmine Pearls; Earl Grey Classic,33,KE
+5174,  Zara40@Mail.Example ,2026-04-27,Rooibos Vanilla,13,KE
+5175,zara40@mail.example,2026-03-27,Tea Taster Gift Box; Sencha; Himalayan First Flush,73,KE
+5176,  Zara40@Mail.Example ,2026-01-27,Jasmine Pearls; Earl Grey Classic; Sencha,49,KE
+5177,ZARA40@MAIL.EXAMPLE,2025-11-29,Tea Taster Gift Box; Masala Chai Blend,51,KE
+5178,zara40@mail.example,2025-12-06,Sencha; Himalayan First Flush,34,KE
+5179,  Zara40@Mail.Example ,2026-02-11,Rooibos Vanilla,13,KE
+5180,zara40@mail.example,2025-10-12,Tea Taster Gift Box; Earl Grey Classic; Masala Chai Blend,62,KE
+5181,zara40@mail.example,2025-12-27,Ilam Green; Jasmine Pearls; Sencha,52,KE
+5182,  Zara40@Mail.Example ,2025-07-01,Rooibos Vanilla; Masala Chai Blend; Himalayan First Flush,43,KE
+5183,nia11@mail.example,2026-06-30,Jasmine Pearls; Rooibos Vanilla; Masala Chai Blend,47,SG
+5184,nia11@mail.example,2026-06-07,Rooibos Vanilla; Masala Chai Blend; Sencha,41,SG
+5185,nia11@mail.example,2026-05-09,Tea Taster Gift Box; Rooibos Vanilla,52,SG
+5186,pablo86@mail.example,2026-04-21,Masala Chai Blend; Rooibos Vanilla; Ilam Green,39,US
+5187,pablo86@mail.example,2026-03-25,Jasmine Pearls; Rooibos Vanilla; Tea Taster Gift Box,74,US
+5188,pablo86@mail.example,2026-03-06,Tea Taster Gift Box,39,US
+5189,omar35@mail.example,2026-10-27,Tea Taster Gift Box; Jasmine Pearls,61,KE
+5190,  Lea39@Mail.Example ,2026-10-16,Tea Taster Gift Box,39,MX
+5191,hana58@mail.example,2026-10-10,Ilam Green; Tea Taster Gift Box; Himalayan First Flush,71,BR
+5192,  Hana58@Mail.Example ,2026-09-07,Himalayan First Flush,18,BR
+5193,HANA58@MAIL.EXAMPLE,2026-08-31,Rooibos Vanilla,13,BR
+5194,hana58@mail.example,2026-06-24,Rooibos Vanilla; Tea Taster Gift Box; Jasmine Pearls,74,BR
+5195,  Hana58@Mail.Example ,2026-05-15,Jasmine Pearls; Earl Grey Classic,33,BR
+5196,hana58@mail.example,2026-06-17,Jasmine Pearls; Himalayan First Flush; Earl Grey Classic,51,BR
+5197,hana58@mail.example,2026-02-18,Himalayan First Flush,18,BR
+5198,hana58@mail.example,2026-05-23,Ilam Green; Rooibos Vanilla; Jasmine Pearls,49,BR
+5199,noah65@mail.example,2026-10-13,Tea Taster Gift Box; Himalayan First Flush; Ilam Green,71,US
+5200,noah65@mail.example,2026-09-20,Jasmine Pearls; Tea Taster Gift Box,61,US
+5201,nia83@mail.example,2026-06-22,Earl Grey Classic; Tea Taster Gift Box; Jasmine Pearls,72,FR
+5202,nia83@mail.example,2026-05-18,Masala Chai Blend,12,FR
+5203,nia83@mail.example,2026-05-05,Ilam Green; Jasmine Pearls,36,FR
+5204,NIA83@MAIL.EXAMPLE,2026-04-23,Rooibos Vanilla; Himalayan First Flush,31,FR
+5205,ARJUN23@MAIL.EXAMPLE,2026-10-15,Masala Chai Blend; Tea Taster Gift Box,51,US
+5206,  Arjun23@Mail.Example ,2026-09-21,Himalayan First Flush,18,US
+5207,ARJUN23@MAIL.EXAMPLE,2026-08-14,Ilam Green; Sencha,30,US
+5208,arjun23@mail.example,2026-06-26,Himalayan First Flush; Tea Taster Gift Box; Ilam Green,71,US
+5209,arjun23@mail.example,2026-07-07,Rooibos Vanilla; Masala Chai Blend,25,US
+5210,  Arjun23@Mail.Example ,2026-06-22,Ilam Green,14,US
+5211,arjun23@mail.example,2026-03-31,Tea Taster Gift Box,39,US
+5212,arjun23@mail.example,2026-05-21,Tea Taster Gift Box,39,US
+5213,ARJUN23@MAIL.EXAMPLE,2026-04-06,Rooibos Vanilla,13,US
+5214,arjun23@mail.example,2026-04-09,Masala Chai Blend,12,US
+5215,rosa44@mail.example,2026-10-07,Himalayan First Flush,18,FR
+5216,rosa44@mail.example,2026-09-16,Earl Grey Classic; Himalayan First Flush,29,FR
+5217,rosa44@mail.example,2026-07-27,Rooibos Vanilla; Jasmine Pearls,35,FR
+5218,ROSA44@MAIL.EXAMPLE,2026-07-21,Jasmine Pearls,22,FR
+5219,ROSA44@MAIL.EXAMPLE,2026-07-19,Ilam Green,14,FR
+5220,  Rosa44@Mail.Example ,2026-05-30,Tea Taster Gift Box,39,FR
+5221,rosa44@mail.example,2026-03-11,Sencha; Tea Taster Gift Box; Rooibos Vanilla,68,FR
+5222,rosa44@mail.example,2026-04-29,Jasmine Pearls,22,FR
+5223,rosa44@mail.example,2026-03-21,Himalayan First Flush; Tea Taster Gift Box; Rooibos Vanilla,70,FR
+5224,mei35@mail.example,2026-10-25,Ilam Green,14,FR
+5225,diego55@mail.example,2026-09-24,Rooibos Vanilla; Sencha,29,UK
+5226,DIEGO55@MAIL.EXAMPLE,2026-09-04,Tea Taster Gift Box,39,UK
+5227,diego55@mail.example,2026-07-20,Sencha; Rooibos Vanilla,29,UK
+5228,diego55@mail.example,2026-07-23,Himalayan First Flush; Sencha,34,UK
+5229,tariq22@mail.example,2026-09-22,Sencha,16,AE
+5230,tariq22@mail.example,2026-08-22,Jasmine Pearls; Tea Taster Gift Box; Earl Grey Classic,72,AE
+5231,tariq22@mail.example,2026-07-18,Earl Grey Classic; Jasmine Pearls,33,AE
+5232,tariq22@mail.example,2026-06-15,Sencha,16,AE
+5233,hugo94@mail.example,2026-10-14,Masala Chai Blend; Rooibos Vanilla,25,ES
+5234,hugo94@mail.example,2026-09-16,Masala Chai Blend; Himalayan First Flush,30,ES
+5235,hugo94@mail.example,2026-08-17,Ilam Green,14,ES
+5236,hugo94@mail.example,2026-06-25,Earl Grey Classic; Jasmine Pearls; Masala Chai Blend,45,ES
+5237,  Hugo94@Mail.Example ,2026-07-26,Jasmine Pearls; Earl Grey Classic,33,ES
+5238,HUGO94@MAIL.EXAMPLE,2026-06-06,Ilam Green; Masala Chai Blend,26,ES
+5239,hugo94@mail.example,2026-02-22,Jasmine Pearls; Himalayan First Flush,40,ES
+5240,  Hugo94@Mail.Example ,2026-04-29,Ilam Green; Tea Taster Gift Box,53,ES
+5241,hugo94@mail.example,2026-03-04,Ilam Green,14,ES
+5242,ingrid81@mail.example,2026-09-19,Masala Chai Blend; Himalayan First Flush,30,SG
+5243,ingrid81@mail.example,2026-08-14,Jasmine Pearls,22,SG
+5244,ingrid81@mail.example,2026-07-09,Tea Taster Gift Box; Ilam Green,53,SG
+5245,ingrid81@mail.example,2026-07-15,Tea Taster Gift Box; Earl Grey Classic,50,SG
+5246,ingrid81@mail.example,2026-04-24,Rooibos Vanilla,13,SG
+5247,ingrid81@mail.example,2026-03-23,Rooibos Vanilla,13,SG
+5248,ingrid81@mail.example,2026-02-03,Ilam Green,14,SG
+5249,ingrid81@mail.example,2026-01-31,Ilam Green,14,SG
+5250,kenji19@mail.example,2026-10-05,Earl Grey Classic,11,AU
+5251,  Kenji19@Mail.Example ,2026-08-26,Earl Grey Classic; Jasmine Pearls,33,AU
+5252,kenji19@mail.example,2026-08-02,Tea Taster Gift Box; Sencha; Ilam Green,69,AU
+5253,kenji19@mail.example,2026-07-04,Rooibos Vanilla,13,AU
+5254,  Liam50@Mail.Example ,2026-07-24,Tea Taster Gift Box; Himalayan First Flush,57,NP
+5255,  Liam50@Mail.Example ,2026-06-17,Himalayan First Flush; Sencha; Masala Chai Blend,46,NP
+5256,  Liam50@Mail.Example ,2026-05-21,Earl Grey Classic; Rooibos Vanilla,24,NP
+5257,liam50@mail.example,2026-05-04,Himalayan First Flush,18,NP
+5258,liam50@mail.example,2026-03-26,Earl Grey Classic; Tea Taster Gift Box,50,NP
+5259,zara84@mail.example,2026-09-21,Earl Grey Classic,11,JP
+5260,ZARA84@MAIL.EXAMPLE,2026-08-15,Masala Chai Blend; Sencha,28,JP
+5261,zara84@mail.example,2026-07-21,Rooibos Vanilla,13,JP
+5262,zara84@mail.example,2026-06-14,Rooibos Vanilla; Tea Taster Gift Box; Himalayan First Flush,70,JP
+5263,ZARA84@MAIL.EXAMPLE,2026-05-12,Tea Taster Gift Box; Earl Grey Classic; Rooibos Vanilla,63,JP
+5264,zara84@mail.example,2026-04-19,Tea Taster Gift Box; Masala Chai Blend; Rooibos Vanilla,64,JP
+5265,  Amara2@Mail.Example ,2026-07-25,Himalayan First Flush,18,DE
+5266,amara2@mail.example,2026-06-18,Sencha; Earl Grey Classic; Ilam Green,41,DE
+5267,ken82@mail.example,2026-09-15,Tea Taster Gift Box; Earl Grey Classic; Rooibos Vanilla,63,NP
+5268,ken82@mail.example,2026-08-10,Sencha; Earl Grey Classic; Tea Taster Gift Box,66,NP
+5269,ken82@mail.example,2026-06-27,Rooibos Vanilla; Sencha,29,NP
+5270,ken82@mail.example,2026-06-02,Sencha,16,NP
+5271,ken82@mail.example,2026-05-22,Earl Grey Classic; Tea Taster Gift Box; Ilam Green,64,NP
+5272,ken82@mail.example,2026-04-28,Earl Grey Classic,11,NP
+5273,ama47@mail.example,2026-10-08,Himalayan First Flush,18,IN
+5274,  Ama47@Mail.Example ,2026-09-14,Masala Chai Blend; Himalayan First Flush,30,IN
+5275,ama47@mail.example,2026-08-23,Tea Taster Gift Box; Rooibos Vanilla; Earl Grey Classic,63,IN
+5276,ama47@mail.example,2026-07-07,Tea Taster Gift Box; Jasmine Pearls; Earl Grey Classic,72,IN
+5277,ama47@mail.example,2026-06-02,Earl Grey Classic,11,IN
+5278,ama47@mail.example,2026-05-06,Earl Grey Classic; Sencha,27,IN
+5279,ama47@mail.example,2026-03-24,Ilam Green; Tea Taster Gift Box,53,IN
+5280,ama47@mail.example,2026-03-05,Earl Grey Classic; Sencha,27,IN
+5281,nia11@mail.example,2026-09-25,Tea Taster Gift Box; Rooibos Vanilla; Ilam Green,66,NG
+5282,nia11@mail.example,2026-09-05,Earl Grey Classic,11,NG
+5283,nia11@mail.example,2026-07-17,Rooibos Vanilla,13,NG
+5284,nia11@mail.example,2026-06-09,Himalayan First Flush; Earl Grey Classic; Masala Chai Blend,41,NG
+5285,nia11@mail.example,2026-06-29,Earl Grey Classic; Jasmine Pearls; Tea Taster Gift Box,72,NG
+5286,nia11@mail.example,2026-03-14,Rooibos Vanilla; Sencha,29,NG
+5287,nia11@mail.example,2026-03-23,Earl Grey Classic,11,NG
+5288,NIA11@MAIL.EXAMPLE,2026-02-27,Sencha; Jasmine Pearls,38,NG
+5289,nia11@mail.example,2025-12-19,Ilam Green; Sencha; Jasmine Pearls,52,NG
+5290,NIA11@MAIL.EXAMPLE,2025-11-14,Tea Taster Gift Box,39,NG
+5291,diego53@mail.example,2026-06-12,Rooibos Vanilla; Ilam Green; Jasmine Pearls,49,AU
+5292,diego53@mail.example,2026-05-13,Sencha,16,AU
+5293,diego53@mail.example,2026-04-05,Jasmine Pearls,22,AU
+5294,liam52@mail.example,2026-09-19,Earl Grey Classic; Masala Chai Blend; Jasmine Pearls,45,AU
+5295,liam52@mail.example,2026-08-14,Himalayan First Flush; Rooibos Vanilla,31,AU
+5296,liam52@mail.example,2026-07-13,Masala Chai Blend,12,AU
+5297,liam52@mail.example,2026-07-15,Tea Taster Gift Box; Rooibos Vanilla,52,AU
+5298,liam52@mail.example,2026-06-11,Sencha; Jasmine Pearls; Himalayan First Flush,56,AU
+5299,HANA2@MAIL.EXAMPLE,2026-10-23,Tea Taster Gift Box,39,US
+5300,hana2@mail.example,2026-09-24,Rooibos Vanilla,13,US
+5301,leila73@mail.example,2026-10-28,Jasmine Pearls,22,SG
+5302,SUNITA27@MAIL.EXAMPLE,2026-05-21,Rooibos Vanilla; Jasmine Pearls,35,JP
+5303,  Sunita27@Mail.Example ,2026-04-16,Earl Grey Classic; Himalayan First Flush,29,JP
+5304,  Sunita27@Mail.Example ,2026-03-04,Earl Grey Classic; Masala Chai Blend; Tea Taster Gift Box,62,JP
+5305,sunita27@mail.example,2026-03-10,Earl Grey Classic; Jasmine Pearls; Rooibos Vanilla,46,JP
+5306,lea34@mail.example,2026-10-05,Tea Taster Gift Box,39,ES
+5307,lea34@mail.example,2026-09-09,Tea Taster Gift Box,39,ES
+5308,HUGO10@MAIL.EXAMPLE,2026-10-13,Tea Taster Gift Box,39,FR
+5309,hugo10@mail.example,2026-09-13,Tea Taster Gift Box,39,FR
+5310,hugo10@mail.example,2026-08-18,Tea Taster Gift Box,39,FR
+5311,sofia21@mail.example,2026-10-06,Himalayan First Flush; Earl Grey Classic; Sencha,45,US
+5312,sofia21@mail.example,2026-09-10,Jasmine Pearls; Tea Taster Gift Box,61,US
+5313,liam84@mail.example,2026-05-03,Masala Chai Blend; Tea Taster Gift Box; Ilam Green,65,NP
+5314,  Liam84@Mail.Example ,2026-03-29,Ilam Green; Jasmine Pearls,36,NP
+5315,liam84@mail.example,2026-03-16,Rooibos Vanilla,13,NP
+5316,anika37@mail.example,2026-10-15,Sencha,16,ES
+5317,  Anika37@Mail.Example ,2026-09-17,Jasmine Pearls,22,ES
+5318,ANIKA37@MAIL.EXAMPLE,2026-09-03,Sencha; Earl Grey Classic,27,ES
+5319,  Yuki76@Mail.Example ,2026-05-14,Tea Taster Gift Box; Ilam Green; Jasmine Pearls,75,UK
+5320,yuki76@mail.example,2026-04-16,Himalayan First Flush,18,UK
+5321,yuki76@mail.example,2026-03-13,Rooibos Vanilla,13,UK
+5322,yuki76@mail.example,2026-03-03,Masala Chai Blend; Himalayan First Flush,30,UK
+5323,AMA94@MAIL.EXAMPLE,2026-10-15,Tea Taster Gift Box,39,KE
+5324,ama94@mail.example,2026-09-20,Rooibos Vanilla; Earl Grey Classic; Sencha,40,KE
+5325,ama94@mail.example,2026-09-03,Earl Grey Classic,11,KE
+5326,ama94@mail.example,2026-07-11,Jasmine Pearls,22,KE
+5327,ama94@mail.example,2026-07-03,Masala Chai Blend; Tea Taster Gift Box,51,KE
+5328,ama94@mail.example,2026-04-03,Rooibos Vanilla; Sencha,29,KE
+5329,ama94@mail.example,2026-02-23,Himalayan First Flush; Rooibos Vanilla,31,KE
+5330,ama94@mail.example,2026-02-19,Masala Chai Blend; Tea Taster Gift Box,51,KE
+5331,ama94@mail.example,2025-12-15,Masala Chai Blend,12,KE
+5332,ama94@mail.example,2025-12-31,Masala Chai Blend,12,KE
+5333,ama94@mail.example,2026-03-19,Himalayan First Flush; Jasmine Pearls,40,KE
+5334,ama94@mail.example,2025-10-17,Jasmine Pearls,22,KE
+5335,ama94@mail.example,2026-02-17,Rooibos Vanilla,13,KE
+5336,ama94@mail.example,2025-08-25,Tea Taster Gift Box; Sencha; Rooibos Vanilla,68,KE
+5337,  Leila91@Mail.Example ,2026-10-17,Tea Taster Gift Box,39,DE
+5338,leila91@mail.example,2026-09-25,Tea Taster Gift Box,39,DE
+5339,leila91@mail.example,2026-08-20,Tea Taster Gift Box,39,DE
+5340,ravi53@mail.example,2026-10-11,Ilam Green,14,FR
+5341,ravi53@mail.example,2026-09-07,Sencha; Ilam Green; Himalayan First Flush,48,FR
+5342,ravi53@mail.example,2026-08-02,Ilam Green; Earl Grey Classic,25,FR
+5343,ravi53@mail.example,2026-07-13,Sencha,16,FR
+5344,RAVI53@MAIL.EXAMPLE,2026-05-12,Jasmine Pearls; Masala Chai Blend; Sencha,50,FR
+5345,ravi53@mail.example,2026-04-04,Ilam Green; Masala Chai Blend; Sencha,42,FR
+5346,fatima95@mail.example,2026-06-04,Himalayan First Flush; Jasmine Pearls; Ilam Green,54,DE
+5347,FATIMA95@MAIL.EXAMPLE,2026-05-03,Sencha; Rooibos Vanilla,29,DE
+5348,fatima95@mail.example,2026-04-03,Jasmine Pearls,22,DE
+5349,fatima95@mail.example,2026-02-10,Jasmine Pearls; Tea Taster Gift Box; Sencha,77,DE
+5350,sita95@mail.example,2026-09-19,Jasmine Pearls; Rooibos Vanilla; Masala Chai Blend,47,KE
+5351,sita95@mail.example,2026-08-22,Ilam Green,14,KE
+5352,  Sita95@Mail.Example ,2026-07-17,Jasmine Pearls,22,KE
+5353,sita95@mail.example,2026-06-06,Himalayan First Flush,18,KE
+5354,sita95@mail.example,2026-06-23,Masala Chai Blend; Jasmine Pearls; Tea Taster Gift Box,73,KE
+5355,sita96@mail.example,2026-09-29,Rooibos Vanilla; Jasmine Pearls; Ilam Green,49,JP
+5356,SITA96@MAIL.EXAMPLE,2026-09-06,Earl Grey Classic; Jasmine Pearls,33,JP
+5357,sita96@mail.example,2026-08-14,Himalayan First Flush; Sencha,34,JP
+5358,sita96@mail.example,2026-07-19,Masala Chai Blend,12,JP
+5359,sita96@mail.example,2026-05-12,Sencha; Earl Grey Classic,27,JP
+5360,sita96@mail.example,2026-05-07,Rooibos Vanilla; Tea Taster Gift Box; Jasmine Pearls,74,JP
+5361,sita96@mail.example,2026-02-25,Himalayan First Flush; Earl Grey Classic; Ilam Green,43,JP
+5362,nadia55@mail.example,2026-09-21,Tea Taster Gift Box,39,KE
+5363,nadia55@mail.example,2026-08-13,Tea Taster Gift Box,39,KE
+5364,amara66@mail.example,2026-10-03,Tea Taster Gift Box,39,MX
+5365,amara66@mail.example,2026-08-24,Tea Taster Gift Box,39,MX
+5366,AMARA66@MAIL.EXAMPLE,2026-07-29,Tea Taster Gift Box,39,MX
+5367,kwame50@mail.example,2026-06-08,Masala Chai Blend; Jasmine Pearls; Himalayan First Flush,52,FR
+5368,kwame50@mail.example,2026-05-03,Jasmine Pearls; Ilam Green; Tea Taster Gift Box,75,FR
+5369,erik31@mail.example,2026-09-26,Rooibos Vanilla; Masala Chai Blend,25,FR
+5370,erik31@mail.example,2026-08-17,Tea Taster Gift Box,39,FR
+5371,erik31@mail.example,2026-08-03,Rooibos Vanilla; Tea Taster Gift Box,52,FR
+5372,erik31@mail.example,2026-07-04,Jasmine Pearls; Himalayan First Flush; Ilam Green,54,FR
+5373,erik31@mail.example,2026-05-01,Ilam Green; Earl Grey Classic,25,FR
+5374,ERIK31@MAIL.EXAMPLE,2026-06-13,Ilam Green; Masala Chai Blend; Jasmine Pearls,48,FR
+5375,erik31@mail.example,2026-02-16,Ilam Green; Masala Chai Blend,26,FR
+5376,zara69@mail.example,2026-09-23,Masala Chai Blend; Ilam Green; Rooibos Vanilla,39,SE
+5377,zara69@mail.example,2026-08-28,Rooibos Vanilla; Himalayan First Flush,31,SE
+5378,AMA32@MAIL.EXAMPLE,2026-09-20,Rooibos Vanilla,13,UK
+5379,  Ama32@Mail.Example ,2026-08-25,Rooibos Vanilla,13,UK
+5380,ama32@mail.example,2026-07-24,Masala Chai Blend; Himalayan First Flush; Ilam Green,44,UK
+5381,ama32@mail.example,2026-06-25,Masala Chai Blend,12,UK
+5382,fatima63@mail.example,2026-09-24,Rooibos Vanilla,13,SE
+5383,fatima63@mail.example,2026-09-01,Masala Chai Blend; Sencha,28,SE
+5384,  Rosa39@Mail.Example ,2026-09-18,Himalayan First Flush; Masala Chai Blend; Earl Grey Classic,41,SE
+5385,rosa39@mail.example,2026-08-19,Jasmine Pearls,22,SE
+5386,  Rosa39@Mail.Example ,2026-07-06,Masala Chai Blend,12,SE
+5387,rosa39@mail.example,2026-05-21,Rooibos Vanilla,13,SE
+5388,yuki59@mail.example,2026-07-05,Rooibos Vanilla,13,NP
+5389,yuki59@mail.example,2026-06-08,Himalayan First Flush,18,NP
+5390,yuki59@mail.example,2026-05-16,Jasmine Pearls; Himalayan First Flush; Rooibos Vanilla,53,NP
+5391,elena44@mail.example,2026-10-24,Tea Taster Gift Box; Jasmine Pearls,61,ES
+5392,elena44@mail.example,2026-09-19,Himalayan First Flush; Jasmine Pearls,40,ES
+5393,elena44@mail.example,2026-09-08,Sencha; Rooibos Vanilla; Earl Grey Classic,40,ES
+5394,ELENA44@MAIL.EXAMPLE,2026-08-25,Earl Grey Classic; Ilam Green,25,ES
+5395,freya65@mail.example,2026-06-03,Tea Taster Gift Box,39,SG
+5396,  Freya65@Mail.Example ,2026-04-24,Jasmine Pearls,22,SG
+5397,freya65@mail.example,2026-04-18,Rooibos Vanilla; Masala Chai Blend; Jasmine Pearls,47,SG
+5398,FREYA65@MAIL.EXAMPLE,2026-03-20,Tea Taster Gift Box; Earl Grey Classic,50,SG
+5399,freya65@mail.example,2025-12-25,Tea Taster Gift Box; Rooibos Vanilla,52,SG
+5400,rosa87@mail.example,2026-10-26,Rooibos Vanilla,13,KE
+5401,sunita27@mail.example,2026-09-26,Rooibos Vanilla,13,JP
+5402,  Sunita27@Mail.Example ,2026-09-01,Earl Grey Classic; Ilam Green; Jasmine Pearls,47,JP
+5403,mei39@mail.example,2026-09-26,Tea Taster Gift Box,39,FR
+5404,mei39@mail.example,2026-08-25,Tea Taster Gift Box,39,FR
+5405,aarav85@mail.example,2026-07-03,Sencha,16,CA
+5406,aarav85@mail.example,2026-06-05,Ilam Green; Sencha,30,CA
+5407,aarav85@mail.example,2026-05-12,Tea Taster Gift Box,39,CA
+5408,diego46@mail.example,2026-10-12,Tea Taster Gift Box,39,IN
+5409,omar11@mail.example,2026-10-21,Ilam Green; Earl Grey Classic; Himalayan First Flush,43,CA
+5410,nadia15@mail.example,2026-10-16,Tea Taster Gift Box,39,JP
+5411,nadia15@mail.example,2026-09-10,Tea Taster Gift Box,39,JP
+5412,  Nadia15@Mail.Example ,2026-08-15,Tea Taster Gift Box,39,JP
+5413,hugo57@mail.example,2026-10-05,Tea Taster Gift Box,39,US
+5414,hugo57@mail.example,2026-08-29,Tea Taster Gift Box,39,US
+5415,hugo57@mail.example,2026-07-31,Tea Taster Gift Box,39,US
+5416,fatima43@mail.example,2026-04-16,Tea Taster Gift Box,39,JP
+5417,sunita47@mail.example,2026-10-23,Rooibos Vanilla; Ilam Green; Sencha,43,MX
+5418,  Sunita47@Mail.Example ,2026-09-21,Masala Chai Blend; Earl Grey Classic,23,MX
+5419,  Sunita47@Mail.Example ,2026-08-28,Earl Grey Classic; Jasmine Pearls,33,MX
+5420,sunita47@mail.example,2026-07-28,Rooibos Vanilla; Himalayan First Flush,31,MX
+5421,  Sunita47@Mail.Example ,2026-05-24,Ilam Green,14,MX
+5422,sunita47@mail.example,2026-04-06,Earl Grey Classic; Himalayan First Flush,29,MX
+5423,ethan12@mail.example,2026-10-01,Ilam Green; Sencha,30,AE
+5424,ethan12@mail.example,2026-08-29,Ilam Green; Earl Grey Classic; Jasmine Pearls,47,AE
+5425,ethan12@mail.example,2026-08-08,Ilam Green; Sencha,30,AE
+5426,ethan12@mail.example,2026-08-02,Himalayan First Flush,18,AE
+5427,ethan12@mail.example,2026-06-11,Sencha; Ilam Green; Rooibos Vanilla,43,AE
+5428,  Ethan12@Mail.Example ,2026-05-09,Masala Chai Blend; Earl Grey Classic,23,AE
+5429,ethan12@mail.example,2026-05-22,Jasmine Pearls,22,AE
+5430,ethan12@mail.example,2026-04-30,Himalayan First Flush; Masala Chai Blend,30,AE
+5431,sunita97@mail.example,2026-10-02,Ilam Green,14,KE
+5432,sunita97@mail.example,2026-09-10,Tea Taster Gift Box; Masala Chai Blend; Rooibos Vanilla,64,KE
+5433,sunita97@mail.example,2026-08-05,Sencha; Masala Chai Blend,28,KE
+5434,sunita97@mail.example,2026-06-10,Jasmine Pearls,22,KE
+5435,  Sunita97@Mail.Example ,2026-06-04,Tea Taster Gift Box; Ilam Green; Masala Chai Blend,65,KE
+5436,  Sunita97@Mail.Example ,2026-05-10,Earl Grey Classic; Tea Taster Gift Box,50,KE
+5437,  Sunita97@Mail.Example ,2026-03-24,Earl Grey Classic; Ilam Green,25,KE
+5438,  Sunita97@Mail.Example ,2026-05-15,Tea Taster Gift Box; Ilam Green,53,KE
+5439,ARJUN24@MAIL.EXAMPLE,2026-04-21,Tea Taster Gift Box,39,UK
+5440,arjun24@mail.example,2026-03-14,Earl Grey Classic; Himalayan First Flush,29,UK
+5441,arjun24@mail.example,2026-03-12,Ilam Green; Himalayan First Flush; Masala Chai Blend,44,UK
+5442,zara35@mail.example,2026-10-01,Ilam Green,14,CA
+5443,ZARA35@MAIL.EXAMPLE,2026-08-30,Rooibos Vanilla; Jasmine Pearls; Masala Chai Blend,47,CA
+5444,zara35@mail.example,2026-08-14,Himalayan First Flush; Rooibos Vanilla,31,CA
+5445,zara35@mail.example,2026-07-03,Ilam Green; Jasmine Pearls,36,CA
+5446,zara35@mail.example,2026-05-22,Masala Chai Blend; Jasmine Pearls; Rooibos Vanilla,47,CA
+5447,ZARA35@MAIL.EXAMPLE,2026-05-24,Masala Chai Blend,12,CA
+5448,  Zara35@Mail.Example ,2026-05-22,Ilam Green; Tea Taster Gift Box,53,CA
+5449,  Jonas73@Mail.Example ,2026-07-01,Himalayan First Flush; Ilam Green,32,AU
+5450,jonas73@mail.example,2026-05-26,Himalayan First Flush,18,AU
+5451,jonas73@mail.example,2026-05-04,Himalayan First Flush,18,AU
+5452,jonas73@mail.example,2026-03-15,Rooibos Vanilla,13,AU
+5453,camila68@mail.example,2026-10-13,Ilam Green,14,SE
+5454,camila68@mail.example,2026-09-21,Masala Chai Blend; Jasmine Pearls,34,SE
+5455,  Camila68@Mail.Example ,2026-08-24,Earl Grey Classic,11,SE
+5456,  Camila68@Mail.Example ,2026-08-14,Tea Taster Gift Box,39,SE
+5457,camila68@mail.example,2026-07-13,Himalayan First Flush; Earl Grey Classic; Tea Taster Gift Box,68,SE
+5458,camila68@mail.example,2026-04-21,Rooibos Vanilla; Masala Chai Blend,25,SE
+5459,camila68@mail.example,2026-05-04,Himalayan First Flush; Ilam Green,32,SE
+5460,camila68@mail.example,2026-03-10,Ilam Green; Masala Chai Blend,26,SE
+5461,ken30@mail.example,2026-09-24,Tea Taster Gift Box,39,UK
+5462,ken30@mail.example,2026-09-04,Tea Taster Gift Box,39,UK
+5463,BIKASH76@MAIL.EXAMPLE,2026-10-07,Rooibos Vanilla,13,NP
+5464,BIKASH76@MAIL.EXAMPLE,2026-09-05,Sencha; Himalayan First Flush,34,NP
+5465,bikash76@mail.example,2026-08-28,Himalayan First Flush,18,NP
+5466,bikash76@mail.example,2026-07-06,Sencha; Rooibos Vanilla,29,NP
+5467,bikash76@mail.example,2026-05-28,Himalayan First Flush; Masala Chai Blend,30,NP
+5468,bikash76@mail.example,2026-05-15,Earl Grey Classic; Himalayan First Flush; Ilam Green,43,NP
+5469,BIKASH76@MAIL.EXAMPLE,2026-06-03,Tea Taster Gift Box,39,NP
+5470,ken62@mail.example,2026-09-19,Jasmine Pearls; Rooibos Vanilla; Masala Chai Blend,47,AU
+5471,ken62@mail.example,2026-08-10,Sencha; Himalayan First Flush,34,AU
+5472,ken62@mail.example,2026-07-21,Tea Taster Gift Box; Masala Chai Blend,51,AU
+5473,  Ken62@Mail.Example ,2026-06-30,Sencha,16,AU
+5474,ken62@mail.example,2026-06-15,Sencha; Rooibos Vanilla; Earl Grey Classic,40,AU
+5475,ken62@mail.example,2026-05-17,Earl Grey Classic; Sencha; Himalayan First Flush,45,AU
+5476,ken62@mail.example,2026-03-29,Tea Taster Gift Box,39,AU
+5477,ken15@mail.example,2026-08-20,Earl Grey Classic; Masala Chai Blend,23,DE
+5478,KEN15@MAIL.EXAMPLE,2026-07-21,Rooibos Vanilla; Sencha; Jasmine Pearls,51,DE
+5479,KEN15@MAIL.EXAMPLE,2026-07-11,Ilam Green; Masala Chai Blend,26,DE
+5480,ken15@mail.example,2026-05-04,Himalayan First Flush,18,DE
+5481,ken15@mail.example,2026-03-25,Sencha; Rooibos Vanilla; Tea Taster Gift Box,68,DE
+5482,ken15@mail.example,2026-05-07,Ilam Green; Sencha; Himalayan First Flush,48,DE
+5483,nia85@mail.example,2026-09-15,Tea Taster Gift Box,39,KE
+5484,nia85@mail.example,2026-08-07,Tea Taster Gift Box,39,KE
+5485,  Nia85@Mail.Example ,2026-07-15,Tea Taster Gift Box,39,KE
+5486,BILAL91@MAIL.EXAMPLE,2026-10-23,Ilam Green,14,NG
+5487,AMA86@MAIL.EXAMPLE,2026-10-05,Earl Grey Classic,11,SE
+5488,ama86@mail.example,2026-09-11,Ilam Green,14,SE
+5489,ama86@mail.example,2026-08-04,Masala Chai Blend,12,SE
+5490,ama86@mail.example,2026-07-04,Jasmine Pearls,22,SE
+5491,ama86@mail.example,2026-05-10,Ilam Green; Rooibos Vanilla,27,SE
+5492,ama86@mail.example,2026-04-03,Tea Taster Gift Box; Himalayan First Flush,57,SE
+5493,ama86@mail.example,2026-06-07,Ilam Green,14,SE
+5494,  Ama86@Mail.Example ,2026-03-23,Earl Grey Classic; Rooibos Vanilla; Ilam Green,38,SE
+5495,ama86@mail.example,2026-01-30,Earl Grey Classic; Rooibos Vanilla,24,SE
+5496,  Ama86@Mail.Example ,2026-01-17,Ilam Green; Earl Grey Classic; Himalayan First Flush,43,SE
+5497,diego48@mail.example,2026-06-19,Tea Taster Gift Box,39,AE
+5498,diego48@mail.example,2026-05-13,Sencha,16,AE
+5499,ethan85@mail.example,2026-10-13,Tea Taster Gift Box,39,UK
+5500,sita68@mail.example,2026-10-30,Rooibos Vanilla,13,BR
+5501,  Lucas82@Mail.Example ,2026-06-01,Ilam Green; Tea Taster Gift Box,53,DE
+5502,lucas82@mail.example,2026-04-29,Himalayan First Flush,18,DE
+5503,lucas82@mail.example,2026-04-18,Ilam Green; Tea Taster Gift Box,53,DE
+5504,lucas82@mail.example,2026-02-01,Sencha; Masala Chai Blend,28,DE
+5505,lucas82@mail.example,2026-02-13,Sencha; Himalayan First Flush,34,DE
+5506,sita55@mail.example,2026-10-21,Tea Taster Gift Box; Himalayan First Flush; Earl Grey Classic,68,KE
+5507,sita55@mail.example,2026-09-15,Tea Taster Gift Box,39,KE
+5508,SITA55@MAIL.EXAMPLE,2026-08-26,Masala Chai Blend,12,KE
+5509,sita55@mail.example,2026-08-07,Earl Grey Classic; Masala Chai Blend; Ilam Green,37,KE
+5510,SITA55@MAIL.EXAMPLE,2026-06-15,Tea Taster Gift Box; Sencha,55,KE
+5511,ANJALI41@MAIL.EXAMPLE,2026-10-21,Tea Taster Gift Box,39,AU
+5512,anjali41@mail.example,2026-09-20,Tea Taster Gift Box,39,AU
+5513,ravi42@mail.example,2026-10-22,Tea Taster Gift Box,39,CA
+5514,ama48@mail.example,2026-07-07,Himalayan First Flush; Sencha; Tea Taster Gift Box,73,KE
+5515,aarav73@mail.example,2026-10-16,Jasmine Pearls; Himalayan First Flush; Masala Chai Blend,52,IN
+5516,aarav73@mail.example,2026-09-07,Himalayan First Flush; Masala Chai Blend,30,IN
+5517,aarav73@mail.example,2026-08-31,Rooibos Vanilla; Sencha; Himalayan First Flush,47,IN
+5518,AARAV73@MAIL.EXAMPLE,2026-06-21,Masala Chai Blend; Ilam Green; Tea Taster Gift Box,65,IN
+5519,aarav73@mail.example,2026-07-28,Tea Taster Gift Box; Himalayan First Flush,57,IN
+5520,tariq83@mail.example,2026-10-21,Himalayan First Flush; Sencha,34,IN
+5521,arjun63@mail.example,2026-08-21,Ilam Green; Rooibos Vanilla; Earl Grey Classic,38,CA
+5522,  Arjun63@Mail.Example ,2026-07-12,Tea Taster Gift Box,39,CA
+5523,ken22@mail.example,2026-10-10,Masala Chai Blend; Rooibos Vanilla,25,MX
+5524,ken22@mail.example,2026-09-11,Sencha; Rooibos Vanilla; Earl Grey Classic,40,MX
+5525,ken22@mail.example,2026-08-29,Rooibos Vanilla; Himalayan First Flush; Masala Chai Blend,43,MX
+5526,ken22@mail.example,2026-07-24,Masala Chai Blend; Himalayan First Flush,30,MX
+5527,ken22@mail.example,2026-07-10,Tea Taster Gift Box,39,MX
+5528,  Ken22@Mail.Example ,2026-04-28,Rooibos Vanilla,13,MX
+5529,ken22@mail.example,2026-03-14,Earl Grey Classic,11,MX
+5530,ken22@mail.example,2026-02-28,Tea Taster Gift Box,39,MX
+5531,  Ken22@Mail.Example ,2026-02-04,Ilam Green; Earl Grey Classic,25,MX
+5532,ken22@mail.example,2026-01-31,Tea Taster Gift Box; Ilam Green; Himalayan First Flush,71,MX
+5533,bikash78@mail.example,2026-09-19,Jasmine Pearls,22,KE
+5534,BIKASH78@MAIL.EXAMPLE,2026-08-12,Tea Taster Gift Box; Masala Chai Blend; Rooibos Vanilla,64,KE
+5535,bikash78@mail.example,2026-07-29,Himalayan First Flush,18,KE
+5536,bikash78@mail.example,2026-07-15,Masala Chai Blend; Rooibos Vanilla,25,KE
+5537,BIKASH78@MAIL.EXAMPLE,2026-06-27,Rooibos Vanilla,13,KE
+5538,bikash78@mail.example,2026-04-17,Jasmine Pearls,22,KE
+5539,bikash78@mail.example,2026-02-15,Masala Chai Blend,12,KE
+5540,bikash78@mail.example,2026-02-14,Jasmine Pearls; Masala Chai Blend; Sencha,50,KE
+5541,bikash78@mail.example,2026-03-27,Jasmine Pearls,22,KE
+5542,bikash78@mail.example,2026-03-23,Ilam Green; Tea Taster Gift Box,53,KE
+5543,  Bikash78@Mail.Example ,2025-12-13,Masala Chai Blend,12,KE
+5544,anjali81@mail.example,2026-09-25,Earl Grey Classic; Rooibos Vanilla,24,MX
+5545,hugo22@mail.example,2026-10-23,Jasmine Pearls,22,NG
+5546,hugo22@mail.example,2026-10-03,Ilam Green; Sencha; Jasmine Pearls,52,NG
+5547,hugo22@mail.example,2026-09-11,Sencha; Himalayan First Flush,34,NG
+5548,  Yuki8@Mail.Example ,2026-10-17,Sencha,16,ES
+5549,  Yuki8@Mail.Example ,2026-09-21,Earl Grey Classic; Masala Chai Blend,23,ES
+5550,  Isha67@Mail.Example ,2026-10-03,Sencha,16,DE
+5551,isha67@mail.example,2026-08-30,Rooibos Vanilla; Masala Chai Blend; Tea Taster Gift Box,64,DE
+5552,ISHA67@MAIL.EXAMPLE,2026-08-24,Masala Chai Blend,12,DE
+5553,isha67@mail.example,2026-07-14,Tea Taster Gift Box; Jasmine Pearls,61,DE
+5554,  Isha67@Mail.Example ,2026-07-03,Tea Taster Gift Box,39,DE
+5555,ISHA67@MAIL.EXAMPLE,2026-04-06,Jasmine Pearls; Sencha,38,DE
+5556,isha67@mail.example,2026-02-23,Rooibos Vanilla,13,DE
+5557,  Isha67@Mail.Example ,2026-02-14,Sencha; Ilam Green,30,DE
+5558,isha67@mail.example,2026-03-25,Sencha,16,DE
+5559,erik34@mail.example,2026-09-16,Masala Chai Blend; Jasmine Pearls,34,JP
+5560,erik34@mail.example,2026-08-21,Masala Chai Blend; Jasmine Pearls,34,JP
+5561,erik34@mail.example,2026-07-20,Sencha; Tea Taster Gift Box; Masala Chai Blend,67,JP
+5562,erik34@mail.example,2026-05-25,Sencha; Masala Chai Blend; Ilam Green,42,JP
+5563,erik34@mail.example,2026-04-17,Earl Grey Classic,11,JP
+5564,ERIK34@MAIL.EXAMPLE,2026-06-08,Sencha,16,JP
+5565,marco63@mail.example,2026-08-14,Rooibos Vanilla,13,SE
+5566,  Marco63@Mail.Example ,2026-07-11,Himalayan First Flush,18,SE
+5567,MARCO63@MAIL.EXAMPLE,2026-06-15,Sencha; Masala Chai Blend,28,SE
+5568,marco63@mail.example,2026-04-28,Earl Grey Classic; Ilam Green; Sencha,41,SE
+5569,MARCO63@MAIL.EXAMPLE,2026-03-07,Himalayan First Flush; Sencha,34,SE
+5570,priya2@mail.example,2026-10-08,Tea Taster Gift Box,39,NP
+5571,priya2@mail.example,2026-09-13,Tea Taster Gift Box,39,NP
+5572,kenji79@mail.example,2026-09-21,Himalayan First Flush; Earl Grey Classic,29,BR
+5573,kenji79@mail.example,2026-08-17,Masala Chai Blend,12,BR
+5574,kenji79@mail.example,2026-07-23,Himalayan First Flush; Ilam Green,32,BR
+5575,KENJI79@MAIL.EXAMPLE,2026-07-05,Sencha; Tea Taster Gift Box; Masala Chai Blend,67,BR
+5576,kenji79@mail.example,2026-04-14,Sencha; Ilam Green; Himalayan First Flush,48,BR
+5577,hana65@mail.example,2026-10-23,Tea Taster Gift Box; Rooibos Vanilla,52,AU
+5578,hana65@mail.example,2026-09-23,Ilam Green; Tea Taster Gift Box; Sencha,69,AU
+5579,hana65@mail.example,2026-08-08,Jasmine Pearls; Masala Chai Blend; Earl Grey Classic,45,AU
+5580,hana65@mail.example,2026-08-06,Tea Taster Gift Box; Ilam Green,53,AU
+5581,lea46@mail.example,2026-10-25,Tea Taster Gift Box,39,CA
+5582,liam27@mail.example,2026-10-23,Tea Taster Gift Box,39,BR
+5583,ethan47@mail.example,2026-07-03,Sencha; Tea Taster Gift Box,55,UK
+5584,  Ethan47@Mail.Example ,2026-06-12,Ilam Green,14,UK
+5585,ethan47@mail.example,2026-05-14,Sencha,16,UK
+5586,noah98@mail.example,2026-09-28,Earl Grey Classic; Masala Chai Blend,23,ES
+5587,noah98@mail.example,2026-08-22,Tea Taster Gift Box; Rooibos Vanilla; Masala Chai Blend,64,ES
+5588,noah98@mail.example,2026-07-10,Jasmine Pearls,22,ES
+5589,noah98@mail.example,2026-07-18,Rooibos Vanilla,13,ES
+5590,noah98@mail.example,2026-05-15,Jasmine Pearls,22,ES
+5591,noah98@mail.example,2026-05-21,Earl Grey Classic,11,ES
+5592,ingrid93@mail.example,2026-09-28,Himalayan First Flush; Masala Chai Blend,30,KE
+5593,ANJALI75@MAIL.EXAMPLE,2026-10-27,Sencha; Tea Taster Gift Box; Ilam Green,69,SE
+5594,chen52@mail.example,2026-10-20,Sencha; Jasmine Pearls; Himalayan First Flush,56,AU
+5595,chen52@mail.example,2026-09-21,Himalayan First Flush; Sencha; Ilam Green,48,AU
+5596,chen52@mail.example,2026-08-09,Tea Taster Gift Box,39,AU
+5597,chen52@mail.example,2026-07-01,Rooibos Vanilla; Sencha; Tea Taster Gift Box,68,AU
+5598,  Amara52@Mail.Example ,2026-10-08,Sencha,16,ZA
+5599,amara52@mail.example,2026-09-11,Jasmine Pearls,22,ZA
+5600,leila35@mail.example,2026-09-18,Tea Taster Gift Box,39,UK
+5601,LEILA35@MAIL.EXAMPLE,2026-08-18,Tea Taster Gift Box,39,UK
+5602,leila35@mail.example,2026-07-16,Tea Taster Gift Box,39,UK
+5603,kwame85@mail.example,2026-10-23,Masala Chai Blend,12,AU
+5604,kwame85@mail.example,2026-09-20,Rooibos Vanilla,13,AU
+5605,  Kwame85@Mail.Example ,2026-08-06,Earl Grey Classic; Ilam Green,25,AU
+5606,kwame85@mail.example,2026-08-21,Sencha; Tea Taster Gift Box,55,AU
+5607,kwame85@mail.example,2026-05-28,Jasmine Pearls; Himalayan First Flush,40,AU
+5608,  Kwame85@Mail.Example ,2026-07-15,Masala Chai Blend,12,AU
+5609,  Kwame85@Mail.Example ,2026-05-20,Sencha; Earl Grey Classic; Rooibos Vanilla,40,AU
+5610,LEA15@MAIL.EXAMPLE,2026-10-14,Ilam Green,14,SE
+5611,  Lea15@Mail.Example ,2026-09-22,Himalayan First Flush; Earl Grey Classic; Rooibos Vanilla,42,SE
+5612,lea15@mail.example,2026-08-17,Ilam Green; Rooibos Vanilla; Sencha,43,SE
+5613,lea15@mail.example,2026-06-22,Sencha; Ilam Green; Earl Grey Classic,41,SE
+5614,lea15@mail.example,2026-07-14,Jasmine Pearls,22,SE
+5615,lea15@mail.example,2026-06-16,Tea Taster Gift Box; Masala Chai Blend; Jasmine Pearls,73,SE
+5616,lea15@mail.example,2026-04-29,Tea Taster Gift Box; Earl Grey Classic; Sencha,66,SE
+5617,elena68@mail.example,2026-10-21,Sencha; Rooibos Vanilla; Masala Chai Blend,41,UK
+5618,  Elena68@Mail.Example ,2026-09-26,Jasmine Pearls; Himalayan First Flush,40,UK
+5619,elena68@mail.example,2026-08-04,Masala Chai Blend; Rooibos Vanilla; Himalayan First Flush,43,UK
+5620,elena68@mail.example,2026-08-13,Jasmine Pearls,22,UK
+5621,  Elena68@Mail.Example ,2026-07-21,Jasmine Pearls; Earl Grey Classic; Himalayan First Flush,51,UK
+5622,elena68@mail.example,2026-04-04,Sencha; Jasmine Pearls; Earl Grey Classic,49,UK
+5623,  Elena68@Mail.Example ,2026-05-18,Masala Chai Blend,12,UK
+5624,elena68@mail.example,2026-05-20,Jasmine Pearls; Tea Taster Gift Box; Sencha,77,UK
+5625,  Elena68@Mail.Example ,2026-05-06,Rooibos Vanilla; Ilam Green; Earl Grey Classic,38,UK
+5626,elena68@mail.example,2026-02-02,Sencha; Rooibos Vanilla; Ilam Green,43,UK
+5627,lucas61@mail.example,2026-05-09,Earl Grey Classic; Himalayan First Flush; Rooibos Vanilla,42,US
+5628,  Lucas61@Mail.Example ,2026-03-30,Himalayan First Flush; Tea Taster Gift Box; Sencha,73,US
+5629,lucas61@mail.example,2026-03-20,Tea Taster Gift Box; Rooibos Vanilla,52,US
+5630,leila6@mail.example,2026-10-14,Tea Taster Gift Box,39,MX
+5631,leila6@mail.example,2026-09-22,Tea Taster Gift Box,39,MX
+5632,jonas27@mail.example,2026-09-16,Jasmine Pearls,22,UK
+5633,  Jonas27@Mail.Example ,2026-08-16,Masala Chai Blend; Himalayan First Flush,30,UK
+5634,  Jonas27@Mail.Example ,2026-07-24,Masala Chai Blend,12,UK
+5635,jonas27@mail.example,2026-05-28,Sencha; Jasmine Pearls; Earl Grey Classic,49,UK
+5636,JONAS27@MAIL.EXAMPLE,2026-05-15,Masala Chai Blend; Himalayan First Flush; Tea Taster Gift Box,69,UK
+5637,JONAS27@MAIL.EXAMPLE,2026-03-10,Earl Grey Classic,11,UK
+5638,JONAS27@MAIL.EXAMPLE,2026-02-12,Rooibos Vanilla; Sencha; Earl Grey Classic,40,UK
+5639,jonas27@mail.example,2026-03-25,Earl Grey Classic,11,UK
+5640,jonas27@mail.example,2025-12-10,Himalayan First Flush,18,UK
+5641,  Jonas27@Mail.Example ,2025-10-27,Masala Chai Blend; Rooibos Vanilla; Tea Taster Gift Box,64,UK
+5642,priya32@mail.example,2026-10-10,Himalayan First Flush,18,MX
+5643,  Priya32@Mail.Example ,2026-09-20,Rooibos Vanilla,13,MX
+5644,priya32@mail.example,2026-08-19,Himalayan First Flush,18,MX
+5645,priya32@mail.example,2026-06-21,Ilam Green; Tea Taster Gift Box; Earl Grey Classic,64,MX
+5646,PRIYA32@MAIL.EXAMPLE,2026-05-11,Ilam Green; Himalayan First Flush; Masala Chai Blend,44,MX
+5647,priya32@mail.example,2026-06-12,Jasmine Pearls; Ilam Green; Sencha,52,MX
+5648,priya32@mail.example,2026-05-13,Masala Chai Blend,12,MX
+5649,MARCO21@MAIL.EXAMPLE,2026-09-19,Himalayan First Flush; Rooibos Vanilla,31,UK
+5650,marco21@mail.example,2026-08-29,Ilam Green; Rooibos Vanilla; Sencha,43,UK
+5651,priya47@mail.example,2026-09-15,Tea Taster Gift Box; Rooibos Vanilla,52,KE
+5652,priya47@mail.example,2026-08-06,Tea Taster Gift Box; Jasmine Pearls; Masala Chai Blend,73,KE
+5653,MATEO82@MAIL.EXAMPLE,2026-10-21,Himalayan First Flush; Rooibos Vanilla; Ilam Green,45,UK
+5654,bilal47@mail.example,2026-10-23,Himalayan First Flush; Sencha; Tea Taster Gift Box,73,DE
+5655,yuki32@mail.example,2026-10-08,Tea Taster Gift Box; Sencha,55,MX
+5656,yuki32@mail.example,2026-09-10,Himalayan First Flush; Ilam Green; Masala Chai Blend,44,MX
+5657,yuki32@mail.example,2026-07-28,Jasmine Pearls; Rooibos Vanilla; Sencha,51,MX
+5658,yuki32@mail.example,2026-06-25,Himalayan First Flush; Jasmine Pearls; Ilam Green,54,MX
+5659,rosa56@mail.example,2026-07-05,Earl Grey Classic,11,CA
+5660,rosa56@mail.example,2026-05-26,Masala Chai Blend,12,CA
+5661,rosa56@mail.example,2026-05-12,Rooibos Vanilla; Sencha; Masala Chai Blend,41,CA
+5662,rosa56@mail.example,2026-03-22,Ilam Green,14,CA
+5663,rosa56@mail.example,2026-04-12,Masala Chai Blend; Earl Grey Classic; Rooibos Vanilla,36,CA
+5664,ama54@mail.example,2026-10-07,Earl Grey Classic; Jasmine Pearls; Rooibos Vanilla,46,IN
+5665,  Ama54@Mail.Example ,2026-09-02,Ilam Green,14,IN
+5666,ama54@mail.example,2026-08-26,Ilam Green,14,IN
+5667,AMA54@MAIL.EXAMPLE,2026-06-27,Jasmine Pearls; Sencha,38,IN
+5668,ama54@mail.example,2026-06-21,Ilam Green,14,IN
+5669,AMA54@MAIL.EXAMPLE,2026-04-25,Sencha; Himalayan First Flush,34,IN
+5670,  Nadia2@Mail.Example ,2026-08-03,Masala Chai Blend; Earl Grey Classic,23,ES
+5671,nadia2@mail.example,2026-06-29,Tea Taster Gift Box; Jasmine Pearls,61,ES
+5672,MAYA54@MAIL.EXAMPLE,2026-09-19,Ilam Green; Masala Chai Blend; Tea Taster Gift Box,65,ZA
+5673,isha28@mail.example,2026-10-15,Sencha; Himalayan First Flush; Tea Taster Gift Box,73,ZA
+5674,isha28@mail.example,2026-09-19,Ilam Green; Earl Grey Classic,25,ZA
+5675,tariq54@mail.example,2026-10-01,Sencha; Jasmine Pearls; Rooibos Vanilla,51,SG
+5676,TARIQ54@MAIL.EXAMPLE,2026-08-29,Himalayan First Flush; Sencha; Tea Taster Gift Box,73,SG
+5677,  Tariq54@Mail.Example ,2026-08-22,Jasmine Pearls; Sencha,38,SG
+5678,tariq54@mail.example,2026-07-12,Earl Grey Classic; Rooibos Vanilla,24,SG
+5679,tariq54@mail.example,2026-07-09,Himalayan First Flush; Tea Taster Gift Box,57,SG
+5680,CHEN29@MAIL.EXAMPLE,2026-10-23,Earl Grey Classic; Rooibos Vanilla; Tea Taster Gift Box,63,NP
+5681,  Chen29@Mail.Example ,2026-09-15,Ilam Green; Masala Chai Blend; Tea Taster Gift Box,65,NP
+5682,chen29@mail.example,2026-08-22,Sencha; Jasmine Pearls; Tea Taster Gift Box,77,NP
+5683,  Pablo43@Mail.Example ,2026-04-19,Tea Taster Gift Box,39,BR
+5684,PABLO43@MAIL.EXAMPLE,2026-03-12,Tea Taster Gift Box; Earl Grey Classic,50,BR
+5685,pablo43@mail.example,2026-02-22,Earl Grey Classic,11,BR
+5686,sofia86@mail.example,2026-10-13,Rooibos Vanilla; Jasmine Pearls; Earl Grey Classic,46,SG
+5687,SOFIA86@MAIL.EXAMPLE,2026-09-09,Ilam Green; Tea Taster Gift Box; Masala Chai Blend,65,SG
+5688,sofia86@mail.example,2026-09-01,Himalayan First Flush,18,SG
+5689,  Sofia86@Mail.Example ,2026-08-11,Jasmine Pearls; Tea Taster Gift Box,61,SG
+5690,SOFIA86@MAIL.EXAMPLE,2026-06-27,Earl Grey Classic; Rooibos Vanilla,24,SG
+5691,sofia86@mail.example,2026-05-26,Himalayan First Flush; Tea Taster Gift Box; Jasmine Pearls,79,SG
+5692,sofia86@mail.example,2026-03-29,Sencha; Tea Taster Gift Box,55,SG
+5693,sofia86@mail.example,2026-03-03,Ilam Green; Himalayan First Flush; Rooibos Vanilla,45,SG
+5694,  Sofia86@Mail.Example ,2025-12-21,Ilam Green,14,SG
+5695,sofia86@mail.example,2026-01-07,Rooibos Vanilla; Masala Chai Blend; Ilam Green,39,SG
+5696,  Erik62@Mail.Example ,2026-10-19,Tea Taster Gift Box; Jasmine Pearls; Himalayan First Flush,79,ES
+5697,erik62@mail.example,2026-09-20,Rooibos Vanilla,13,ES
+5698,erik62@mail.example,2026-08-16,Tea Taster Gift Box; Ilam Green; Sencha,69,ES
+5699,erik62@mail.example,2026-08-08,Masala Chai Blend; Himalayan First Flush,30,ES
+5700,  Tomas43@Mail.Example ,2026-10-08,Earl Grey Classic; Masala Chai Blend,23,NG
+5701,tomas43@mail.example,2026-08-29,Sencha; Himalayan First Flush; Masala Chai Blend,46,NG
+5702,tomas43@mail.example,2026-08-07,Tea Taster Gift Box,39,NG
+5703,tomas43@mail.example,2026-06-28,Himalayan First Flush; Jasmine Pearls,40,NG
+5704,  Tomas43@Mail.Example ,2026-06-02,Masala Chai Blend,12,NG
+5705,tomas43@mail.example,2026-05-31,Sencha; Tea Taster Gift Box; Himalayan First Flush,73,NG
+5706,tomas43@mail.example,2026-05-23,Tea Taster Gift Box; Sencha,55,NG
+5707,tomas43@mail.example,2026-03-19,Masala Chai Blend; Rooibos Vanilla; Jasmine Pearls,47,NG
+5708,tomas43@mail.example,2026-02-10,Himalayan First Flush; Ilam Green,32,NG
+5709,tomas43@mail.example,2025-12-24,Himalayan First Flush; Tea Taster Gift Box,57,NG
+5710,TOMAS43@MAIL.EXAMPLE,2026-01-21,Sencha,16,NG
+5711,NADIA63@MAIL.EXAMPLE,2026-10-26,Sencha; Ilam Green; Himalayan First Flush,48,KE
+5712,kenji82@mail.example,2026-09-20,Sencha; Jasmine Pearls,38,NG
+5713,kenji82@mail.example,2026-08-11,Masala Chai Blend; Earl Grey Classic; Jasmine Pearls,45,NG
+5714,kenji82@mail.example,2026-08-05,Sencha,16,NG
+5715,bilal21@mail.example,2026-10-16,Ilam Green,14,CA
+5716,noah31@mail.example,2026-05-22,Tea Taster Gift Box,39,SE
+5717,noah31@mail.example,2026-04-25,Earl Grey Classic; Tea Taster Gift Box; Rooibos Vanilla,63,SE
+5718,noah31@mail.example,2026-03-03,Tea Taster Gift Box; Rooibos Vanilla,52,SE
+5719,yuki43@mail.example,2026-08-02,Rooibos Vanilla,13,AU
+5720,yuki43@mail.example,2026-06-23,Masala Chai Blend,12,AU
+5721,yuki43@mail.example,2026-05-28,Earl Grey Classic,11,AU
+5722,fatima52@mail.example,2026-09-15,Jasmine Pearls; Ilam Green,36,AE
+5723,fatima52@mail.example,2026-08-25,Masala Chai Blend; Earl Grey Classic,23,AE
+5724,fatima52@mail.example,2026-08-06,Masala Chai Blend; Ilam Green,26,AE
+5725,fatima52@mail.example,2026-06-14,Ilam Green,14,AE
+5726,  Fatima52@Mail.Example ,2026-06-19,Ilam Green; Jasmine Pearls,36,AE
+5727,fatima52@mail.example,2026-03-24,Jasmine Pearls; Masala Chai Blend; Sencha,50,AE
+5728,FATIMA52@MAIL.EXAMPLE,2026-04-18,Jasmine Pearls,22,AE
+5729,freya54@mail.example,2026-10-05,Rooibos Vanilla; Himalayan First Flush; Ilam Green,45,AU
+5730,FREYA54@MAIL.EXAMPLE,2026-09-05,Masala Chai Blend; Earl Grey Classic,23,AU
+5731,liam64@mail.example,2026-09-28,Tea Taster Gift Box,39,BR
+5732,  Liam64@Mail.Example ,2026-08-29,Tea Taster Gift Box,39,BR
+5733,liam64@mail.example,2026-08-03,Tea Taster Gift Box,39,BR
+5734,mei33@mail.example,2026-10-30,Tea Taster Gift Box; Masala Chai Blend,51,KE
+5735,maya62@mail.example,2026-10-24,Himalayan First Flush; Earl Grey Classic; Sencha,45,DE
+5736,maya62@mail.example,2026-09-23,Rooibos Vanilla; Earl Grey Classic,24,DE
+5737,maya62@mail.example,2026-09-14,Jasmine Pearls; Himalayan First Flush,40,DE
+5738,maya62@mail.example,2026-08-19,Sencha,16,DE
+5739,MAYA62@MAIL.EXAMPLE,2026-06-26,Masala Chai Blend,12,DE
+5740,  Maya62@Mail.Example ,2026-07-01,Sencha,16,DE
+5741,maya62@mail.example,2026-03-10,Masala Chai Blend,12,DE
+5742,maya62@mail.example,2026-03-14,Ilam Green; Rooibos Vanilla; Himalayan First Flush,45,DE
+5743,isha60@mail.example,2026-09-28,Tea Taster Gift Box,39,NP
+5744,isha60@mail.example,2026-08-25,Tea Taster Gift Box,39,NP
+5745,pablo79@mail.example,2026-10-18,Earl Grey Classic,11,ZA
+5746,ken32@mail.example,2026-10-24,Ilam Green; Tea Taster Gift Box; Earl Grey Classic,64,UK
+5747,ken32@mail.example,2026-09-17,Tea Taster Gift Box; Sencha; Ilam Green,69,UK
+5748,  Ken32@Mail.Example ,2026-08-23,Sencha; Rooibos Vanilla; Earl Grey Classic,40,UK
+5749,KEN32@MAIL.EXAMPLE,2026-07-29,Ilam Green; Sencha; Rooibos Vanilla,43,UK
+5750,ken32@mail.example,2026-05-25,Ilam Green,14,UK
+5751,ken32@mail.example,2026-04-22,Tea Taster Gift Box; Himalayan First Flush; Earl Grey Classic,68,UK
+5752,ken32@mail.example,2026-04-21,Earl Grey Classic; Masala Chai Blend; Rooibos Vanilla,36,UK
+5753,KEN32@MAIL.EXAMPLE,2026-02-14,Ilam Green; Sencha; Earl Grey Classic,41,UK
+5754,ken32@mail.example,2026-04-07,Rooibos Vanilla,13,UK
+5755,  Ken32@Mail.Example ,2026-03-22,Jasmine Pearls; Earl Grey Classic,33,UK
+5756,  Bikash58@Mail.Example ,2026-10-23,Earl Grey Classic; Ilam Green,25,NP
+5757,bikash58@mail.example,2026-09-28,Earl Grey Classic; Ilam Green,25,NP
+5758,bikash58@mail.example,2026-09-11,Himalayan First Flush; Sencha,34,NP
+5759,bikash58@mail.example,2026-08-09,Earl Grey Classic; Jasmine Pearls; Sencha,49,NP
+5760,bikash58@mail.example,2026-06-09,Sencha,16,NP
+5761,bikash58@mail.example,2026-05-26,Himalayan First Flush,18,NP
+5762,bikash58@mail.example,2026-02-25,Masala Chai Blend,12,NP
+5763,  Bikash58@Mail.Example ,2026-06-05,Ilam Green; Masala Chai Blend; Himalayan First Flush,44,NP
+5764,bikash58@mail.example,2025-12-31,Jasmine Pearls,22,NP
+5765,bikash58@mail.example,2026-02-22,Tea Taster Gift Box,39,NP
+5766,bikash58@mail.example,2026-02-15,Ilam Green; Jasmine Pearls,36,NP
+5767,BIKASH58@MAIL.EXAMPLE,2025-08-20,Himalayan First Flush; Ilam Green,32,NP
+5768,  Bikash58@Mail.Example ,2025-10-28,Jasmine Pearls; Sencha,38,NP
+5769,  Aarav1@Mail.Example ,2026-09-30,Tea Taster Gift Box; Himalayan First Flush,57,ZA
+5770,aarav1@mail.example,2026-09-08,Jasmine Pearls; Tea Taster Gift Box; Sencha,77,ZA
+5771,aarav1@mail.example,2026-08-11,Tea Taster Gift Box,39,ZA
+5772,aarav1@mail.example,2026-07-14,Himalayan First Flush; Tea Taster Gift Box; Masala Chai Blend,69,ZA
+5773,ethan17@mail.example,2026-10-12,Ilam Green; Rooibos Vanilla; Jasmine Pearls,49,NG
+5774,ethan17@mail.example,2026-09-13,Ilam Green,14,NG
+5775,ethan17@mail.example,2026-08-21,Himalayan First Flush,18,NG
+5776,ethan17@mail.example,2026-08-01,Earl Grey Classic; Jasmine Pearls; Masala Chai Blend,45,NG
+5777,ethan17@mail.example,2026-06-10,Himalayan First Flush; Ilam Green; Rooibos Vanilla,45,NG
+5778,ethan17@mail.example,2026-05-25,Ilam Green; Masala Chai Blend; Sencha,42,NG
+5779,ethan17@mail.example,2026-02-14,Tea Taster Gift Box; Himalayan First Flush; Sencha,73,NG
+5780,ethan17@mail.example,2026-01-05,Jasmine Pearls,22,NG
+5781,ethan17@mail.example,2025-12-20,Tea Taster Gift Box; Jasmine Pearls,61,NG
+5782,ama39@mail.example,2026-10-04,Himalayan First Flush,18,ES
+5783,ama39@mail.example,2026-08-27,Rooibos Vanilla; Himalayan First Flush,31,ES
+5784,liam4@mail.example,2026-09-29,Himalayan First Flush; Earl Grey Classic; Rooibos Vanilla,42,SE
+5785,liam4@mail.example,2026-08-26,Rooibos Vanilla,13,SE
+5786,liam4@mail.example,2026-08-18,Tea Taster Gift Box; Himalayan First Flush,57,SE
+5787,liam4@mail.example,2026-06-13,Jasmine Pearls,22,SE
+5788,liam4@mail.example,2026-07-07,Earl Grey Classic; Himalayan First Flush; Rooibos Vanilla,42,SE
+5789,mateo9@mail.example,2026-09-26,Himalayan First Flush; Sencha,34,AE
+5790,mateo9@mail.example,2026-08-27,Masala Chai Blend; Earl Grey Classic,23,AE
+5791,MATEO9@MAIL.EXAMPLE,2026-08-17,Sencha; Ilam Green; Rooibos Vanilla,43,AE
+5792,mateo9@mail.example,2026-06-28,Sencha; Ilam Green; Masala Chai Blend,42,AE
+5793,mateo9@mail.example,2026-07-08,Masala Chai Blend; Tea Taster Gift Box,51,AE
+5794,MAYA89@MAIL.EXAMPLE,2026-10-04,Himalayan First Flush; Rooibos Vanilla; Jasmine Pearls,53,SG
+5795,  Maya89@Mail.Example ,2026-08-30,Earl Grey Classic; Masala Chai Blend,23,SG
+5796,maya89@mail.example,2026-08-01,Himalayan First Flush; Rooibos Vanilla,31,SG
+5797,MAYA89@MAIL.EXAMPLE,2026-07-09,Masala Chai Blend; Earl Grey Classic; Sencha,39,SG
+5798,maya89@mail.example,2026-06-18,Himalayan First Flush; Jasmine Pearls,40,SG
+5799,nadia21@mail.example,2026-09-16,Masala Chai Blend,12,NG
+5800,nadia21@mail.example,2026-08-17,Ilam Green; Earl Grey Classic,25,NG
+5801,mei75@mail.example,2026-10-20,Ilam Green,14,US
+5802,sita68@mail.example,2026-10-07,Ilam Green,14,ZA
+5803,sita68@mail.example,2026-09-13,Masala Chai Blend; Earl Grey Classic; Jasmine Pearls,45,ZA
+5804,  Arjun80@Mail.Example ,2026-10-15,Rooibos Vanilla; Tea Taster Gift Box,52,JP
+5805,ARJUN80@MAIL.EXAMPLE,2026-09-10,Himalayan First Flush; Rooibos Vanilla,31,JP
+5806,arjun80@mail.example,2026-07-27,Rooibos Vanilla,13,JP
+5807,arjun80@mail.example,2026-07-02,Tea Taster Gift Box; Himalayan First Flush,57,JP
+5808,arjun80@mail.example,2026-07-15,Rooibos Vanilla; Ilam Green; Earl Grey Classic,38,JP
+5809,arjun80@mail.example,2026-04-03,Sencha; Masala Chai Blend,28,JP
+5810,ARJUN80@MAIL.EXAMPLE,2026-02-23,Jasmine Pearls; Ilam Green; Earl Grey Classic,47,JP
+5811,arjun80@mail.example,2026-04-23,Sencha,16,JP
+5812,  Arjun80@Mail.Example ,2026-03-21,Ilam Green; Masala Chai Blend; Jasmine Pearls,48,JP
+5813,  Arjun80@Mail.Example ,2026-03-22,Earl Grey Classic; Himalayan First Flush; Tea Taster Gift Box,68,JP
+5814,arjun80@mail.example,2026-01-08,Jasmine Pearls,22,JP
+5815,anjali18@mail.example,2026-10-16,Tea Taster Gift Box,39,SG
+5816,ANJALI18@MAIL.EXAMPLE,2026-09-13,Tea Taster Gift Box,39,SG
+5817,anjali18@mail.example,2026-08-25,Tea Taster Gift Box,39,SG
+5818,hana91@mail.example,2026-10-19,Tea Taster Gift Box; Himalayan First Flush; Sencha,73,JP
+5819,hana91@mail.example,2026-09-14,Sencha,16,JP
+5820,HANA91@MAIL.EXAMPLE,2026-09-09,Masala Chai Blend; Jasmine Pearls; Himalayan First Flush,52,JP
+5821,hana91@mail.example,2026-08-05,Earl Grey Classic; Himalayan First Flush,29,JP
+5822,  Pablo31@Mail.Example ,2026-06-26,Sencha; Himalayan First Flush,34,SG
+5823,pablo31@mail.example,2026-05-17,Sencha; Himalayan First Flush; Masala Chai Blend,46,SG
+5824,lucas45@mail.example,2026-09-30,Himalayan First Flush,18,UK
+5825,lucas45@mail.example,2026-09-04,Himalayan First Flush,18,UK
+5826,lucas45@mail.example,2026-08-15,Sencha; Jasmine Pearls; Ilam Green,52,UK
+5827,lucas45@mail.example,2026-07-29,Sencha; Ilam Green; Rooibos Vanilla,43,UK
+5828,  Lucas45@Mail.Example ,2026-06-10,Masala Chai Blend; Tea Taster Gift Box,51,UK
+5829,lucas45@mail.example,2026-03-24,Earl Grey Classic; Ilam Green; Sencha,41,UK
+5830,  Lucas45@Mail.Example ,2026-04-27,Jasmine Pearls; Earl Grey Classic,33,UK
+5831,priya37@mail.example,2026-09-25,Himalayan First Flush,18,DE
+5832,priya37@mail.example,2026-08-30,Masala Chai Blend; Rooibos Vanilla,25,DE
+5833,priya37@mail.example,2026-07-17,Masala Chai Blend; Himalayan First Flush; Rooibos Vanilla,43,DE
+5834,priya37@mail.example,2026-05-28,Rooibos Vanilla,13,DE
+5835,priya37@mail.example,2026-05-12,Jasmine Pearls; Ilam Green,36,DE
+5836,priya37@mail.example,2026-04-03,Sencha,16,DE
+5837,mateo57@mail.example,2026-10-21,Masala Chai Blend,12,IN
+5838,mateo57@mail.example,2026-09-23,Rooibos Vanilla; Masala Chai Blend; Ilam Green,39,IN
+5839,MATEO57@MAIL.EXAMPLE,2026-08-24,Ilam Green,14,IN
+5840,mateo57@mail.example,2026-08-04,Tea Taster Gift Box,39,IN
+5841,mateo57@mail.example,2026-06-15,Earl Grey Classic,11,IN
+5842,amara2@mail.example,2026-10-10,Himalayan First Flush; Ilam Green,32,NP
+5843,amara2@mail.example,2026-09-06,Tea Taster Gift Box; Jasmine Pearls; Masala Chai Blend,73,NP
+5844,amara2@mail.example,2026-08-09,Rooibos Vanilla; Masala Chai Blend; Ilam Green,39,NP
+5845,amara2@mail.example,2026-06-24,Himalayan First Flush,18,NP
+5846,amara2@mail.example,2026-06-04,Sencha; Ilam Green,30,NP
+5847,amara2@mail.example,2026-05-08,Sencha; Himalayan First Flush,34,NP
+5848,ANIKA60@MAIL.EXAMPLE,2026-10-16,Himalayan First Flush; Earl Grey Classic,29,CA
+5849,  Anika60@Mail.Example ,2026-09-13,Jasmine Pearls; Sencha; Himalayan First Flush,56,CA
+5850,anika60@mail.example,2026-09-06,Ilam Green; Jasmine Pearls,36,CA
+5851,anika60@mail.example,2026-08-17,Masala Chai Blend; Jasmine Pearls,34,CA
+5852,ANIKA60@MAIL.EXAMPLE,2026-06-18,Ilam Green; Masala Chai Blend; Jasmine Pearls,48,CA
+5853,bikash9@mail.example,2026-10-01,Ilam Green; Sencha,30,NP
+5854,bikash9@mail.example,2026-09-09,Sencha; Earl Grey Classic; Himalayan First Flush,45,NP
+5855,BIKASH9@MAIL.EXAMPLE,2026-08-16,Jasmine Pearls; Rooibos Vanilla; Tea Taster Gift Box,74,NP
+5856,bikash9@mail.example,2026-08-02,Jasmine Pearls; Rooibos Vanilla; Himalayan First Flush,53,NP
+5857,bikash9@mail.example,2026-06-19,Masala Chai Blend; Himalayan First Flush,30,NP
+5858,  Bikash9@Mail.Example ,2026-04-09,Tea Taster Gift Box,39,NP
+5859,bikash9@mail.example,2026-04-22,Tea Taster Gift Box,39,NP
+5860,  Bikash9@Mail.Example ,2026-01-01,Ilam Green; Jasmine Pearls; Tea Taster Gift Box,75,NP
+5861,bikash9@mail.example,2026-01-02,Rooibos Vanilla; Ilam Green; Sencha,43,NP
+5862,bikash9@mail.example,2026-01-31,Tea Taster Gift Box; Himalayan First Flush; Ilam Green,71,NP
+5863,lucas61@mail.example,2026-10-07,Tea Taster Gift Box,39,NG
+5864,lucas61@mail.example,2026-09-10,Rooibos Vanilla; Earl Grey Classic; Masala Chai Blend,36,NG
+5865,ingrid94@mail.example,2026-08-02,Sencha; Ilam Green; Earl Grey Classic,41,DE
+5866,ingrid94@mail.example,2026-07-04,Rooibos Vanilla; Jasmine Pearls; Ilam Green,49,DE
+5867,ingrid94@mail.example,2026-06-15,Masala Chai Blend,12,DE
+5868,ingrid94@mail.example,2026-04-10,Rooibos Vanilla; Ilam Green,27,DE
+5869,ingrid94@mail.example,2026-02-27,Earl Grey Classic; Himalayan First Flush; Ilam Green,43,DE
+5870,ingrid94@mail.example,2026-03-20,Masala Chai Blend; Himalayan First Flush; Jasmine Pearls,52,DE
+5871,  Marco32@Mail.Example ,2026-10-15,Himalayan First Flush; Earl Grey Classic,29,KE
+5872,marco32@mail.example,2026-09-14,Jasmine Pearls; Ilam Green; Masala Chai Blend,48,KE
+5873,MARCO32@MAIL.EXAMPLE,2026-08-14,Tea Taster Gift Box; Ilam Green; Masala Chai Blend,65,KE
+5874,MARCO32@MAIL.EXAMPLE,2026-08-07,Earl Grey Classic,11,KE
+5875,amara5@mail.example,2026-09-20,Earl Grey Classic; Tea Taster Gift Box; Jasmine Pearls,72,AE
+5876,amara5@mail.example,2026-08-28,Rooibos Vanilla,13,AE
+5877,  Bikash27@Mail.Example ,2026-10-10,Rooibos Vanilla,13,FR
+5878,  Bikash27@Mail.Example ,2026-09-07,Tea Taster Gift Box; Jasmine Pearls,61,FR
+5879,bikash27@mail.example,2026-08-21,Sencha; Jasmine Pearls,38,FR
+5880,bikash27@mail.example,2026-06-27,Himalayan First Flush; Jasmine Pearls; Tea Taster Gift Box,79,FR
+5881,amara18@mail.example,2026-10-24,Tea Taster Gift Box,39,MX
+5882,erik24@mail.example,2026-09-15,Ilam Green,14,ZA
+5883,nadia94@mail.example,2026-10-20,Himalayan First Flush; Jasmine Pearls,40,FR
+5884,mateo87@mail.example,2026-07-12,Ilam Green; Rooibos Vanilla; Tea Taster Gift Box,66,FR
+5885,mateo87@mail.example,2026-06-13,Masala Chai Blend; Tea Taster Gift Box; Jasmine Pearls,73,FR
+5886,mateo87@mail.example,2026-04-25,Earl Grey Classic,11,FR
+5887,nia36@mail.example,2026-09-19,Ilam Green; Rooibos Vanilla; Earl Grey Classic,38,ES
+5888,nia36@mail.example,2026-08-13,Sencha; Tea Taster Gift Box; Himalayan First Flush,73,ES
+5889,  Priya48@Mail.Example ,2026-09-27,Masala Chai Blend,12,ZA
+5890,priya48@mail.example,2026-08-25,Sencha,16,ZA
+5891,priya48@mail.example,2026-08-10,Masala Chai Blend; Ilam Green,26,ZA
+5892,priya48@mail.example,2026-07-29,Ilam Green,14,ZA
+5893,priya48@mail.example,2026-05-18,Rooibos Vanilla; Himalayan First Flush,31,ZA
+5894,priya48@mail.example,2026-05-10,Himalayan First Flush,18,ZA
+5895,priya48@mail.example,2026-02-11,Earl Grey Classic,11,ZA
+5896,priya48@mail.example,2026-02-15,Earl Grey Classic,11,ZA
+5897,PRIYA48@MAIL.EXAMPLE,2025-11-27,Sencha; Himalayan First Flush,34,ZA
+5898,  Aarav25@Mail.Example ,2026-10-10,Rooibos Vanilla; Earl Grey Classic; Himalayan First Flush,42,NP
+5899,aarav25@mail.example,2026-09-08,Sencha; Earl Grey Classic,27,NP
+5900,nia72@mail.example,2026-10-02,Jasmine Pearls; Earl Grey Classic,33,SE
+5901,nia72@mail.example,2026-09-09,Masala Chai Blend; Himalayan First Flush; Rooibos Vanilla,43,SE
+5902,nia72@mail.example,2026-08-23,Sencha; Himalayan First Flush; Masala Chai Blend,46,SE
+5903,NIA72@MAIL.EXAMPLE,2026-07-10,Jasmine Pearls; Sencha,38,SE
+5904,nia72@mail.example,2026-05-23,Earl Grey Classic; Sencha,27,SE
+5905,nia72@mail.example,2026-05-30,Sencha; Tea Taster Gift Box,55,SE
+5906,nia72@mail.example,2026-03-06,Jasmine Pearls,22,SE
+5907,  Nia72@Mail.Example ,2026-04-24,Rooibos Vanilla,13,SE
+5908,nia72@mail.example,2026-01-11,Himalayan First Flush; Jasmine Pearls,40,SE
+5909,nia72@mail.example,2026-04-05,Jasmine Pearls; Rooibos Vanilla; Tea Taster Gift Box,74,SE
+5910,amara95@mail.example,2026-10-08,Ilam Green; Masala Chai Blend; Earl Grey Classic,37,BR
+5911,amara95@mail.example,2026-09-04,Sencha; Tea Taster Gift Box; Jasmine Pearls,77,BR
+5912,AMARA95@MAIL.EXAMPLE,2026-07-20,Himalayan First Flush,18,BR
+5913,amara95@mail.example,2026-07-16,Himalayan First Flush,18,BR
+5914,ingrid13@mail.example,2026-09-15,Himalayan First Flush,18,CA
+5915,INGRID13@MAIL.EXAMPLE,2026-08-22,Himalayan First Flush,18,CA
+5916,ingrid13@mail.example,2026-08-04,Ilam Green; Tea Taster Gift Box,53,CA
+5917,ingrid13@mail.example,2026-05-18,Sencha; Earl Grey Classic,27,CA
+5918,ingrid13@mail.example,2026-06-15,Tea Taster Gift Box; Rooibos Vanilla; Earl Grey Classic,63,CA
+5919,ingrid13@mail.example,2026-06-02,Ilam Green,14,CA
+5920,INGRID13@MAIL.EXAMPLE,2026-01-30,Ilam Green; Jasmine Pearls; Earl Grey Classic,47,CA
+5921,ingrid13@mail.example,2026-01-06,Earl Grey Classic,11,CA
+5922,ingrid13@mail.example,2026-03-23,Ilam Green; Sencha,30,CA
+5923,  Lea46@Mail.Example ,2026-10-17,Masala Chai Blend; Ilam Green; Jasmine Pearls,48,NP
+5924,  Lea46@Mail.Example ,2026-09-07,Rooibos Vanilla; Sencha; Earl Grey Classic,40,NP
+5925,  Sofia78@Mail.Example ,2026-09-22,Sencha; Tea Taster Gift Box; Jasmine Pearls,77,ES
+5926,nadia90@mail.example,2026-10-23,Tea Taster Gift Box,39,DE
+5927,nadia90@mail.example,2026-09-26,Tea Taster Gift Box,39,DE
+5928,nadia90@mail.example,2026-09-05,Tea Taster Gift Box,39,DE
+5929,kwame21@mail.example,2026-10-02,Masala Chai Blend; Rooibos Vanilla,25,SE
+5930,  Kwame21@Mail.Example ,2026-08-29,Himalayan First Flush,18,SE
+5931,kwame21@mail.example,2026-07-20,Jasmine Pearls,22,SE
+5932,kwame21@mail.example,2026-07-16,Tea Taster Gift Box; Jasmine Pearls; Earl Grey Classic,72,SE
+5933,kwame21@mail.example,2026-06-04,Masala Chai Blend; Earl Grey Classic,23,SE
+5934,liam2@mail.example,2026-10-17,Himalayan First Flush,18,NP
+5935,liam2@mail.example,2026-09-19,Jasmine Pearls,22,NP
+5936,liam2@mail.example,2026-07-31,Jasmine Pearls; Himalayan First Flush,40,NP
+5937,LIAM2@MAIL.EXAMPLE,2026-07-25,Earl Grey Classic,11,NP
+5938,liam2@mail.example,2026-07-17,Tea Taster Gift Box; Himalayan First Flush; Masala Chai Blend,69,NP
+5939,liam2@mail.example,2026-05-25,Masala Chai Blend; Earl Grey Classic,23,NP
+5940,liam2@mail.example,2026-04-26,Masala Chai Blend,12,NP
+5941,liam2@mail.example,2026-05-02,Masala Chai Blend; Earl Grey Classic,23,NP
+5942,liam2@mail.example,2026-02-19,Sencha; Masala Chai Blend; Jasmine Pearls,50,NP
+5943,liam2@mail.example,2025-12-24,Himalayan First Flush; Sencha,34,NP
+5944,ravi78@mail.example,2026-10-08,Tea Taster Gift Box,39,NP
+5945,ravi78@mail.example,2026-09-05,Tea Taster Gift Box,39,NP
+5946,ravi78@mail.example,2026-07-24,Tea Taster Gift Box,39,NP
+5947,priya47@mail.example,2026-09-16,Ilam Green,14,JP
+5948,priya47@mail.example,2026-08-18,Ilam Green,14,JP
+5949,nia27@mail.example,2026-10-11,Earl Grey Classic; Tea Taster Gift Box,50,SE
+5950,nia27@mail.example,2026-09-09,Earl Grey Classic,11,SE
+5951,diego24@mail.example,2026-10-13,Tea Taster Gift Box,39,DE
+5952,  Diego24@Mail.Example ,2026-09-19,Tea Taster Gift Box,39,DE
+5953,LIAM98@MAIL.EXAMPLE,2026-10-21,Ilam Green; Himalayan First Flush,32,ES
+5954,liam98@mail.example,2026-09-15,Tea Taster Gift Box,39,ES
+5955,liam98@mail.example,2026-08-20,Jasmine Pearls,22,ES
+5956,liam98@mail.example,2026-06-23,Himalayan First Flush; Sencha,34,ES
+5957,liam98@mail.example,2026-06-19,Rooibos Vanilla; Himalayan First Flush,31,ES
+5958,liam98@mail.example,2026-04-29,Rooibos Vanilla; Masala Chai Blend; Tea Taster Gift Box,64,ES
+5959,LIAM98@MAIL.EXAMPLE,2026-05-30,Ilam Green; Himalayan First Flush; Tea Taster Gift Box,71,ES
+5960,liam98@mail.example,2026-04-15,Tea Taster Gift Box; Rooibos Vanilla,52,ES
+5961,liam98@mail.example,2026-05-14,Tea Taster Gift Box; Ilam Green,53,ES
+5962,LIAM98@MAIL.EXAMPLE,2026-03-10,Earl Grey Classic,11,ES
+5963,nadia60@mail.example,2026-10-18,Jasmine Pearls; Sencha; Earl Grey Classic,49,SE
+5964,nadia60@mail.example,2026-09-18,Tea Taster Gift Box; Masala Chai Blend; Earl Grey Classic,62,SE
+5965,nadia60@mail.example,2026-08-05,Earl Grey Classic; Rooibos Vanilla; Sencha,40,SE
+5966,  Nadia60@Mail.Example ,2026-07-08,Masala Chai Blend; Jasmine Pearls,34,SE
+5967,nadia60@mail.example,2026-07-10,Rooibos Vanilla; Jasmine Pearls; Himalayan First Flush,53,SE
+5968,NADIA60@MAIL.EXAMPLE,2026-07-10,Ilam Green,14,SE
+5969,nadia60@mail.example,2026-04-21,Sencha; Earl Grey Classic; Rooibos Vanilla,40,SE
+5970,sofia6@mail.example,2026-10-22,Sencha,16,SG
+5971,noah49@mail.example,2026-09-27,Ilam Green,14,ES
+5972,noah49@mail.example,2026-08-31,Tea Taster Gift Box,39,ES
+5973,NOAH49@MAIL.EXAMPLE,2026-08-16,Sencha; Jasmine Pearls; Ilam Green,52,ES
+5974,noah49@mail.example,2026-07-11,Ilam Green; Himalayan First Flush,32,ES
+5975,noah49@mail.example,2026-06-15,Himalayan First Flush; Masala Chai Blend,30,ES
+5976,noah49@mail.example,2026-05-20,Masala Chai Blend; Tea Taster Gift Box; Sencha,67,ES
+5977,noah49@mail.example,2026-03-25,Himalayan First Flush; Earl Grey Classic; Sencha,45,ES
+5978,noah49@mail.example,2026-01-04,Tea Taster Gift Box,39,ES
+5979,  Noah49@Mail.Example ,2025-11-11,Ilam Green,14,ES
+5980,ethan42@mail.example,2026-10-14,Earl Grey Classic; Ilam Green; Masala Chai Blend,37,MX
+5981,ethan42@mail.example,2026-09-13,Jasmine Pearls; Rooibos Vanilla,35,MX
+5982,ETHAN42@MAIL.EXAMPLE,2026-09-02,Ilam Green; Earl Grey Classic,25,MX
+5983,ethan42@mail.example,2026-07-16,Sencha; Rooibos Vanilla; Tea Taster Gift Box,68,MX
+5984,ethan42@mail.example,2026-06-08,Tea Taster Gift Box; Earl Grey Classic; Masala Chai Blend,62,MX
+5985,sipho56@mail.example,2026-10-20,Jasmine Pearls,22,AU
+5986,lucas8@mail.example,2026-10-23,Himalayan First Flush,18,DE
+5987,  Lucas8@Mail.Example ,2026-09-13,Masala Chai Blend; Jasmine Pearls,34,DE
+5988,lucas8@mail.example,2026-08-12,Himalayan First Flush,18,DE
+5989,  Lucas8@Mail.Example ,2026-07-13,Masala Chai Blend; Himalayan First Flush,30,DE
+5990,lucas8@mail.example,2026-05-16,Jasmine Pearls; Earl Grey Classic; Ilam Green,47,DE
+5991,LUCAS8@MAIL.EXAMPLE,2026-05-01,Himalayan First Flush; Masala Chai Blend; Tea Taster Gift Box,69,DE
+5992,fatima31@mail.example,2026-09-16,Tea Taster Gift Box; Himalayan First Flush; Rooibos Vanilla,70,ZA
+5993,fatima31@mail.example,2026-08-17,Masala Chai Blend,12,ZA
+5994,  Fatima31@Mail.Example ,2026-07-22,Masala Chai Blend; Ilam Green; Sencha,42,ZA
+5995,FATIMA31@MAIL.EXAMPLE,2026-06-18,Rooibos Vanilla; Himalayan First Flush; Jasmine Pearls,53,ZA
+5996,lea21@mail.example,2026-10-04,Tea Taster Gift Box; Rooibos Vanilla; Jasmine Pearls,74,AU
+5997,lea21@mail.example,2026-09-10,Rooibos Vanilla,13,AU
+5998,lea21@mail.example,2026-08-01,Tea Taster Gift Box,39,AU
+5999,lea21@mail.example,2026-06-15,Tea Taster Gift Box,39,AU
+6000,bilal89@mail.example,2026-09-21,Masala Chai Blend; Himalayan First Flush; Sencha,46,SE
+6001,  Bilal89@Mail.Example ,2026-08-26,Himalayan First Flush; Masala Chai Blend,30,SE
+6002,bilal89@mail.example,2026-07-13,Earl Grey Classic; Masala Chai Blend; Tea Taster Gift Box,62,SE
+6003,bilal89@mail.example,2026-06-14,Masala Chai Blend; Tea Taster Gift Box; Earl Grey Classic,62,SE
+6004,bilal89@mail.example,2026-06-05,Masala Chai Blend,12,SE
+6005,bilal89@mail.example,2026-06-13,Ilam Green; Earl Grey Classic; Tea Taster Gift Box,64,SE
+6006,TARIQ13@MAIL.EXAMPLE,2026-10-06,Tea Taster Gift Box,39,FR
+6007,tariq13@mail.example,2026-09-11,Sencha; Earl Grey Classic,27,FR
+6008,tariq13@mail.example,2026-07-24,Masala Chai Blend; Earl Grey Classic,23,FR
+6009,tariq13@mail.example,2026-07-17,Earl Grey Classic; Jasmine Pearls; Masala Chai Blend,45,FR
+6010,TARIQ13@MAIL.EXAMPLE,2026-06-04,Rooibos Vanilla,13,FR
+6011,AMA66@MAIL.EXAMPLE,2026-10-27,Masala Chai Blend; Rooibos Vanilla,25,FR
+6012,AMA73@MAIL.EXAMPLE,2026-10-06,Earl Grey Classic; Himalayan First Flush,29,CA
+6013,AMA73@MAIL.EXAMPLE,2026-08-31,Earl Grey Classic; Himalayan First Flush,29,CA
+6014,ama73@mail.example,2026-07-20,Masala Chai Blend; Jasmine Pearls; Rooibos Vanilla,47,CA
+6015,AMA73@MAIL.EXAMPLE,2026-07-17,Rooibos Vanilla; Himalayan First Flush,31,CA
+6016,ama73@mail.example,2026-06-04,Rooibos Vanilla; Jasmine Pearls; Himalayan First Flush,53,CA
+6017,ama73@mail.example,2026-06-18,Tea Taster Gift Box; Rooibos Vanilla,52,CA
+6018,ama73@mail.example,2026-06-02,Rooibos Vanilla,13,CA
+6019,ama73@mail.example,2026-03-10,Himalayan First Flush,18,CA
+6020,ama73@mail.example,2025-11-28,Ilam Green; Earl Grey Classic; Rooibos Vanilla,38,CA
+6021,ama73@mail.example,2026-03-13,Rooibos Vanilla; Jasmine Pearls; Himalayan First Flush,53,CA
+6022,aarav83@mail.example,2026-10-17,Ilam Green,14,ES
+6023,aarav83@mail.example,2026-09-22,Earl Grey Classic,11,ES
+6024,aarav83@mail.example,2026-09-01,Sencha,16,ES
+6025,aarav83@mail.example,2026-08-18,Earl Grey Classic; Himalayan First Flush; Jasmine Pearls,51,ES
+6026,  Aarav83@Mail.Example ,2026-05-18,Sencha; Rooibos Vanilla; Tea Taster Gift Box,68,ES
+6027,aarav83@mail.example,2026-05-15,Tea Taster Gift Box; Jasmine Pearls,61,ES
+6028,aarav83@mail.example,2026-03-15,Masala Chai Blend,12,ES
+6029,elena50@mail.example,2026-05-23,Tea Taster Gift Box; Sencha,55,AU
+6030,aarav35@mail.example,2026-10-10,Masala Chai Blend; Sencha,28,UK
+6031,aarav35@mail.example,2026-09-13,Himalayan First Flush; Jasmine Pearls; Sencha,56,UK
+6032,aarav35@mail.example,2026-08-11,Jasmine Pearls; Sencha; Tea Taster Gift Box,77,UK
+6033,aarav35@mail.example,2026-06-15,Jasmine Pearls,22,UK
+6034,AARAV35@MAIL.EXAMPLE,2026-06-20,Ilam Green; Rooibos Vanilla,27,UK
+6035,aarav35@mail.example,2026-06-22,Tea Taster Gift Box; Himalayan First Flush,57,UK
+6036,rosa56@mail.example,2026-10-19,Jasmine Pearls,22,MX
+6037,rosa56@mail.example,2026-09-09,Himalayan First Flush; Jasmine Pearls; Masala Chai Blend,52,MX
+6038,  Rosa56@Mail.Example ,2026-08-10,Sencha; Masala Chai Blend,28,MX
+6039,ROSA56@MAIL.EXAMPLE,2026-07-12,Himalayan First Flush,18,MX
+6040,rosa56@mail.example,2026-07-15,Jasmine Pearls,22,MX
+6041,ZARA77@MAIL.EXAMPLE,2026-09-20,Masala Chai Blend; Ilam Green,26,SE
+6042,ZARA77@MAIL.EXAMPLE,2026-08-15,Rooibos Vanilla; Sencha; Ilam Green,43,SE
+6043,  Camila98@Mail.Example ,2026-10-12,Sencha; Tea Taster Gift Box; Earl Grey Classic,66,SE
+6044,camila98@mail.example,2026-09-05,Ilam Green; Sencha; Jasmine Pearls,52,SE
+6045,camila98@mail.example,2026-08-21,Masala Chai Blend; Ilam Green; Jasmine Pearls,48,SE
+6046,CAMILA98@MAIL.EXAMPLE,2026-06-26,Earl Grey Classic,11,SE
+6047,camila98@mail.example,2026-06-10,Ilam Green,14,SE
+6048,CAMILA98@MAIL.EXAMPLE,2026-04-05,Tea Taster Gift Box; Rooibos Vanilla,52,SE
+6049,camila98@mail.example,2026-04-09,Himalayan First Flush; Ilam Green,32,SE
+6050,camila98@mail.example,2026-04-13,Masala Chai Blend; Ilam Green,26,SE
+6051,  Ken51@Mail.Example ,2026-09-26,Sencha; Jasmine Pearls,38,ZA
+6052,ken51@mail.example,2026-09-05,Tea Taster Gift Box; Himalayan First Flush,57,ZA
+6053,  Ken51@Mail.Example ,2026-08-01,Jasmine Pearls; Sencha; Himalayan First Flush,56,ZA
+6054,ken51@mail.example,2026-07-22,Tea Taster Gift Box; Himalayan First Flush,57,ZA
+6055,ken51@mail.example,2026-05-29,Sencha; Rooibos Vanilla,29,ZA
+6056,  Ken51@Mail.Example ,2026-04-24,Sencha; Earl Grey Classic,27,ZA

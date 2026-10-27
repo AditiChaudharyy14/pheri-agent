@@ -29,6 +29,7 @@ import random
 import time
 import uuid
 from dataclasses import dataclass, field
+from types import SimpleNamespace
 from typing import Any, Callable
 
 from pydantic import BaseModel, ValidationError
@@ -76,6 +77,7 @@ class LLMResult:
     raw: Any = field(default=None, repr=False)
     function_calls: list[FunctionCall] = field(default_factory=list)
     parse_error: str | None = None  # with tools: the reply was not the JSON we asked for
+    incomplete: str | None = None  # why the provider stopped early, e.g. "max_output_tokens"
 
 
 # Mock responders let tests and offline demos run with zero network and zero spend.
@@ -213,8 +215,8 @@ class LLM:
         try:
             calls: list[FunctionCall] = []
             if self.settings.llm_mode == "mock":
-                text, usage, calls, resp_id = self._mock_call(messages, purpose, schema, tools, previous_response_id)
-                raw = None
+                text, usage, calls, resp_id, raw = self._mock_call(messages, purpose, schema, tools,
+                                                                   previous_response_id)
             elif provider == "meta":
                 req = build_responses_request(model, messages, max_tokens, schema, effort, f"pheri-{purpose}",
                                               tools, previous_response_id)
@@ -243,6 +245,9 @@ class LLM:
             self._context_tokens.pop(previous_response_id or "", None)  # our chains are linear
             self._context_tokens[resp_id] = in_tok + out_tok
 
+        incomplete = None
+        if getattr(raw, "status", None) == "incomplete":
+            incomplete = getattr(getattr(raw, "incomplete_details", None), "reason", None) or "unknown"
         parsed, parse_error = None, None
         if schema is not None and not calls:
             try:
@@ -250,9 +255,9 @@ class LLM:
             except ModelOutputError as exc:
                 if not tools:
                     raise
-                parse_error = str(exc)
+                parse_error = f"cut off ({incomplete})" if incomplete else str(exc)
         return LLMResult(text, parsed, provider, model, in_tok, cached_tok, out_tok, actual, latency, resp_id, raw,
-                         calls, parse_error)
+                         calls, parse_error, incomplete)
 
     # ---- transports -------------------------------------------------------
     def _responses(self, req: dict):
@@ -295,7 +300,10 @@ class LLM:
         thread = thread + list(messages)
         reply = fn(thread, schema.model_json_schema() if schema else None)
         calls: list[FunctionCall] = []
+        raw = None
         if isinstance(reply, dict):
+            if reply.get("incomplete"):  # lets tests play a reply cut off at the output limit
+                raw = SimpleNamespace(status="incomplete", incomplete_details=SimpleNamespace(reason=reply["incomplete"]))
             calls = [FunctionCall(c["name"], c["arguments"] if isinstance(c["arguments"], str)
                                   else json.dumps(c["arguments"], ensure_ascii=False), f"call_{uuid.uuid4().hex[:12]}")
                      for c in reply.get("function_calls", [])]
@@ -309,7 +317,7 @@ class LLM:
         if tools:  # only tool loops chain, so only they keep a thread
             resp_id = f"mock_{uuid.uuid4().hex[:12]}"
             self._mock_threads[resp_id] = thread + out_items
-        return text, usage, calls, resp_id
+        return text, usage, calls, resp_id, raw
 
 
 def _retry_delay(exc: Exception, attempt: int) -> float:

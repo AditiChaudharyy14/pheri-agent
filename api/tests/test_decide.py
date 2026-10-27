@@ -180,3 +180,61 @@ def test_twenty_kettle_customers_each_get_a_checked_decision(llm):
     assert llm.ledger.totals("meta").settled_usd == 0  # mock mode spends nothing
     decided = [a for a in store.audit_log() if a["event"] == "decided"]
     assert len(decided) == 20
+
+
+# ---- what the first live run taught us ----------------------------------------------
+def test_an_answer_cut_off_at_the_output_limit_falls_back_without_a_nudge(maya, store, llm, monkeypatch):
+    def model(messages, schema):
+        if not any(m.get("type") == "function_call_output" for m in messages):
+            return {"function_calls": [{"name": "get_profile", "arguments": {}}]}
+        return {"text": "", "incomplete": "max_output_tokens"}  # all reasoning, no JSON
+
+    _model(monkeypatch, model)
+    out = decide(maya, store, llm)
+    assert out.turns == 2 and "cut off (max_output_tokens)" in out.fallback
+    assert out.decision["action"] == "task_for_owner"
+
+
+class _Refused(Exception):
+    status_code = 400
+    message = "referenced response not found or expired"
+
+
+def test_a_refused_request_ends_only_this_customers_decision(maya, store, llm, monkeypatch):
+    real, calls = llm.complete, []
+
+    def flaky(items, **kw):
+        calls.append(kw)
+        if len(calls) == 2:
+            raise _Refused()
+        return real(items, **kw)
+
+    monkeypatch.setattr(llm, "complete", flaky)
+    out = decide(maya, store, llm)
+    assert "refused turn 2 (400: referenced response not found or expired)" in out.fallback
+    assert out.action["kind"] == "task_for_owner"
+
+
+def test_spend_cap_still_stops_the_run(maya, store, llm, monkeypatch):
+    from pheri.ledger import SpendCapExceeded
+
+    monkeypatch.setattr(llm, "complete", lambda *a, **kw: (_ for _ in ()).throw(SpendCapExceeded("cap")))
+    with pytest.raises(SpendCapExceeded):
+        decide(maya, store, llm)
+
+
+def test_repeat_profile_reads_are_answered_briefly_and_optional_args_may_be_left_out(maya, store, llm, monkeypatch):
+    def model(messages, schema):
+        n = sum(m.get("type") == "function_call_output" for m in messages)
+        if n == 0:
+            return {"function_calls": [{"name": "get_profile", "arguments": {}},
+                                       {"name": "get_profile", "arguments": {}}]}
+        if n == 2:
+            return {"function_calls": [{"name": "check_rules", "arguments": {"action": "send_help"}}]}
+        return _answer()
+
+    _model(monkeypatch, model)
+    out = decide(maya, store, llm)
+    assert [t["tool"] for t in out.trace] == ["get_profile", "get_profile", "check_rules"]
+    assert '"note"' in out.trace[1]["output"] and len(out.trace[0]["output"]) == 300  # full profile, clipped in trace
+    assert out.prechecks[0]["action"] == "send_help" and "not one brightdesk uses" in out.prechecks[0]["violations"][0]

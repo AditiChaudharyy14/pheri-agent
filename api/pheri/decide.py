@@ -10,7 +10,8 @@ The model works through three tools (Responses API, flat function tools, effort 
   check_rules           a dry run of the rule check for an action it is considering
 
 tool_choice is "auto" only, so any turn may come back as plain text. A reply that is not the decision
-JSON gets one nudge, then a safe fallback: a task for the owner. Then code takes over:
+JSON gets one nudge; a reply cut off at the output limit, a refused request, or a second miss falls
+back safely to a task for the owner. Then code takes over:
   1. evidence: each item must be a profile fact with its exact value, or a quote taken from the
      profile's verified evidence; numbers in why/message must appear in that evidence. Anything else
      is dropped, and weak evidence means Pheri may not act alone.
@@ -38,8 +39,9 @@ from .rules import CheckContext, active_rules, check, describe
 from .synth import NOW
 
 PURPOSE = "decide"
-MAX_TURNS = 6  # tool rounds + the answer; a decision needs about four
-MAX_OUTPUT_TOKENS = 1500  # per turn, reasoning included
+MAX_TURNS = 5  # tool rounds + the answer; live decisions took four
+# Per turn, reasoning included. Live, effort medium spent all of 1500 reasoning before the JSON answer.
+MAX_OUTPUT_TOKENS = 4000
 
 
 # ---- what the model returns ----------------------------------------------------
@@ -60,8 +62,8 @@ class Decision(BaseModel):
 
 class CheckRulesArgs(BaseModel):
     action: Literal[tuple(CATALOG)]
-    channel: Literal[ALL_CHANNELS] | None
-    discount_pct: float | None
+    channel: Literal[ALL_CHANNELS] | None = None  # the model may leave optional fields out
+    discount_pct: float | None = None
 
 
 class NoArgs(BaseModel):
@@ -124,8 +126,20 @@ class _Run:
     store: object
     ctx: CheckContext
     prechecks: list[dict] = field(default_factory=list)
+    trace: list[dict] = field(default_factory=list)  # every tool call and a short view of its result
+    _given: set = field(default_factory=set)
 
     def call(self, name: str, arguments: str) -> dict:
+        out = self._call(name, arguments)
+        self.trace.append({"tool": name, "arguments": arguments,
+                           "output": json.dumps(out, ensure_ascii=False, default=str)[:300]})
+        return out
+
+    def _call(self, name: str, arguments: str) -> dict:
+        if name in ("get_profile", "list_allowed_actions"):
+            if name in self._given:  # it is already in the conversation: don't pay to read it twice
+                return {"note": f"Unchanged: use the {name} result above."}
+            self._given.add(name)
         if name == "get_profile":
             return _profile_view(self.profile, self.journey)
         if name == "list_allowed_actions":
@@ -207,6 +221,7 @@ class Outcome:
     fallback: str | None = None  # why the model's answer was not used
     prechecks: list[dict] = field(default_factory=list)
     cost_usd: float = 0.0
+    trace: list[dict] = field(default_factory=list)
 
 
 def _fallback(reason: str) -> Decision:
@@ -226,8 +241,16 @@ def decide(p: Profile, store, llm: LLM, now: datetime = NOW, data_class: str = "
     items: list[dict] = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": user}]
     prev, decision, fallback, nudged, turns, cost = None, None, None, False, 0, 0.0
     while turns < MAX_TURNS:
-        r: LLMResult = llm.complete(items, purpose=PURPOSE, schema=Decision, effort="medium", tools=TOOLS,
-                                    previous_response_id=prev, max_tokens=MAX_OUTPUT_TOKENS, data_class=data_class)
+        try:
+            r: LLMResult = llm.complete(items, purpose=PURPOSE, schema=Decision, effort="medium", tools=TOOLS,
+                                        previous_response_id=prev, max_tokens=MAX_OUTPUT_TOKENS,
+                                        data_class=data_class)
+        except Exception as exc:  # noqa: BLE001
+            status = getattr(exc, "status_code", None)
+            if status is None or not 400 <= status < 500:
+                raise  # spend cap, data policy, outages: stop the run, never paper over them
+            fallback = f"the model API refused turn {turns + 1} ({status}: {getattr(exc, 'message', exc)})"
+            break
         turns, cost, prev = turns + 1, cost + r.cost_usd, r.response_id
         if r.function_calls:
             items = [{"type": "function_call_output", "call_id": c.call_id,
@@ -236,6 +259,9 @@ def decide(p: Profile, store, llm: LLM, now: datetime = NOW, data_class: str = "
             continue
         if r.parsed is not None:
             decision = r.parsed
+            break
+        if r.incomplete:  # cut off mid-thought: a nudge would only pay for the same thought again
+            fallback = f"the answer was cut off ({r.incomplete}) before the decision JSON"
             break
         if nudged:
             fallback = "the model answered in plain text twice instead of the decision JSON"
@@ -259,7 +285,8 @@ def decide(p: Profile, store, llm: LLM, now: datetime = NOW, data_class: str = "
                                   message=decision.message, send_at=now)
         action = submit(store, p.customer_key, proposed, run.ctx, why=why, evidence=kept,
                         cap="ask_owner" if weak else None)
-    return Outcome(p.customer_key, decision.model_dump(), action, kept, dropped, turns, fallback, run.prechecks, cost)
+    return Outcome(p.customer_key, decision.model_dump(), action, kept, dropped, turns, fallback, run.prechecks, cost,
+                   run.trace)
 
 
 # ---- offline stand-in for Muse Spark ------------------------------------------------

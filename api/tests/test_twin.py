@@ -125,8 +125,10 @@ def test_the_cli_writes_the_results_file(tmp_path):
     import subprocess
     import sys
 
+    from pheri.config import REPO_ROOT
+
     out = tmp_path / "bd.json"
     done = subprocess.run([sys.executable, "-m", "pheri.twin", "brightdesk", "--out", str(out)],
-                          capture_output=True, text=True, encoding="utf-8")
+                          capture_output=True, text=True, encoding="utf-8", cwd=REPO_ROOT / "api")  # from any cwd
     assert done.returncode == 0, done.stderr
     assert "lift" in done.stdout and json.loads(out.read_text(encoding="utf-8"))["customers"] == 200

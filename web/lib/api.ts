@@ -122,6 +122,7 @@ export type TwinResults = {
 };
 
 export type Learned = {
+  source: "live" | "recorded" | "stand-in";
   headline: string;
   findings: { stage: string; verdict: string; text: string; fact_ids: string[] }[];
   caveats: { text: string; fact_ids: string[] }[];

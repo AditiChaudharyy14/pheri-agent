@@ -12,10 +12,11 @@ Read this before every task. These rules are not optional.
 - Doing: Next steps feedback. Done: Maya's card specific (problem, goal, "renews in 8 days", "she"); card footer
   ("Decided by Muse Spark 1.3 · $cost · N turns · View trace"; "the offline stand-in" when not recorded).
   Trace shows Maya's recorded run (3 turns, per-turn tokens and cost, "Recorded from a live run").
-- Next: safe demo mode badge ("Recorded from a live run"; the pill wrongly says
-  "Live models" in replay until then), deploy prep; then README, demo video.
+  Safe demo mode: PHERI_LLM_MODE=replay; the pill says "Recorded from a live run · synthetic data", Proof and Spend
+  say when the stand-in wrote something (no Wonder reply recorded for the 5,000 twin).
+- Next: deploy prep (Render: API in replay mode, web), then README, demo video.
   Servers for screenshots: uvicorn :8000 (no --reload: restart after API changes), next dev :3000.
-- Live spend: Meta $0.5102 of $130, Baseten $0.1447 of $90. Tests: 258 pass (mock).
+- Live spend: Meta $0.5102 of $130, Baseten $0.1447 of $90. Tests: 258 pass (mock + one replay test).
 
 ## What we are building
 Pheri: an AI agent that understands each customer, decides their next best action ("why this, why now"),

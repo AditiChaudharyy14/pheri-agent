@@ -175,6 +175,7 @@ def test_twin_results_and_the_learned_report(client):
     rep = client.get(f"{BD}/learned").json()
     assert rep["rejected"] == [] and len(rep["findings"]) == 6
     assert rep["markdown"].startswith("## What Pheri learned")
+    assert rep["source"] == "stand-in"  # never credited to Muse Wonder unless Wonder wrote it
 
 
 def test_spend_summary(client):
@@ -270,3 +271,7 @@ def test_replay_serves_mayas_recorded_live_run(monkeypatch, tmp_path):
     assert "renews in 8 days" in d["why_now"] and d["why_this"].startswith("She ")
     assert card["cost_usd"] > 0 and card["turns"] == 3  # what the live run paid, for its turns
     assert llm.ledger.totals("meta").settled_usd == 0  # replaying it spent nothing
+    api = TestClient(create_app(llm))
+    assert api.get("/health").json()["mode"] == "replay"
+    # No Wonder reply was recorded for the 5,000-customer twin: the report says the stand-in wrote it.
+    assert api.get(f"{BD}/learned").json()["source"] == "stand-in"

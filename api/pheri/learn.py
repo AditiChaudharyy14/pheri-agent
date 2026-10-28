@@ -180,6 +180,7 @@ class LearnedReport:
     rejected: list[dict] = field(default_factory=list)  # {"part", "text", "problems"}
     model: str | None = None
     cost_usd: float = 0.0
+    recorded: bool = False  # replay mode: Muse Wonder's reply from a recorded live run
 
     @property
     def markdown(self) -> str:
@@ -258,7 +259,7 @@ def write_report(results: dict, llm: LLM, data_class: str = "synthetic") -> Lear
         return LearnedReport(_code_headline(facts), [], [], [{"part": "report", "text": "",
                                                                "problems": [f"unusable answer: {str(exc)[:200]}"]}])
     rep: Report = r.parsed
-    out = LearnedReport(rep.headline, [], [], model=r.model, cost_usd=r.cost_usd)
+    out = LearnedReport(rep.headline, [], [], model=r.model, cost_usd=r.cost_usd, recorded=r.recorded)
     problems = check_item(rep.headline, rep.headline_fact_ids, facts)
     if facts["overall.verdict"] == "unclear" and (claims := _claims(rep.headline)):
         problems.append(f"claims a result while the overall verdict is unclear ({', '.join(claims)})")

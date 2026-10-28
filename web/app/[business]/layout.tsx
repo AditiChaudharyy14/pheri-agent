@@ -10,6 +10,16 @@ export function generateStaticParams() {
 
 async function ModePill() {
   const h = await api<{ mode: string }>("/health");
+  if (h.mode === "replay") {
+    return (
+      <span
+        className="rounded-full bg-teal-soft px-3 py-1 text-[0.8rem] text-teal-ink"
+        title="The model's replies were recorded in a live run and are replayed here; code runs every check again. No model calls, no spend."
+      >
+        Recorded from a live run · synthetic data
+      </span>
+    );
+  }
   return h.mode === "mock" ? (
     <span className="rounded-full border border-line px-3 py-1 text-[0.8rem] text-muted" title="No model calls, no spend">
       Mock mode · synthetic data

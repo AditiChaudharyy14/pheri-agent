@@ -145,6 +145,7 @@ def create_app(llm: LLM | None = None) -> FastAPI:
     # ---- the basics ----
     @app.get("/health")
     def health():
+        """mode: live (real calls), replay (replies recorded in a live run, played back), or mock (the stand-in)."""
         return {"ok": True, "mode": state.settings.llm_mode}
 
     @app.get("/businesses")
@@ -318,7 +319,9 @@ def create_app(llm: LLM | None = None) -> FastAPI:
         with state.lock:
             if k not in state.learned:
                 rep = write_report(twin_results(b, customers, seed_), state.llm)
-                state.learned[k] = {**dataclasses.asdict(rep), "markdown": rep.markdown}
+                # Offline, the report is Muse Wonder's only if a live run recorded it; else the stand-in wrote it.
+                source = "recorded" if rep.recorded else "stand-in"
+                state.learned[k] = {**dataclasses.asdict(rep), "markdown": rep.markdown, "source": source}
             return state.learned[k]
 
     # ---- for the web app: next steps, replies, which model runs ----

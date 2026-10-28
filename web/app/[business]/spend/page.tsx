@@ -21,6 +21,7 @@ const MODEL: Record<string, string> = {
   "meta-models/muse-spark-open-1026": "Muse Spark Open",
 };
 
+const SERVER_MODE: Record<string, string> = { mock: "Mock mode", replay: "Replay mode", live: "Live mode" };
 const money = (v: number, digits = 4) => `$${v.toFixed(digits)}`;
 const tokens = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(n >= 100_000 ? 0 : 1)}k` : `${n}`);
 const day = (iso: string) =>
@@ -71,12 +72,12 @@ async function SpendView({ params }: { params: PageProps<"/[business]/spend">["p
         <Card>
           <div className="flex items-baseline justify-between gap-4">
             <h2 className="text-[1.35rem] font-medium">This server</h2>
-            <Badge tone={s.mode === "mock" ? "slate" : "amber"}>{s.mode === "mock" ? "Mock mode" : "Live mode"}</Badge>
+            <Badge tone={s.mode === "live" ? "amber" : "slate"}>{SERVER_MODE[s.mode] ?? s.mode}</Badge>
           </div>
           <p className="mt-2 text-ink-2">
-            {s.mode === "mock"
-              ? `What you are clicking through runs offline. Its ledger holds ${here.toLocaleString()} offline calls, every one counted at $0.`
-              : `Its ledger holds ${here.toLocaleString()} calls, each one settled at its real cost.`}
+            {s.mode === "live"
+              ? `Its ledger holds ${here.toLocaleString()} calls, each one settled at its real cost.`
+              : `${s.mode === "replay" ? "What you are clicking through replays the model's replies from a recorded live run; nothing is sent." : "What you are clicking through runs offline."} Its ledger holds ${here.toLocaleString()} offline calls, every one counted at $0.`}
           </p>
           <table className="mt-4 w-full text-[0.95rem]">
             <tbody>

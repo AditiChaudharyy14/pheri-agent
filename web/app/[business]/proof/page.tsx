@@ -25,10 +25,9 @@ export default function ProofPage({ params }: PageProps<"/[business]/proof">) {
 
 async function Proof({ params }: { params: PageProps<"/[business]/proof">["params"] }) {
   const { business } = await params;
-  const [twin, learned, health] = await Promise.all([
+  const [twin, learned] = await Promise.all([
     api<TwinResults>(`/businesses/${business}/twin`),
     api<Learned>(`/businesses/${business}/learned`),
-    api<{ mode: string }>("/health"),
   ]);
   const o = twin.overall;
   return (
@@ -81,7 +80,7 @@ async function Proof({ params }: { params: PageProps<"/[business]/proof">["param
           <LearningCurve curve={twin.learning_curve} />
           <p className="mt-1 text-center text-[0.82rem] text-muted">round</p>
         </Card>
-        <Report learned={learned} mock={health.mode === "mock"} />
+        <Report learned={learned} />
       </div>
     </div>
   );
@@ -97,7 +96,7 @@ function Tile({ value, label, sub, strong }: { value: string; label: string; sub
   );
 }
 
-function Report({ learned, mock }: { learned: Learned; mock: boolean }) {
+function Report({ learned }: { learned: Learned }) {
   return (
     <Card>
       <div className="flex items-baseline justify-between gap-4">
@@ -107,9 +106,9 @@ function Report({ learned, mock }: { learned: Learned; mock: boolean }) {
         </Badge>
       </div>
       <p className="mt-1 text-[0.88rem] text-muted">
-        {mock
-          ? "Written by the offline stand-in (mock mode). The Muse Wonder report is a deliberate, budgeted run."
-          : `Written by ${learned.model}.`}{" "}
+        {learned.source === "stand-in"
+          ? "Written by the offline stand-in. The Muse Wonder report is a deliberate, budgeted run."
+          : `Written by Muse Wonder${learned.source === "recorded" ? ", recorded from a live run" : ""}.`}{" "}
         Code checks every number against the results and every verdict against its interval.
       </p>
       <p className="mt-4 font-serif text-[1.15rem] leading-snug text-ink">{learned.headline}</p>

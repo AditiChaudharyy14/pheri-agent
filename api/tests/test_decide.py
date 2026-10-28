@@ -428,3 +428,28 @@ def test_private_decide_is_strict_json_schema_only(maya, store, llm, monkeypatch
     out = decide(maya, store, llm)
     assert schemas and all(s is not None for s in schemas) and len(schemas) == 1  # no instructions fallback
     assert "refused the request (400)" in out.fallback
+
+
+def test_the_turn_log_shows_the_agents_loop(maya, store, llm):
+    out = decide(maya, store, llm)
+    kinds = [([x["kind"] for x in t["sent"]], [x.get("tool", x["kind"]) for x in t["got"]]) for t in out.turn_log]
+    assert kinds == [
+        (["instructions", "brief"], ["get_profile", "list_allowed_actions"]),  # it asks for what it needs
+        (["tool_result", "tool_result"], ["check_rules"]),  # tries the goodwill discount...
+        (["tool_result"], ["check_rules"]),  # ...is refused by the first-month rule, tries help
+        (["tool_result"], ["answer"]),
+    ]
+    refused = out.turn_log[2]["sent"][0]["output"]
+    assert refused["action"] == "offer_discount" and refused["violations"] == [FIRST_MONTH]
+    assert out.turn_log[-1]["got"][0]["decision"]["action"] == "send_help"
+    assert all(t["usage"]["model"] == "muse-spark-1.3" for t in out.turn_log)
+    assert [t["turn"] for t in out.turn_log] == list(range(1, out.turns + 1))
+
+
+def test_a_private_decision_logs_its_one_turn(maya, store, llm):
+    from pheri.privacy import set_private_mode
+
+    set_private_mode(store, decide=True, by="owner")
+    out = decide(maya, store, llm)
+    assert len(out.turn_log) == 1 and out.turn_log[0]["usage"]["provider"] == "baseten"
+    assert set(out.turn_log[0]["sent"][1]["data"]) == {"today", "business_name", "profile", "allowed", "dry_run"}

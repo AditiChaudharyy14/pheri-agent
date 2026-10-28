@@ -224,3 +224,15 @@ def test_the_discount_refusal_comes_with_the_rules_plain_words(client):
                                   "source_text": "Never offer discounts in a customer's first month.",
                                   "described": ["Block any discount for customers in their first 30 days."],
                                   "reason": FIRST_MONTH}]
+
+
+def test_the_stored_decision_and_its_trace(client):
+    first = client.get(f"{c(MAYA)}/decision").json()
+    again = client.get(f"{c(MAYA)}/decision").json()
+    assert first["action"]["id"] == again["action"]["id"]  # read, not decided twice
+    assert len(client.get(f"{BD}/approvals").json()) == 1
+    t = client.get(f"{c(MAYA)}/trace").json()
+    assert [x["turn"] for x in t["turns"]] == [1, 2, 3, 4] and t["prechecks"][0]["allowed"] is False
+    assert t["action"]["rule_check"]["allowed"] and t["action"]["mode"] == "ask_owner"
+    fresh = client.post(f"{c(MAYA)}/decision").json()
+    assert client.get(f"{c(MAYA)}/decision").json()["action"]["id"] == fresh["action"]["id"]  # replaced

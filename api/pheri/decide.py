@@ -189,6 +189,7 @@ class _Run:
     latest: GuardResult | None = None
     prechecks: list[dict] = field(default_factory=list)
     trace: list[dict] = field(default_factory=list)  # every tool call and a short view of its result
+    turn_log: list[dict] = field(default_factory=list)  # every model turn: what it was sent, what came back
     _given: set = field(default_factory=set)
 
     def call(self, name: str, arguments: str) -> dict:
@@ -287,6 +288,7 @@ class Outcome:
     skipped: str | None = None  # why no model was asked: do_not_contact | escalated | open_escalation
     unsupported_numbers: list[str] = field(default_factory=list)  # numbers no kept evidence backs
     message_problems: list[str] = field(default_factory=list)
+    turn_log: list[dict] = field(default_factory=list)  # the agent's loop, turn by turn (decision trace)
     private: bool = False  # decided on Muse Spark Open (Meta's open-weight model, served by a partner)
 
 
@@ -354,7 +356,45 @@ def decide(p: Profile, store, llm: LLM, now: datetime = NOW, data_class: str = "
         action = submit(store, p.customer_key, proposed, run.ctx, why=why, evidence=kept,
                         cap="ask_owner" if weak else None)
     return Outcome(p.customer_key, decision.model_dump(), action, kept, dropped, turns, fallback, run.prechecks, cost,
-                   run.trace, private=private, unsupported_numbers=loose, message_problems=problems)
+                   run.trace, private=private, unsupported_numbers=loose, message_problems=problems,
+                   turn_log=run.turn_log)
+
+
+def _sent(items: list[dict], names: dict[str, str]) -> list[dict]:
+    """What a turn added to the conversation, for the decision trace (the model's own items are left out:
+    they are the previous turn's 'got')."""
+    out = []
+    for i in items:
+        if i.get("role") == "system":
+            out.append({"kind": "instructions", "text": i["content"]})
+        elif i.get("role") == "user":
+            try:
+                out.append({"kind": "brief", "data": json.loads(i["content"])})
+            except (TypeError, ValueError):
+                out.append({"kind": "nudge", "text": i["content"]})
+        elif i.get("type") == "function_call_output":
+            out.append({"kind": "tool_result", "tool": names.get(i["call_id"], "?"), "output": json.loads(i["output"])})
+    return out
+
+
+def _got(r: LLMResult) -> list[dict]:
+    if r.function_calls:
+        out = []
+        for c in r.function_calls:
+            try:
+                args = json.loads(c.arguments or "{}")
+            except ValueError:
+                args = c.arguments
+            out.append({"kind": "tool_call", "tool": c.name, "arguments": args})
+        return out
+    if r.parsed is not None:
+        return [{"kind": "answer", "decision": r.parsed.model_dump()}]
+    return [{"kind": "text", "text": (r.text or "")[:2000], "incomplete": r.incomplete}]
+
+
+def _usage(r: LLMResult) -> dict:
+    return {"provider": r.provider, "model": r.model, "input_tokens": r.input_tokens, "cached_tokens": r.cached_tokens,
+            "output_tokens": r.output_tokens, "reasoning_tokens": r.reasoning_tokens, "cost_usd": r.cost_usd}
 
 
 def _decide_with_tools(run: _Run, llm: LLM, now: datetime, data_class: str, schema: type[Decision]):
@@ -365,6 +405,7 @@ def _decide_with_tools(run: _Run, llm: LLM, now: datetime, data_class: str, sche
     # stored response (live, ~1 in 8 chains failed with "referenced response not found or expired").
     items: list[dict] = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": user}]
     decision, fallback, nudged, turns, cost = None, None, False, 0, 0.0
+    logged, names = 0, {}  # how many items earlier turns already showed; call id -> tool name
     while turns < MAX_TURNS:
         try:
             r: LLMResult = llm.complete(items, purpose=PURPOSE, schema=schema, effort="medium", tools=TOOLS,
@@ -376,7 +417,10 @@ def _decide_with_tools(run: _Run, llm: LLM, now: datetime, data_class: str, sche
             fallback = f"the model API refused turn {turns + 1} ({status}: {getattr(exc, 'message', exc)})"
             break
         turns, cost = turns + 1, cost + r.cost_usd
+        names.update({c.call_id: c.name for c in r.function_calls})
+        run.turn_log.append({"turn": turns, "sent": _sent(items[logged:], names), "got": _got(r), "usage": _usage(r)})
         items = items + r.output_items
+        logged = len(items)
         if r.function_calls:
             items += [{"type": "function_call_output", "call_id": c.call_id,
                        "output": json.dumps(run.call(c.name, c.arguments), ensure_ascii=False, default=str)}
@@ -447,17 +491,21 @@ def _decide_private(run: _Run, llm: LLM, now: datetime, data_class: str, schema:
                "allowed": _allowed_view(store), "dry_run": dry}
     messages = [{"role": "system", "content": PRIVATE_SYSTEM},
                 {"role": "user", "content": json.dumps(payload, ensure_ascii=False, default=str)}]
+    sent = [{"kind": "instructions", "text": PRIVATE_SYSTEM}, {"kind": "brief", "data": payload}]
     try:
         r = llm.complete_json(messages, schema=schema, provider="baseten", schema_only=True,
                               purpose=PRIVATE_PURPOSE, effort=PRIVATE_EFFORT, max_tokens=PRIVATE_MAX_OUTPUT_TOKENS,
                               data_class=data_class)
     except ModelOutputError as exc:
+        if exc.result is not None:
+            run.turn_log.append({"turn": 1, "sent": sent, "got": _got(exc.result), "usage": _usage(exc.result)})
         return None, f"Muse Spark Open's answer was not usable: {str(exc)[:160]}", 1, 0.0
     except Exception as exc:  # noqa: BLE001
         status = getattr(exc, "status_code", None)
         if status is None or not 400 <= status < 500:
             raise
         return None, f"the partner API refused the request ({status})", 1, 0.0
+    run.turn_log.append({"turn": 1, "sent": sent, "got": _got(r), "usage": _usage(r)})
     return r.parsed, None, 1, r.cost_usd
 
 

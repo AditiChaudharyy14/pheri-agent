@@ -172,10 +172,36 @@ def create_app(llm: LLM | None = None) -> FastAPI:
 
     @app.post("/businesses/{b}/customers/{key}/decision")
     def decision(key: str, b: str = Depends(business)):
-        customer(b, key)
+        """Decide again now (guard, profile, decide). The result replaces the stored one."""
+        c = customer(b, key)
         with state.lock:
-            out = decide_customer(state.data[b], key, state.stores[b], state.llm)
-        return dataclasses.asdict(out)
+            out = dataclasses.asdict(decide_customer(state.data[b], key, state.stores[b], state.llm))
+            state.decided[b][c.key] = out
+        return out
+
+    def decided(b: str, key: str) -> dict:
+        c = customer(b, key)
+        if c.key not in state.decided[b]:
+            state.decided[b][c.key] = dataclasses.asdict(decide_customer(state.data[b], c.key, state.stores[b],
+                                                                         state.llm))
+        return state.decided[b][c.key]
+
+    @app.get("/businesses/{b}/customers/{key}/decision")
+    def stored_decision(key: str, b: str = Depends(business)):
+        """The customer's current decision (decided once, then read), with the action's live status."""
+        with state.lock:
+            k = customer(b, key).key
+            return card(b, k, decided(b, k))
+
+    @app.get("/businesses/{b}/customers/{key}/trace")
+    def trace(key: str, b: str = Depends(business)):
+        """The agent's loop for this decision: every turn (what the model was sent, the tool it called, what came
+        back), then what code did with the answer: evidence attached, rule checks, the autonomy dial."""
+        with state.lock:
+            k = customer(b, key).key
+            out = decided(b, k)
+            return {**card(b, k, out), "turns": out["turn_log"], "prechecks": out["prechecks"],
+                    "dropped_evidence": out["dropped_evidence"]}
 
     @app.post("/businesses/{b}/customers/{key}/discount-check")
     def discount_check(body: DiscountIn, key: str, b: str = Depends(business)):

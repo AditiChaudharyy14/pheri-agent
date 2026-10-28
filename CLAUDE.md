@@ -9,7 +9,7 @@ Read this before every task. These rules are not optional.
 - Doing: web app screens, one commit each, Playwright screenshots checked by eye. Next steps, Journey done.
 - Next: Customer, Decision trace (each turn + rule checks), Rules, Safety, Proof, Spend;
   then polish, README, deploy, demo video. Servers for screenshots: uvicorn :8000 (mock), next dev :3000.
-- Live spend: Meta $0.4782 of $130, Baseten $0.1447 of $90. Tests: 246 pass (mock).
+- Live spend: Meta $0.4782 of $130, Baseten $0.1447 of $90. Tests: 249 pass (mock).
 
 ## What we are building
 Pheri: an AI agent that understands each customer, decides their next best action ("why this, why now"),

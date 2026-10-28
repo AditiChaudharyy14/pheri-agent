@@ -21,6 +21,12 @@ const PAGES = {
 
 // What a viewer would click on some pages; the result is screenshotted too.
 const ACTIONS = {
+  rules: async (page) => {
+    await page.getByRole("button", { name: "No discounts above 15%" }).click();
+    await page.getByRole("button", { name: "Preview" }).click();
+    await page.getByRole("status").waitFor({ timeout: 30_000 });
+    await page.waitForTimeout(200);
+  },
   customer: async (page) => {
     const button = page.getByRole("button", { name: "Offer a discount" });
     await button.scrollIntoViewIfNeeded();

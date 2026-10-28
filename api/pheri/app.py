@@ -363,7 +363,20 @@ def create_app(llm: LLM | None = None) -> FastAPI:
                 "decision": out["decision"], "evidence": out["evidence"], "action": action,
                 "approval": approval, "skipped": out["skipped"], "fallback": out["fallback"],
                 "unsupported_numbers": out["unsupported_numbers"], "message_problems": out["message_problems"],
-                "private": out["private"], "cost_usd": out["cost_usd"], "turns": out["turns"]}
+                "private": out["private"], "cost_usd": out["cost_usd"], "turns": out["turns"],
+                "decided_by": decided_by(out)}
+
+    def decided_by(out: dict) -> dict | None:
+        """Which model made the decision, and how this server got its replies: live, recorded from a live run,
+        or the offline stand-in (mock mode, or a conversation never recorded). None: no model was asked."""
+        usage = [t["usage"] for t in out.get("turn_log") or [] if t.get("usage")]
+        if not usage:
+            return None
+        if state.settings.llm_mode == "live":
+            source = "live"
+        else:
+            source = "recorded" if all(u.get("recorded") for u in usage) else "stand-in"
+        return {"provider": usage[-1]["provider"], "model": usage[-1]["model"], "source": source}
 
     @app.get("/businesses/{b}/next-steps")
     def next_steps(b: str = Depends(business)):

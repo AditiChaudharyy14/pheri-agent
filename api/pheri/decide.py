@@ -399,7 +399,8 @@ def _got(r: LLMResult) -> list[dict]:
 
 def _usage(r: LLMResult) -> dict:
     return {"provider": r.provider, "model": r.model, "input_tokens": r.input_tokens, "cached_tokens": r.cached_tokens,
-            "output_tokens": r.output_tokens, "reasoning_tokens": r.reasoning_tokens, "cost_usd": r.cost_usd}
+            "output_tokens": r.output_tokens, "reasoning_tokens": r.reasoning_tokens, "cost_usd": r.cost_usd,
+            "recorded": r.recorded}
 
 
 def _decide_with_tools(run: _Run, llm: LLM, now: datetime, data_class: str, schema: type[Decision]):
@@ -589,7 +590,7 @@ def _mock_decide(messages: list[dict], schema: dict | None):
 _STAGE_WORDS = {
     "stuck": "is blocked by a problem {they} reported", "onboarding": "is new and still setting up",
     "quiet": "has gone quiet", "healthy": "is doing well", "expanding": "is growing past {their} plan",
-    "at_risk_renewal": "is at risk before their renewal", "new": "is a new customer", "loyal": "is a loyal regular",
+    "at_risk_renewal": "is at risk before {their} renewal", "new": "is a new customer", "loyal": "is a loyal regular",
     "subscriber": "is on a subscription", "lapsing": "has stopped ordering", "cart_abandoner": "left a cart behind",
     "gift_buyer": "buys gifts",
 }
@@ -597,7 +598,7 @@ _ACTION_WORDS = {
     "send_help": "help with that problem", "book_call": "a short call", "send_checkin": "a friendly check-in",
     "offer_upgrade": "room to grow", "offer_discount": "a discount", "send_reminder": "a reminder",
     "recommend_product": "a tea that fits past orders", "offer_subscription": "a subscription",
-    "task_for_owner": "a person looking at it", "no_action": "leaving them be",
+    "task_for_owner": "a person looking at it", "no_action": "holding off",
 }
 _FACT_WORDS = {
     "failed_exports_30d": "{v} failed exports this month", "days_quiet": "quiet for {v} days",
@@ -634,7 +635,7 @@ def _stage_words(stage: str, pronouns: tuple[str, str] | None) -> str:
     words = _STAGE_WORDS.get(stage, "needs a next step")
     if pronouns:
         return words.format(they=pronouns[0], their=pronouns[1])
-    return words.replace("a problem {they} reported", "a reported problem").replace("{their} plan", "the plan")
+    return words.replace("a problem {they} reported", "a reported problem").replace("{their} ", "the ")
 
 
 def _main_blocker(blockers: list[dict], because: list[dict]) -> dict | None:

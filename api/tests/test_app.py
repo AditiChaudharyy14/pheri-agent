@@ -242,3 +242,31 @@ def test_the_stored_decision_and_its_trace(client):
     assert t["action"]["rule_check"]["allowed"] and t["action"]["mode"] == "ask_owner"
     fresh = client.post(f"{c(MAYA)}/decision").json()
     assert client.get(f"{c(MAYA)}/decision").json()["action"]["id"] == fresh["action"]["id"]  # replaced
+
+
+# ---- who decided: live, recorded, or the stand-in ----------------------------------------
+def test_a_mock_card_says_the_stand_in_decided(client):
+    card = client.get(f"{c(MAYA)}/decision").json()
+    assert card["decided_by"] == {"provider": "meta", "model": "muse-spark-1.3", "source": "stand-in"}
+    assert card["cost_usd"] == 0 and card["turns"] == 4
+
+
+def test_replay_serves_mayas_recorded_live_run(monkeypatch, tmp_path):
+    """The demo's recording still matches the code: if a prompt or the data changes, re-record
+    (python scripts/record_demo.py --live) rather than let the site fall back to the stand-in."""
+    from pheri.app import create_app
+    from pheri.config import REPO_ROOT
+
+    monkeypatch.setenv("PHERI_LLM_MODE", "replay")
+    monkeypatch.setenv("PHERI_LLM_REPLAY", str(REPO_ROOT / "data" / "recorded" / "llm.jsonl"))
+    monkeypatch.setenv("PHERI_LEDGER_PATH", str(tmp_path / "ledger.sqlite"))
+    monkeypatch.delenv("PHERI_LLM_RECORD", raising=False)
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    llm = LLM(Settings())
+    card = TestClient(create_app(llm)).get(f"{c(MAYA)}/decision").json()
+    assert card["decided_by"] == {"provider": "meta", "model": "muse-spark-1.3", "source": "recorded"}
+    d = card["decision"]
+    assert d["action"] == "send_help" and "90%" in d["message"] and "weekly client reports" in d["message"]
+    assert "renews in 8 days" in d["why_now"] and d["why_this"].startswith("She ")
+    assert card["cost_usd"] > 0 and card["turns"] == 3  # what the live run paid, for its turns
+    assert llm.ledger.totals("meta").settled_usd == 0  # replaying it spent nothing

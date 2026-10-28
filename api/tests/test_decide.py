@@ -75,13 +75,20 @@ def test_maya_is_told_about_her_actual_problem_and_why_now(maya, store, llm):
 
 
 def test_no_pronoun_is_guessed_when_the_customer_gave_none(brightdesk, store, llm):
-    key = next(k for k, c in brightdesk.customers.items() if c.pronouns is None
-               and build_profile(brightdesk, k, llm).facts.get("failed_exports_30d"))
-    p = build_profile(brightdesk, key, llm)
-    d = decide(p, store, llm).decision
-    words = f" {d['why_this']} {d['why_now']} ".replace(",", " ").replace(".", " ").split()
-    assert not {"she", "he", "her", "his", "they", "their"} & set(words)
-    assert d["why_this"].startswith(p.name.split()[0])
+    """One customer from every journey stage, each without pronouns: the why-text uses the name only."""
+    from pheri.journey import stage
+
+    by_stage = {}
+    for k, c in brightdesk.customers.items():
+        p = build_profile(brightdesk, k, llm)
+        if c.pronouns is None:
+            by_stage.setdefault(stage("brightdesk", p.facts, p.provenance.get("facts")).stage, p)
+    assert len(by_stage) == 6
+    for p in by_stage.values():
+        d = decide(p, store, llm).decision
+        words = f" {d['why_this']} {d['why_now']} ".replace(",", " ").replace(".", " ").split()
+        assert not {"she", "he", "her", "his", "they", "their", "them"} & set(words), d
+        assert d["why_this"].startswith(p.name.split()[0])
 
 
 def test_maya_discount_is_blocked_in_the_loop_and_she_gets_help(maya, store, llm):

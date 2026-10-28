@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { ApproveReject } from "@/components/approve";
+import { DecidedByLine } from "@/components/decided-by";
 import { OfferDiscount } from "@/components/discount";
 import { EvidenceChips } from "@/components/evidence";
 import { Badge, Card, Chip, Label, ModeBadge, Skeleton, StageBadge } from "@/components/ui";
-import { api, customerPath, type CustomerDetail, type Insight, type NextStep, type Profile, usd } from "@/lib/api";
+import { api, customerPath, type CustomerDetail, type Insight, type NextStep, type Profile } from "@/lib/api";
 import { actionLabel, CHANNEL_LABEL, factLabel, factValue, STATUS_LABEL } from "@/lib/labels";
 
 type Params = PageProps<"/[business]/customers/[key]">["params"];
@@ -140,13 +141,22 @@ async function Customer({ params }: { params: Params }) {
             <div className="mt-5 flex items-end justify-between gap-4">
               <div className="text-[0.92rem] text-ink-2">
                 {step.action && (STATUS_LABEL[step.action.status] ?? step.action.status)}
-                <div className="text-[0.82rem] text-muted">Decision cost {usd(step.cost_usd)}</div>
               </div>
               {step.approval?.decision === "pending" && (
                 <div className="w-40">
                   <ApproveReject business={business} approvalId={step.approval.id} />
                 </div>
               )}
+            </div>
+            <div className="mt-5 border-t border-line pt-3">
+              <DecidedByLine
+                business={business}
+                customerKey={key}
+                by={step.decided_by}
+                cost={step.cost_usd}
+                turns={step.turns}
+                isPrivate={step.private}
+              />
             </div>
           </Card>
 

@@ -50,6 +50,9 @@ export type Approval = { id: string; action_id: string; decision: "pending" | "a
 export type Decision = { action: string; channel: string | null; discount_pct: number | null; message: string;
   why_this: string; why_now: string; fact_keys: string[]; quote_ids: string[] };
 
+/** The model behind a decision, and how this server got its replies (stand-in: offline, never a model). */
+export type DecidedBy = { provider: string; model: string; source: "live" | "recorded" | "stand-in" };
+
 export type NextStep = {
   customer: { key: string; name: string; company: string | null; stage: string };
   decision: Decision;
@@ -63,6 +66,7 @@ export type NextStep = {
   private: boolean;
   cost_usd: number;
   turns: number;
+  decided_by: DecidedBy | null;
 };
 
 export type CustomerRow = { key: string; name: string; company: string | null; stage: string;

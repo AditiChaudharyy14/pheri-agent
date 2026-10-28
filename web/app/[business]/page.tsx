@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { ApproveReject } from "@/components/approve";
+import { DecidedByLine } from "@/components/decided-by";
 import { EvidenceChips } from "@/components/evidence";
 import { Badge, Card, Label, ModeBadge, PageHead, Skeleton, StageBadge } from "@/components/ui";
-import { api, BUSINESSES, type Business, type NextStep, usd } from "@/lib/api";
+import { api, BUSINESSES, type Business, type NextStep } from "@/lib/api";
 import { actionLabel, CHANNEL_LABEL, STATUS_LABEL } from "@/lib/labels";
 
 export default function NextStepsPage({ params }: PageProps<"/[business]">) {
@@ -112,10 +113,17 @@ function StepCard({ business, step }: { business: string; step: NextStep }) {
             </div>
           )}
           {step.approval?.decision === "pending" && <ApproveReject business={business} approvalId={step.approval.id} />}
-          <div className="mt-auto text-right text-[0.85rem] text-muted" title="What this decision cost in model calls">
-            Decision cost {usd(step.cost_usd)}
-          </div>
         </aside>
+      </div>
+      <div className="mt-6 border-t border-line pt-4">
+        <DecidedByLine
+          business={business}
+          customerKey={customer.key}
+          by={step.decided_by}
+          cost={step.cost_usd}
+          turns={step.turns}
+          isPrivate={step.private}
+        />
       </div>
     </Card>
   );

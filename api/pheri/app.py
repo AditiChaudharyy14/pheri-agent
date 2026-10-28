@@ -15,7 +15,8 @@ Routes, per business (brightdesk, kettle):
   GET  /businesses/{b}/twin                          the customer twin's results (chart-ready)
   GET  /businesses/{b}/learned                       "What Pheri learned" from those results
   GET  /businesses/{b}/audit                         the append-only audit log
-  GET  /spend                                        model spend against the caps, per provider
+  GET  /spend                                        model spend against the caps, per provider; plus the
+                                                     live runs' snapshot (data/spend/live.json)
 
 Mock mode only for now: create_app() refuses live mode unless PHERI_API_ALLOW_LIVE=1, so no request can
 spend by accident. Even then, /learned never calls Muse Wonder; a Wonder report is a deliberate,
@@ -49,6 +50,7 @@ from .synth import BUSINESS_NAMES, NOW
 
 BUSINESSES = tuple(BUSINESS_NAMES)
 TWIN_DIR = REPO_ROOT / "data" / "twin"
+SPEND_SNAPSHOT = REPO_ROOT / "data" / "spend" / "live.json"  # written by scripts/spend_snapshot.py
 PROVIDERS = ("meta", "baseten")
 
 
@@ -416,7 +418,10 @@ def create_app(llm: LLM | None = None) -> FastAPI:
             t = state.llm.ledger.totals(p)
             out[p] = {"settled_usd": round(t.settled_usd, 6), "reserved_usd": round(t.reserved_usd, 6),
                       "offset_usd": t.offset_usd, "cap_usd": t.cap_usd, "remaining_usd": round(t.remaining_usd, 6)}
-        return {"mode": state.settings.llm_mode, "providers": out, "as_of": datetime.now().isoformat(timespec="seconds")}
+        live = SPEND_SNAPSHOT.exists() and json.loads(SPEND_SNAPSHOT.read_text(encoding="utf-8"))
+        return {"mode": state.settings.llm_mode, "providers": out, "as_of": datetime.now().isoformat(timespec="seconds"),
+                "max_call_usd": state.settings.max_call_usd, "by_purpose": state.llm.ledger.breakdown(),
+                "live_runs": live or None}
 
     return app
 

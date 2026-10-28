@@ -1,0 +1,109 @@
+{
+ "as_of": "2026-10-28T19:59:10",
+ "providers": {
+  "meta": {
+   "settled_usd": 0.478151,
+   "offset_usd": 0.0,
+   "cap_usd": 130.0,
+   "remaining_usd": 129.521849
+  },
+  "baseten": {
+   "settled_usd": 0.144702,
+   "offset_usd": 0.0,
+   "cap_usd": 90.0,
+   "remaining_usd": 89.855298
+  }
+ },
+ "calls": [
+  {
+   "provider": "meta",
+   "model": "muse-spark-1.3",
+   "purpose": "profile_insights",
+   "calls": 54,
+   "usd": 0.219456,
+   "input_tokens": 40826,
+   "cached_tokens": 21009,
+   "output_tokens": 49866
+  },
+  {
+   "provider": "meta",
+   "model": "muse-spark-1.3",
+   "purpose": "decide",
+   "calls": 95,
+   "usd": 0.145095,
+   "input_tokens": 136298,
+   "cached_tokens": 60772,
+   "output_tokens": 33668
+  },
+  {
+   "provider": "baseten",
+   "model": "meta-models/muse-spark-open-1026",
+   "purpose": "decide_private",
+   "calls": 6,
+   "usd": 0.101956,
+   "input_tokens": 8393,
+   "cached_tokens": 1408,
+   "output_tokens": 21521
+  },
+  {
+   "provider": "meta",
+   "model": "muse-wonder-1.0",
+   "purpose": "learn_report",
+   "calls": 1,
+   "usd": 0.065012,
+   "input_tokens": 1733,
+   "cached_tokens": 0,
+   "output_tokens": 2904
+  },
+  {
+   "provider": "meta",
+   "model": "muse-spark-1.3",
+   "purpose": "guard",
+   "calls": 20,
+   "usd": 0.044125,
+   "input_tokens": 10660,
+   "cached_tokens": 9315,
+   "output_tokens": 9658
+  },
+  {
+   "provider": "baseten",
+   "model": "meta-models/muse-spark-open-1026",
+   "purpose": "guard",
+   "calls": 20,
+   "usd": 0.040008,
+   "input_tokens": 10940,
+   "cached_tokens": 9088,
+   "output_tokens": 6196
+  },
+  {
+   "provider": "meta",
+   "model": "muse-spark-1.3",
+   "purpose": "compile_rule",
+   "calls": 5,
+   "usd": 0.003567,
+   "input_tokens": 2475,
+   "cached_tokens": 0,
+   "output_tokens": 1017
+  },
+  {
+   "provider": "baseten",
+   "model": "meta-models/muse-spark-open-1026",
+   "purpose": "smoke",
+   "calls": 3,
+   "usd": 0.002739,
+   "input_tokens": 247,
+   "cached_tokens": 0,
+   "output_tokens": 643
+  },
+  {
+   "provider": "meta",
+   "model": "muse-spark-1.3",
+   "purpose": "smoke",
+   "calls": 3,
+   "usd": 0.000897,
+   "input_tokens": 110,
+   "cached_tokens": 0,
+   "output_tokens": 250
+  }
+ ]
+}

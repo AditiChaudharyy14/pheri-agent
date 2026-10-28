@@ -125,8 +125,12 @@ export type Learned = {
   model: string | null; cost_usd: number; markdown: string;
 };
 
-export type Spend = { mode: string; as_of: string; providers: Record<string, { settled_usd: number;
-  reserved_usd: number; offset_usd: number; cap_usd: number; remaining_usd: number }> };
+export type SpendRow = { provider: string; model: string; purpose: string; calls: number; usd: number;
+  input_tokens: number; cached_tokens: number; output_tokens: number };
+export type ProviderSpend = { settled_usd: number; reserved_usd?: number; offset_usd: number; cap_usd: number;
+  remaining_usd: number };
+export type Spend = { mode: string; as_of: string; max_call_usd: number; providers: Record<string, ProviderSpend>;
+  by_purpose: SpendRow[]; live_runs: { as_of: string; providers: Record<string, ProviderSpend>; calls: SpendRow[] } | null };
 
 // ---- words for people ---------------------------------------------------------------------
 export const words = (s: string | null | undefined) => (s ?? "").replaceAll("_", " ");

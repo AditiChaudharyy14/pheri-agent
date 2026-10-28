@@ -122,6 +122,16 @@ class Ledger:
         with self._tx() as cur:
             return self._totals(cur, provider)
 
+    def breakdown(self) -> list[dict]:
+        """Settled calls and their cost, per provider, model and purpose (costliest first)."""
+        with self._tx() as cur:
+            rows = cur.execute(
+                "SELECT provider, model, purpose, COUNT(*), SUM(actual_usd), SUM(input_tokens), "
+                "SUM(cached_tokens), SUM(output_tokens) FROM spend_ledger WHERE status = 'settled' "
+                "GROUP BY provider, model, purpose ORDER BY SUM(actual_usd) DESC").fetchall()
+        keys = ("provider", "model", "purpose", "calls", "usd", "input_tokens", "cached_tokens", "output_tokens")
+        return [dict(zip(keys, (*r[:4], round(float(r[4] or 0), 6), *(int(v or 0) for v in r[5:])))) for r in rows]
+
     # ---- lifecycle -----------------------------------------------------
     def reserve(self, provider: str, model: str, purpose: str, estimate_usd: float) -> str:
         with self._tx() as cur:

@@ -184,6 +184,12 @@ def test_spend_summary(client):
     meta = s["providers"]["meta"]
     assert meta["settled_usd"] == 0 and meta["cap_usd"] > 0  # mock mode spends nothing
     assert meta["remaining_usd"] == pytest.approx(max(0.0, meta["cap_usd"] - meta["offset_usd"]))
+    assert s["by_purpose"] and all(r["usd"] == 0 for r in s["by_purpose"])  # mock calls are counted, at $0
+    live = s["live_runs"]  # this week's live runs, a checked-in snapshot of totals only
+    if live:
+        for p, t in live["providers"].items():
+            assert sum(r["usd"] for r in live["calls"] if r["provider"] == p) == pytest.approx(t["settled_usd"], abs=1e-4)
+            assert t["settled_usd"] <= t["cap_usd"]
 
 
 # ---- what the web app reads --------------------------------------------------------------

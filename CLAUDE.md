@@ -11,7 +11,8 @@ Read this before every task. These rules are not optional.
   resumes without paying twice), PHERI_LLM_MODE=replay plays them back offline. Maya recorded ($0.0319, 3 turns).
 - Doing: Next steps feedback. Done: Maya's card specific (problem, goal, "renews in 8 days", "she"); card footer
   ("Decided by Muse Spark 1.3 · $cost · N turns · View trace"; "the offline stand-in" when not recorded).
-- Next: trace shows the recorded run, safe demo mode badge ("Recorded from a live run"; the pill wrongly says
+  Trace shows Maya's recorded run (3 turns, per-turn tokens and cost, "Recorded from a live run").
+- Next: safe demo mode badge ("Recorded from a live run"; the pill wrongly says
   "Live models" in replay until then), deploy prep; then README, demo video.
   Servers for screenshots: uvicorn :8000 (no --reload: restart after API changes), next dev :3000.
 - Live spend: Meta $0.5102 of $130, Baseten $0.1447 of $90. Tests: 258 pass (mock).

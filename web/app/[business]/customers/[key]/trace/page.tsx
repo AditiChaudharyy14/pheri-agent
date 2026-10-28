@@ -40,8 +40,16 @@ async function TraceView({ params }: { params: Params }) {
         </p>
         <div className="mt-5 flex flex-wrap gap-2">
           <Badge tone="ink">{t.turns.length} turns</Badge>
-          {model && <Badge>{model.model}</Badge>}
+          {model && <Badge>{model.provider === "baseten" ? "Muse Spark Open" : model.model === "muse-spark-1.3" ? "Muse Spark 1.3" : model.model}</Badge>}
           {model && <Badge>{model.provider === "baseten" ? "Baseten (private)" : "Meta Model API"}</Badge>}
+          {t.decided_by?.source === "recorded" && (
+            <Badge tone="teal" title="Every reply below is what the model said in a live run, replayed; code ran again now">
+              Recorded from a live run
+            </Badge>
+          )}
+          {t.decided_by?.source === "stand-in" && (
+            <Badge tone="amber" title="Offline: no model was called; the stand-in follows the same loop">Offline stand-in</Badge>
+          )}
           <Badge>{tokens.toLocaleString()} tokens</Badge>
           <Badge>cost {usd(t.cost_usd)}</Badge>
         </div>
@@ -189,7 +197,7 @@ function GotPart({ part }: { part: Part }) {
           Answered: <span className="font-semibold text-teal-ink">{actionLabel(String(d.action))}</span>
         </p>
         <p className="mt-2 text-[0.95rem] text-ink-2">{String(d.why_this)}</p>
-        <p className="mt-2 font-mono text-[0.8rem] text-muted">
+        <p className="mt-2 font-mono text-[0.8rem] break-all text-muted">
           fact_keys {JSON.stringify(d.fact_keys)} · quote_ids {JSON.stringify(d.quote_ids)}
         </p>
       </div>

@@ -41,7 +41,7 @@ export const FACT_LABEL: Record<string, string> = {
   seat_limit_hits_30d: "seat-limit hits this month",
   active_days_30d: "active days this month",
   active_days_prev_60d: "active days, 60 days before",
-  usage_change_pct: "usage vs usual, %",
+  usage_change_pct: "usage vs usual",
   open_tickets: "open tickets",
   price_complaints: "price complaints",
   renewal_in_days: "days to renewal",
@@ -74,3 +74,37 @@ export const STAGE_LABEL: Record<string, string> = {
 
 export const factLabel = (f: string) => FACT_LABEL[f] ?? f.replaceAll("_", " ");
 export const stageLabel = (s: string) => STAGE_LABEL[s] ?? s.replaceAll("_", " ");
+
+// The code rule behind each stage (api/pheri/journey.py), in the owner's words. First match wins, in this order.
+export const STAGE_RULE: Record<string, string> = {
+  onboarding: "In their first 14 days.",
+  stuck: "Exports failed this month.",
+  at_risk_renewal: "Renewal within 30 days, and a price complaint or usage down 60% or more.",
+  expanding: "Hit their seat limit this month.",
+  quiet: "No activity at all this month.",
+  healthy: "Everyone else: active, no warning signs.",
+  subscriber: "On a monthly subscription.",
+  cart_abandoner: "Left a cart in the last 7 days and has not ordered since.",
+  new: "Joined in the last 30 days.",
+  lapsing: "No order in the last 60 days.",
+  gift_buyer: "Only ever buys gift boxes.",
+  loyal: "Everyone else: orders regularly.",
+};
+
+// Journey order, as a customer moves through it.
+export const STAGE_ORDER: Record<string, string[]> = {
+  brightdesk: ["onboarding", "healthy", "expanding", "stuck", "quiet", "at_risk_renewal"],
+  kettle: ["new", "loyal", "subscriber", "gift_buyer", "cart_abandoner", "lapsing"],
+};
+
+// The demo's hero customer (data/synth/brightdesk/_truth.json "hero"): shown first in her stage.
+export const HERO: Record<string, string> = { brightdesk: "maya.okafor@pinecrest.example" };
+
+/** A fact's value as a person reads it. */
+export const factValue = (fact: string, v: unknown) => {
+  if (v === null || v === undefined) return "—";
+  if (fact === "usage_change_pct" && typeof v === "number") return `${v > 0 ? "+" : ""}${v}%`;
+  if (fact === "journey_stage") return stageLabel(String(v));
+  if (typeof v === "boolean") return v ? "yes" : "no";
+  return String(v);
+};

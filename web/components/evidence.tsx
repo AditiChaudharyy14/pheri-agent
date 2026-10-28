@@ -1,5 +1,5 @@
 import type { Evidence } from "@/lib/api";
-import { factLabel, stageLabel } from "@/lib/labels";
+import { factLabel, factValue } from "@/lib/labels";
 import { Chip } from "./ui";
 
 /** The facts and verified quotes code attached to a decision. The model picked them by id; code filled them in. */
@@ -14,7 +14,7 @@ export function EvidenceChips({ evidence }: { evidence: Evidence[] }) {
           {facts.map((e) => (
             <Chip key={e.ref} title="A fact counted in code">
               <span className="text-muted">{factLabel(e.ref)}</span>
-              <span className="font-medium text-ink">{e.ref === "journey_stage" ? stageLabel(e.value) : e.value}</span>
+              <span className="font-medium text-ink">{factValue(e.ref, e.ref === "usage_change_pct" ? Number(e.value) : e.value)}</span>
             </Chip>
           ))}
         </div>

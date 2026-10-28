@@ -268,10 +268,17 @@ def test_replay_serves_mayas_recorded_live_run(monkeypatch, tmp_path):
     assert card["decided_by"] == {"provider": "meta", "model": "muse-spark-1.3", "source": "recorded"}
     d = card["decision"]
     assert d["action"] == "send_help" and "90%" in d["message"] and "weekly client reports" in d["message"]
-    assert "renews in 8 days" in d["why_now"] and d["why_this"].startswith("She ")
+    assert "renews in 8 days" in d["why_now"] and " she " in f" {d['why_this'].casefold()} "
+    assert "inbox" not in d["message"]  # one problem: the export behind her stage, not her second ticket
     assert card["cost_usd"] > 0 and card["turns"] == 3  # what the live run paid, for its turns
     assert llm.ledger.totals("meta").settled_usd == 0  # replaying it spent nothing
     api = TestClient(create_app(llm))
     assert api.get("/health").json()["mode"] == "replay"
-    # No Wonder reply was recorded for the 5,000-customer twin: the report says the stand-in wrote it.
-    assert api.get(f"{BD}/learned").json()["source"] == "stand-in"
+    # Muse Wonder's report on the 5,000-customer twin is recorded too; its headline stated no result, so
+    # code replaced it and says so.
+    rep = api.get(f"{BD}/learned").json()
+    assert rep["source"] == "recorded" and rep["model"] == "muse-wonder-1.0" and len(rep["findings"]) == 6
+    assert [r["part"] for r in rep["rejected"]] == ["headline"] and rep["headline"].startswith("Across 5000")
+    assert api.get("/businesses/kettle/learned").json()["source"] == "stand-in"  # not recorded: one call only
+    for card in api.get(f"{BD}/next-steps").json() + api.get("/businesses/kettle/next-steps").json():
+        assert card["decided_by"]["source"] == "recorded", card["customer"]["name"]

@@ -108,6 +108,16 @@ def test_an_unclear_overall_result_may_not_be_claimed_in_the_headline(results, l
     assert rep.rejected[0]["part"] == "headline" and "overall verdict is unclear" in rep.rejected[0]["problems"][0]
 
 
+def test_a_headline_that_states_no_result_is_replaced_by_codes(results, llm, monkeypatch):
+    """Live, Muse Wonder once cited six overall facts and wrote "Students edge - non tipping pendant"."""
+    _model(monkeypatch, {"headline": "Students edge - non tipping pendant",
+                         "headline_fact_ids": ["overall.verdict", "overall.lift_pp"], "findings": [], "caveats": []})
+    rep = learn.write_report(results, llm)
+    assert rep.rejected[0] == {"part": "headline", "text": "Students edge - non tipping pendant",
+                               "problems": ["states no result: the headline must give the overall lift in points"]}
+    assert rep.headline.startswith("Across 200 customers")
+
+
 def test_an_unusable_answer_leaves_only_what_code_can_say(results, llm, monkeypatch):
     monkeypatch.setitem(llm_module._mock_responders, learn.PURPOSE, lambda m, s: "not json")
     rep = learn.write_report(results, llm)
@@ -162,6 +172,7 @@ def test_a_close_call_must_be_called_one(llm, monkeypatch):
                                                 f"with {close['runner_up']}.", ids)
     _model(monkeypatch, {"headline": "Results.", "headline_fact_ids": [], "findings": [plain], "caveats": []})
     rep = learn.write_report(res, llm)
-    assert rep.findings == [] and "close call" in rep.rejected[0]["problems"][0]
+    finding = next(r for r in rep.rejected if r["part"] == "finding")
+    assert rep.findings == [] and "close call" in finding["problems"][0]
     _model(monkeypatch, {"headline": "Results.", "headline_fact_ids": [], "findings": [honest], "caveats": []})
     assert learn.write_report(res, llm).findings[0]["stage"] == close["stage"]

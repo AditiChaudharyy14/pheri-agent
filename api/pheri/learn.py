@@ -263,6 +263,8 @@ def write_report(results: dict, llm: LLM, data_class: str = "synthetic") -> Lear
     problems = check_item(rep.headline, rep.headline_fact_ids, facts)
     if facts["overall.verdict"] == "unclear" and (claims := _claims(rep.headline)):
         problems.append(f"claims a result while the overall verdict is unclear ({', '.join(claims)})")
+    if "overall.lift_pp" in facts and not _numbers(rep.headline):
+        problems.append("states no result: the headline must give the overall lift in points")
     if problems:
         out.rejected.append({"part": "headline", "text": rep.headline, "problems": problems})
         out.headline = _code_headline(facts)

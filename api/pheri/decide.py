@@ -125,12 +125,13 @@ and if it is not allowed choose another. Then answer with the decision JSON only
   upgrade. If you want to offer money off, the action is offer_discount.
 - message: what the customer receives, in their language, signed as the team of the business you work
   for (business_name), never as the customer's own company; or, for task_for_owner, what the owner
-  should do. Friendly and short (two or three sentences). Be specific: name their actual problem or
-  need as they described it, and the goal it gets in the way of when the profile has one.
+  should do. Friendly and short (two or three sentences). Be specific: lead with one problem, the one
+  behind their journey stage (journey.because), in the words they used, and name the goal it gets in
+  the way of when the profile has one. Leave any other problem for a later step.
 - why_this: why this action fits this customer: cite the problem and the goal. why_now: why today
   rather than later; when a renewal is 14 days away or less, say so ("renews in N days").
-- The customer: use their first name, or the pronouns in the profile. If pronouns is null, use their
-  name; never guess pronouns from a name.
+- The customer: use their first name, or the pronouns in the profile. If pronouns are not given, use
+  their name everywhere (message, why_this, why_now); never guess pronouns from a name.
 - fact_keys: the names of the profile facts behind your why_this, why_now and message ("journey_stage"
   for the stage). quote_ids: the quote_id of each verified quote you rely on. Pick from the lists only,
   at most 8 of each: code attaches the real values and quotes. Use only numbers that are in the facts
@@ -166,7 +167,8 @@ def _insights_with_ids(p: Profile) -> dict:
 
 
 def _profile_view(p: Profile, j: Journey, latest: GuardResult | None = None) -> dict:
-    view = {"customer": p.customer_key, "name": p.name, "pronouns": p.pronouns, "company": p.company,
+    view = {"customer": p.customer_key, "name": p.name,
+            "pronouns": p.pronouns or "not given: use their name, never he or she", "company": p.company,
             "facts": p.facts,
             "journey": {"stage": j.stage, "because": [{"fact": b["fact"], "value": b["value"]} for b in j.because]},
             "insights": _insights_with_ids(p)}
@@ -265,16 +267,27 @@ def unsupported_numbers(d: Decision, kept: list[dict]) -> list[str]:
     return sorted({n for n in written if norm(n) not in allowed})
 
 
+_GENDERED = {"he": "he", "him": "he", "his": "he", "himself": "he",
+             "she": "she", "her": "she", "hers": "she", "herself": "she"}
+
+
 def message_problems(d: Decision, p: Profile) -> list[str]:
-    """Code's own check on what the customer would read: never signed as the customer's company."""
+    """Code's own check on what the customer (and the owner) would read: never signed as the customer's
+    company, and never a pronoun the customer did not give (none given: their name only)."""
+    problems = []
     t = CATALOG.get(d.action)
     words = (p.company or "").split()
-    if not (t and t.customer_facing and words):
-        return []
-    company = re.escape(words[0].casefold())
-    if re.search(rf"\b{company}\b[\w .&'-]{{0,30}}\bteam\b", d.message.casefold()):
-        return [f"signed as the customer's company ({words[0]}), not the business"]
-    return []
+    if t and t.customer_facing and words:
+        company = re.escape(words[0].casefold())
+        if re.search(rf"\b{company}\b[\w .&'-]{{0,30}}\bteam\b", d.message.casefold()):
+            problems.append(f"signed as the customer's company ({words[0]}), not the business")
+    given = (p.pronouns or "").casefold().split("/")
+    allowed = {w for w, g in _GENDERED.items() if g in given}  # "she/her": she, her, hers, herself
+    used = sorted({w for w in re.findall(r"[a-z]+", " ".join((d.message, d.why_this, d.why_now)).casefold())
+                   if w in _GENDERED and w not in allowed})
+    if used:
+        problems.append(f"uses a pronoun the customer never gave ({', '.join(used)}); use their name")
+    return problems
 
 
 # ---- the loop ---------------------------------------------------------------------

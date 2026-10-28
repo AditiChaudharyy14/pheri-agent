@@ -483,3 +483,20 @@ def test_a_private_decision_logs_its_one_turn(maya, store, llm):
     out = decide(maya, store, llm)
     assert len(out.turn_log) == 1 and out.turn_log[0]["usage"]["provider"] == "baseten"
     assert set(out.turn_log[0]["sent"][1]["data"]) == {"today", "business_name", "profile", "allowed", "dry_run"}
+
+
+def test_a_guessed_pronoun_is_caught_in_code(maya):
+    """The model was told; code checks anyway. A pronoun the customer never gave holds the step for a person."""
+    import dataclasses
+
+    from pheri.decide import Decision, message_problems
+
+    def says(why_this, message="Hi there. - The Brightdesk team"):
+        return Decision(action="send_help", channel="email", discount_pct=None, message=message,
+                        why_this=why_this, why_now="Renews soon.", fact_keys=[], quote_ids=[])
+    nameless = dataclasses.replace(maya, pronouns=None)
+    assert message_problems(says("His exports fail."), nameless) == [
+        "uses a pronoun the customer never gave (his); use their name"]
+    assert message_problems(says("Maya's exports fail."), nameless) == []
+    assert message_problems(says("She is stuck on her exports."), maya) == []  # she/her, as Maya gave them
+    assert message_problems(says("He is stuck."), maya) == ["uses a pronoun the customer never gave (he); use their name"]

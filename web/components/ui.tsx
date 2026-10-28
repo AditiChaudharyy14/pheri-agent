@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { MODE_LABEL, words } from "@/lib/api";
+import { stageLabel } from "@/lib/labels";
 
 export function PageHead({ title, lead, right }: { title: string; lead?: ReactNode; right?: ReactNode }) {
   return (
@@ -41,7 +42,7 @@ export function ModeBadge({ mode }: { mode: string | null | undefined }) {
 }
 
 export function StageBadge({ stage }: { stage: string }) {
-  return <Badge tone="slate">{words(stage)}</Badge>;
+  return <Badge tone="slate">{stageLabel(stage)}</Badge>;
 }
 
 export function Chip({ children, title }: { children: ReactNode; title?: string }) {

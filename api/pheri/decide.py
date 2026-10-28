@@ -531,22 +531,69 @@ def _mock_decide(messages: list[dict], schema: dict | None):
     return _mock_answer(prof, "task_for_owner", None, None)
 
 
+# Plain words for the mock's why-text. No digits of their own: every number comes from a fact it cites.
+_STAGE_WORDS = {
+    "stuck": "is blocked by a problem they reported", "onboarding": "is new and still setting up",
+    "quiet": "has gone quiet", "healthy": "is doing well", "expanding": "is growing past their plan",
+    "at_risk_renewal": "is at risk before their renewal", "new": "is a new customer", "loyal": "is a loyal regular",
+    "subscriber": "is on a subscription", "lapsing": "has stopped ordering", "cart_abandoner": "left a cart behind",
+    "gift_buyer": "buys gifts",
+}
+_ACTION_WORDS = {
+    "send_help": "help with that problem", "book_call": "a short call", "send_checkin": "a friendly check-in",
+    "offer_upgrade": "room to grow", "offer_discount": "a discount", "send_reminder": "a reminder",
+    "recommend_product": "a tea that fits what they buy", "offer_subscription": "a subscription",
+    "task_for_owner": "a person looking at it", "no_action": "leaving them be",
+}
+_FACT_WORDS = {
+    "failed_exports_30d": "{v} failed exports this month", "days_quiet": "quiet for {v} days",
+    "days_since_signup": "{v} days since signing up", "price_complaints": "{v} complaints about price",
+    "renewal_in_days": "renewal in {v} days", "seat_limit_hits_30d": "hit their seat limit this month",
+    "seats": "{v} seats", "active_days_30d": "active on {v} days this month", "subscription": "on a {v} subscription",
+    "days_since_cart_abandoned": "left a cart {v} days ago", "orders": "{v} orders so far",
+    "days_since_last_order": "last ordered {v} days ago", "gift_only": "only ever buys gifts",
+}
+
+
+def _fact_words(fact: str, value) -> str:
+    if fact == "usage_change_pct" and isinstance(value, (int, float)):
+        return f"usage {'down' if value < 0 else 'up'} {abs(value)}% on their usual"
+    zero = {"active_days_30d": "not active at all this month", "orders": "no orders yet",
+            "price_complaints": "no complaints about price"}
+    if value == 0 and fact in zero:
+        return zero[fact]
+    if value == 1 and fact == "price_complaints":
+        return "a complaint about price"
+    return _FACT_WORDS.get(fact, f"{fact.replace('_', ' ')} {value}").format(v=value)
+
+
 def _mock_answer(prof: dict, kind: str, channel: str | None, pct: float | None, business_name: str = "") -> str:
     fact_keys = ["journey_stage"] + [b["fact"] for b in prof["journey"]["because"] if b["value"] is not None]
     blockers = prof["insights"].get("blockers") or []
     quote_ids = [blockers[0]["quote_id"]] if blockers else []
     first = prof["name"].split()[0] if prof.get("name") else "there"
     team = business_name or "Pheri"
-    because = ", ".join(f"{b['fact']} is {b['value']}" for b in prof["journey"]["because"] if b["value"] is not None)
+    because = ", ".join(_fact_words(b["fact"], b["value"]) for b in prof["journey"]["because"] if b["value"] is not None)
     message = {"send_help": f"Hi {first}, we saw the trouble you reported and have steps that fix it. "
                             f"Reply and we will walk you through them. - The {team} team",
                "offer_discount": f"Hi {first}, as a thank-you, here is {pct:g}% off your next month. "
                                  f"- The {team} team" if pct else "",
                "task_for_owner": f"Look at {prof['customer']} by hand: no allowed action fits.",
+               "book_call": f"Hi {first}, could we find a short call this week to get things working for you? "
+                            f"- The {team} team",
+               "offer_upgrade": f"Hi {first}, you have outgrown your plan. Want us to add room for your team? "
+                                f"- The {team} team",
+               "recommend_product": f"Hi {first}, based on what you enjoy, we think you would love our Ilam Green. "
+                                    f"- The {team} team",
+               "send_reminder": f"Hi {first}, you left something in your cart. It is still there when you are ready. "
+                                f"- The {team} team",
+               "offer_subscription": f"Hi {first}, want your favourite tea delivered every month, no reordering? "
+                                     f"- The {team} team",
                }.get(kind, f"Hi {first}, checking in to see how things are going. - The {team} team")
     return json.dumps({"action": kind, "channel": channel, "discount_pct": pct, "message": message,
-                       "why_this": f"The customer is {prof['journey']['stage']} and {kind} answers that.",
-                       "why_now": f"Because {because}." if because else "Nothing is waiting on them.",
+                       "why_this": f"{first} {_STAGE_WORDS.get(prof['journey']['stage'], 'needs a next step')}, so "
+                                   f"{_ACTION_WORDS.get(kind, kind.replace('_', ' '))} is the most direct next step.",
+                       "why_now": f"{because[0].upper()}{because[1:]}." if because else "Nothing is waiting on them.",
                        "fact_keys": fact_keys, "quote_ids": quote_ids}, ensure_ascii=False)
 
 

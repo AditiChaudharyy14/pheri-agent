@@ -6,8 +6,8 @@ Read this before every task. These rules are not optional.
 - Done: spend guard, synthetic data, profiles, journey (Brightdesk 92.1%, Kettle 100%), rules, decide (tool loop,
   evidence by id), autonomy + approvals, guard + private mode (Muse Spark Open), evals, twin + Thompson (5,000,
   12/12 learned right, close calls flagged), Wonder report (checked in code), FastAPI (mock), web scaffold + Next steps.
-- Doing: web app screens, one commit each, Playwright screenshots checked by eye. Next steps, Journey, Customer done.
-- Next: Decision trace (each turn + rule checks), Rules, Safety, Proof, Spend;
+- Doing: web app screens, one commit each, Playwright screenshots checked by eye. Next steps, Journey, Customer, Decision trace done.
+- Next: Rules, Safety, Proof, Spend;
   then polish, README, deploy, demo video. Servers for screenshots: uvicorn :8000 (mock, no --reload: restart after API changes), next dev :3000.
 - Live spend: Meta $0.4782 of $130, Baseten $0.1447 of $90. Tests: 249 pass (mock).
 

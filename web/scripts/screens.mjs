@@ -12,6 +12,7 @@ const PAGES = {
   "home-kettle": "/kettle",
   journey: "/brightdesk/journey",
   customer: `/brightdesk/customers/${MAYA}`,
+  trace: `/brightdesk/customers/${MAYA}/trace`,
   rules: "/brightdesk/rules",
   safety: "/brightdesk/safety",
   proof: "/brightdesk/proof",

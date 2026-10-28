@@ -18,6 +18,18 @@ const PAGES = {
   spend: "/brightdesk/spend",
 };
 
+// What a viewer would click on some pages; the result is screenshotted too.
+const ACTIONS = {
+  customer: async (page) => {
+    const button = page.getByRole("button", { name: "Offer a discount" });
+    await button.scrollIntoViewIfNeeded();
+    await button.click();
+    await page.getByRole("status").waitFor({ timeout: 30_000 });
+    await page.getByRole("status").scrollIntoViewIfNeeded();
+    await page.waitForTimeout(200);
+  },
+};
+
 const wanted = process.argv.slice(2).length ? process.argv.slice(2) : Object.keys(PAGES);
 await mkdir("screenshots", { recursive: true });
 const browser = await chromium.launch();
@@ -32,6 +44,11 @@ for (const name of wanted) {
   await page.screenshot({ path: `screenshots/${name}.png` });
   await page.screenshot({ path: `screenshots/${name}-full.png`, fullPage: true });
   console.log(`${name}: ${res?.status()} -> screenshots/${name}.png`);
+  if (ACTIONS[name]) {
+    await ACTIONS[name](page);
+    await page.screenshot({ path: `screenshots/${name}-after.png` });
+    console.log(`${name}: after the click -> screenshots/${name}-after.png`);
+  }
 }
 await browser.close();
 if (problems.length) {

@@ -61,6 +61,29 @@ def _model(monkeypatch, fn):
 
 
 # ---- the hero -----------------------------------------------------------------------
+def test_maya_is_told_about_her_actual_problem_and_why_now(maya, store, llm):
+    """Specific, not generic: her problem, her goal, the renewal, and her own pronoun."""
+    out = decide(maya, store, llm)
+    d = out.decision
+    assert maya.pronouns == "she/her"
+    assert "CSV export" in d["message"] and "weekly reports" in d["message"]
+    assert "CSV export" in d["why_this"] and "her goal of weekly reports" in d["why_this"]
+    assert "she reported" in d["why_this"] and " they " not in f" {d['why_this']} "
+    assert "renews in 8 days" in d["why_now"]
+    refs = {e["ref"] for e in out.evidence}
+    assert {"renewal_in_days", "T0999", "sales_notes.txt#L41"} <= refs  # every claim cites its source
+
+
+def test_no_pronoun_is_guessed_when_the_customer_gave_none(brightdesk, store, llm):
+    key = next(k for k, c in brightdesk.customers.items() if c.pronouns is None
+               and build_profile(brightdesk, k, llm).facts.get("failed_exports_30d"))
+    p = build_profile(brightdesk, key, llm)
+    d = decide(p, store, llm).decision
+    words = f" {d['why_this']} {d['why_now']} ".replace(",", " ").replace(".", " ").split()
+    assert not {"she", "he", "her", "his", "they", "their"} & set(words)
+    assert d["why_this"].startswith(p.name.split()[0])
+
+
 def test_maya_discount_is_blocked_in_the_loop_and_she_gets_help(maya, store, llm):
     out = decide(maya, store, llm)
 

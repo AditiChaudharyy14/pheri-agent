@@ -123,10 +123,14 @@ and if it is not allowed choose another. Then answer with the decision JSON only
 - discount_pct: a number only when action is offer_discount. For every other action it must be JSON
   null (not the string "null", not 0): a discount cannot ride along with a call, a help message or an
   upgrade. If you want to offer money off, the action is offer_discount.
-- message: what the customer receives, short, in their language, signed as the team of the business
-  you work for (business_name), never as the customer's own company; or, for task_for_owner, what the
-  owner should do.
-- why_this: why this action fits this customer. why_now: why today rather than later.
+- message: what the customer receives, in their language, signed as the team of the business you work
+  for (business_name), never as the customer's own company; or, for task_for_owner, what the owner
+  should do. Friendly and short (two or three sentences). Be specific: name their actual problem or
+  need as they described it, and the goal it gets in the way of when the profile has one.
+- why_this: why this action fits this customer: cite the problem and the goal. why_now: why today
+  rather than later; when a renewal is 14 days away or less, say so ("renews in N days").
+- The customer: use their first name, or the pronouns in the profile. If pronouns is null, use their
+  name; never guess pronouns from a name.
 - fact_keys: the names of the profile facts behind your why_this, why_now and message ("journey_stage"
   for the stage). quote_ids: the quote_id of each verified quote you rely on. Pick from the lists only,
   at most 8 of each: code attaches the real values and quotes. Use only numbers that are in the facts
@@ -162,7 +166,8 @@ def _insights_with_ids(p: Profile) -> dict:
 
 
 def _profile_view(p: Profile, j: Journey, latest: GuardResult | None = None) -> dict:
-    view = {"customer": p.customer_key, "name": p.name, "company": p.company, "facts": p.facts,
+    view = {"customer": p.customer_key, "name": p.name, "pronouns": p.pronouns, "company": p.company,
+            "facts": p.facts,
             "journey": {"stage": j.stage, "because": [{"fact": b["fact"], "value": b["value"]} for b in j.because]},
             "insights": _insights_with_ids(p)}
     if latest is not None and latest.provider is not None:
@@ -580,9 +585,10 @@ def _mock_decide(messages: list[dict], schema: dict | None):
 
 
 # Plain words for the mock's why-text. No digits of their own: every number comes from a fact it cites.
+# No pronouns either, except the customer's own ({they}/{their}; with none given, the sentence avoids one).
 _STAGE_WORDS = {
-    "stuck": "is blocked by a problem they reported", "onboarding": "is new and still setting up",
-    "quiet": "has gone quiet", "healthy": "is doing well", "expanding": "is growing past their plan",
+    "stuck": "is blocked by a problem {they} reported", "onboarding": "is new and still setting up",
+    "quiet": "has gone quiet", "healthy": "is doing well", "expanding": "is growing past {their} plan",
     "at_risk_renewal": "is at risk before their renewal", "new": "is a new customer", "loyal": "is a loyal regular",
     "subscriber": "is on a subscription", "lapsing": "has stopped ordering", "cart_abandoner": "left a cart behind",
     "gift_buyer": "buys gifts",
@@ -590,13 +596,13 @@ _STAGE_WORDS = {
 _ACTION_WORDS = {
     "send_help": "help with that problem", "book_call": "a short call", "send_checkin": "a friendly check-in",
     "offer_upgrade": "room to grow", "offer_discount": "a discount", "send_reminder": "a reminder",
-    "recommend_product": "a tea that fits what they buy", "offer_subscription": "a subscription",
+    "recommend_product": "a tea that fits past orders", "offer_subscription": "a subscription",
     "task_for_owner": "a person looking at it", "no_action": "leaving them be",
 }
 _FACT_WORDS = {
     "failed_exports_30d": "{v} failed exports this month", "days_quiet": "quiet for {v} days",
     "days_since_signup": "{v} days since signing up", "price_complaints": "{v} complaints about price",
-    "renewal_in_days": "renewal in {v} days", "seat_limit_hits_30d": "hit their seat limit this month",
+    "renewal_in_days": "renews in {v} days", "seat_limit_hits_30d": "hit the seat limit this month",
     "seats": "{v} seats", "active_days_30d": "active on {v} days this month", "subscription": "on a {v} subscription",
     "days_since_cart_abandoned": "left a cart {v} days ago", "orders": "{v} orders so far",
     "days_since_last_order": "last ordered {v} days ago", "gift_only": "only ever buys gifts",
@@ -605,7 +611,7 @@ _FACT_WORDS = {
 
 def _fact_words(fact: str, value) -> str:
     if fact == "usage_change_pct" and isinstance(value, (int, float)):
-        return f"usage {'down' if value < 0 else 'up'} {abs(value)}% on their usual"
+        return f"usage {'down' if value < 0 else 'up'} {abs(value)}% on the usual"
     zero = {"active_days_30d": "not active at all this month", "orders": "no orders yet",
             "price_complaints": "no complaints about price"}
     if value == 0 and fact in zero:
@@ -615,15 +621,56 @@ def _fact_words(fact: str, value) -> str:
     return _FACT_WORDS.get(fact, f"{fact.replace('_', ' ')} {value}").format(v=value)
 
 
+RENEWAL_SOON_DAYS = 14  # a renewal this close is always part of "why now"
+_PRONOUNS = {"she": ("she", "her"), "he": ("he", "his"), "they": ("they", "their")}
+
+
+def _pronouns(given: str | None) -> tuple[str, str] | None:
+    """("she", "her") from "she/her"; None when the customer gave none (then the stand-in avoids them)."""
+    return _PRONOUNS.get((given or "").split("/")[0].strip().casefold())
+
+
+def _stage_words(stage: str, pronouns: tuple[str, str] | None) -> str:
+    words = _STAGE_WORDS.get(stage, "needs a next step")
+    if pronouns:
+        return words.format(they=pronouns[0], their=pronouns[1])
+    return words.replace("a problem {they} reported", "a reported problem").replace("{their} plan", "the plan")
+
+
+def _main_blocker(blockers: list[dict], because: list[dict]) -> dict | None:
+    """The blocker behind the stage: the one that shares a word with the facts that set it (exports)."""
+    words = {w.rstrip("s") for b in because for w in b["fact"].split("_")
+             if len(w) > 3 and not w[0].isdigit() and w not in ("days", "since", "last")}
+    return next((x for x in blockers if any(w in f"{x['label']} {x['quote']}".casefold() for w in words)),
+                blockers[0] if blockers else None)
+
+
 def _mock_answer(prof: dict, kind: str, channel: str | None, pct: float | None, business_name: str = "") -> str:
-    fact_keys = ["journey_stage"] + [b["fact"] for b in prof["journey"]["because"] if b["value"] is not None]
-    blockers = prof["insights"].get("blockers") or []
-    quote_ids = [blockers[0]["quote_id"]] if blockers else []
+    because = [b for b in prof["journey"]["because"] if b["value"] is not None]
+    renewal = prof["facts"].get("renewal_in_days")
+    if isinstance(renewal, int) and 0 <= renewal <= RENEWAL_SOON_DAYS and all(
+            b["fact"] != "renewal_in_days" for b in because):
+        because.append({"fact": "renewal_in_days", "value": renewal})
+    fact_keys = ["journey_stage"] + [b["fact"] for b in because]
+    blocker = _main_blocker(prof["insights"].get("blockers") or [], because)
+    goals = prof["insights"].get("goals") or []
+    quote_ids = [x["quote_id"] for x in (blocker, goals[0] if goals else None) if x]
+    problem = blocker["label"] if blocker else None
+    goal = goals[0]["label"].lower() if goals else None
     first = prof["name"].split()[0] if prof.get("name") else "there"
+    pronouns = _pronouns(prof.get("pronouns"))
+    their = pronouns[1] if pronouns else f"{first}'s"
     team = business_name or "Pheri"
-    because = ", ".join(_fact_words(b["fact"], b["value"]) for b in prof["journey"]["because"] if b["value"] is not None)
-    message = {"send_help": f"Hi {first}, we saw the trouble you reported and have steps that fix it. "
-                            f"Reply and we will walk you through them. - The {team} team",
+    why_now = ", ".join(_fact_words(b["fact"], b["value"]) for b in because)
+    why_this = f"{first} {_stage_words(prof['journey']['stage'], pronouns)}"
+    if problem and kind in ("send_help", "book_call"):
+        why_this += f" ({problem})" + (f", and it stands in the way of {their} goal of {goal}" if goal else "")
+    why_this += f", so {_ACTION_WORDS.get(kind, kind.replace('_', ' '))} is the most direct next step."
+    named = problem if problem and problem[1:2].isupper() else (problem or "")[:1].lower() + (problem or "")[1:]
+    fix = (f"sorry the {named} keeps failing. We have steps that fix it"
+           + (f", so your {goal} go out again" if goal and goal.endswith("s") else "") + "."
+           if problem else "we saw the trouble you reported and have steps that fix it.")
+    message = {"send_help": f"Hi {first}, {fix} Reply and we will walk you through them. - The {team} team",
                "offer_discount": f"Hi {first}, as a thank-you, here is {pct:g}% off your next month. "
                                  f"- The {team} team" if pct else "",
                "task_for_owner": f"Look at {prof['customer']} by hand: no allowed action fits.",
@@ -639,9 +686,8 @@ def _mock_answer(prof: dict, kind: str, channel: str | None, pct: float | None, 
                                      f"- The {team} team",
                }.get(kind, f"Hi {first}, checking in to see how things are going. - The {team} team")
     return json.dumps({"action": kind, "channel": channel, "discount_pct": pct, "message": message,
-                       "why_this": f"{first} {_STAGE_WORDS.get(prof['journey']['stage'], 'needs a next step')}, so "
-                                   f"{_ACTION_WORDS.get(kind, kind.replace('_', ' '))} is the most direct next step.",
-                       "why_now": f"{because[0].upper()}{because[1:]}." if because else "Nothing is waiting on them.",
+                       "why_this": why_this,
+                       "why_now": f"{why_now[0].upper()}{why_now[1:]}." if why_now else "Nothing is waiting.",
                        "fact_keys": fact_keys, "quote_ids": quote_ids}, ensure_ascii=False)
 
 

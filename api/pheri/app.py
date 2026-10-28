@@ -93,15 +93,18 @@ class State:
         self.learned: dict[tuple[str, int, int], dict] = {}
         self.decided: dict[str, dict[str, dict]] = {b: {} for b in BUSINESSES}  # business -> key -> Outcome
         self.lock = threading.RLock()  # the memory store is not thread-safe: one request at a time touches it
-        if self.settings.llm_mode == "mock":
-            for b in BUSINESSES:  # the demo's starting rules (Brightdesk: no discounts in the first month)
+        if self.settings.llm_mode != "live" or self.settings.record_path:
+            # The demo's starting rules (Brightdesk: no discounts in the first month). A recording run seeds them
+            # too, so replay rebuilds exactly the conversations it recorded.
+            for b in BUSINESSES:
                 seed(self.stores[b], llm, by="owner:demo")
 
 
 def create_app(llm: LLM | None = None) -> FastAPI:
     settings = llm.settings if llm else get_settings()
-    if settings.llm_mode != "mock" and os.environ.get("PHERI_API_ALLOW_LIVE") != "1":
-        raise RuntimeError("The API runs in mock mode for now. Set PHERI_API_ALLOW_LIVE=1 to serve live on purpose.")
+    if settings.llm_mode == "live" and os.environ.get("PHERI_API_ALLOW_LIVE") != "1":
+        raise RuntimeError("The API runs in mock mode (or replay) for now. Set PHERI_API_ALLOW_LIVE=1 to serve live "
+                           "on purpose.")
     state = State(llm or LLM(settings))
     app = FastAPI(title="Pheri", description="The next step for every customer, inside your rules.")
     app.state.pheri = state
@@ -309,7 +312,7 @@ def create_app(llm: LLM | None = None) -> FastAPI:
     def learned(b: str = Depends(business), customers: int = 5000, seed_: int = Query(7, alias="seed")):
         """'What Pheri learned', every number and verdict checked in code. Written by the offline stand-in in
         mock mode; never calls Muse Wonder from a request (that is scripts/live_learn.py, on purpose)."""
-        if state.settings.llm_mode != "mock":
+        if state.settings.llm_mode == "live":
             raise HTTPException(409, "Muse Wonder reports are written on purpose: run scripts/live_learn.py.")
         k = (b, customers, seed_)
         with state.lock:

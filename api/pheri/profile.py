@@ -87,6 +87,7 @@ class Customer:
     name: str
     company: str | None = None
     external_id: str | None = None
+    pronouns: str | None = None  # only as the customer gave them; None: refer to them by name
     attrs: dict = field(default_factory=dict)
     refs: list[str] = field(default_factory=list)  # the rows that describe this customer
     aliases: set[str] = field(default_factory=set)  # every raw spelling of the email seen
@@ -185,6 +186,7 @@ def load_brightdesk(folder: Path = OUT / "brightdesk") -> Dataset:
               for i, r in _csv_rows(folder / "crm_export.csv")]
     _add_people(ds, people, lambda r, key: Customer(
         key=key, name=r["Customer Name"].strip(), company=r["Company"].strip(),
+        pronouns=(r.get("Pronouns") or "").strip() or None,
         attrs={"plan": r["Plan"], "seats": int(r["Seats"]), "signed_up": parse_date(r["Signed Up"]),
                "country": r["Country"], "mrr_usd": float(r["MRR (USD)"]), "renewal": parse_date(r["Renewal"])}))
 
@@ -226,6 +228,7 @@ def load_kettle(folder: Path = OUT / "kettle") -> Dataset:
               for i, r in _csv_rows(folder / "customers.csv")]
     _add_people(ds, people, lambda r, key: Customer(
         key=key, name=f"{r['first_name']} {r['last_name']}".strip(), external_id=r["id"],
+        pronouns=(r.get("pronouns") or "").strip() or None,
         attrs={"signed_up": parse_date(r["joined"]), "country": r["country"],
                "subscription": r["subscription"] or None, "marketing_opt_in": _yes_no(r["marketing_opt_in"])}))
 
@@ -476,6 +479,7 @@ class Profile:
     insights: dict
     provenance: dict
     model: str | None = None  # None when there was nothing to read
+    pronouns: str | None = None  # as the customer gave them, e.g. "she/her"; None: use their name
 
     def as_dict(self) -> dict:
         return dataclasses.asdict(self)
@@ -500,7 +504,7 @@ def build_profile(ds: Dataset, key: str, llm: LLM, today: date = TODAY, private:
         model = r.model
     provenance = {"identity": {"key": c.key, "rows": c.refs, "aliases": sorted(c.aliases)},
                   "facts": fact_prov, "sources": [s.id for s in sources], "dropped": dropped}
-    return Profile(ds.business, c.key, c.name, c.company, facts, insights, provenance, model)
+    return Profile(ds.business, c.key, c.name, c.company, facts, insights, provenance, model, c.pronouns)
 
 
 def build_profiles(ds: Dataset, llm: LLM, keys: list[str] | None = None, limit: int = 20,

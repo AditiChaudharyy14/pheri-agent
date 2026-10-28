@@ -57,8 +57,11 @@ def _envf(name: str, default: float):
 
 @dataclass(frozen=True)
 class Settings:
-    # "live" calls real providers; "mock" never touches the network (tests, offline demos).
+    # "live" calls real providers; "mock" never touches the network (tests, offline demos); "replay" never
+    # touches it either, and plays back the replies a live run recorded (the public demo).
     llm_mode: str = _env("PHERI_LLM_MODE", "mock")
+    record_path: str | None = _env("PHERI_LLM_RECORD")  # live only: append every reply to this file
+    replay_path: str = _env("PHERI_LLM_REPLAY", str(REPO_ROOT / "data" / "recorded" / "llm.jsonl"))
 
     # Meta Model API
     meta_base_url: str = _env("META_BASE_URL", "https://api.meta.ai/v1")

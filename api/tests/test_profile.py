@@ -297,3 +297,9 @@ def test_small_sample_by_default(kettle, llm):
     profiles = build_profiles(kettle, llm)
     assert len(profiles) == 20
     assert llm.ledger.totals("meta").settled_usd == 0  # mock mode spends nothing
+
+
+def test_pronouns_only_when_the_customer_gave_them(brightdesk, kettle):
+    """The CRM column is blank unless the customer told us: then Pheri uses the name, never a guess."""
+    given = {k: c.pronouns for ds in (brightdesk, kettle) for k, c in ds.customers.items() if c.pronouns}
+    assert given == {"maya.okafor@pinecrest.example": "she/her"}

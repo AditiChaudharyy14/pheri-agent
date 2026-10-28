@@ -33,16 +33,26 @@ Tool loops (meta only): pass `tools` (flat function shape). Two ways to carry th
 Either way the server reads the whole conversation on every turn and bills it as input again, so a
 chained call is estimated against everything said so far, not only the new items. `tool_choice` is auto only: a turn may come back
 as plain text instead of a tool call or JSON, so with tools a bad parse is reported, not raised.
+
+Recorded replies: a live run with PHERI_LLM_RECORD=<file> saves every reply. PHERI_LLM_MODE=replay plays
+them back offline (zero network, zero spend), so a public demo shows what the real model said while code
+still does everything else: rule checks, evidence checks, the autonomy dial. A reply is found by the
+conversation it answered (reasoning items left out, random ids masked); anything not recorded falls back
+to the offline stand-in, and the result says which it was (`recorded`).
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import os
 import random
+import re
 import time
 import uuid
+from datetime import datetime, timezone
+from pathlib import Path
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from types import SimpleNamespace
@@ -101,6 +111,7 @@ class LLMResult:
     output_items: list[dict] = field(default_factory=list)  # stateless: append these to the next input
     reasoning_tokens: int | None = None  # as the provider reported them, when it does
     reasoning_chars: int | None = None  # length of the reasoning text returned (Chat: reasoning_content)
+    recorded: bool = False  # replay mode: the reply a live run recorded (cost_usd is what that run paid)
 
 
 # Mock responders let tests and offline demos run with zero network and zero spend.
@@ -169,6 +180,7 @@ class LLM:
         self._mock_threads: dict[str, list[dict]] = {}  # mock only: the conversation behind a response id
         self._json_mode: dict[str, str] = {}  # provider -> "instructions" once it refused json_schema
         self._only: frozenset[str] | None = None  # inside `only(...)`: the providers calls may go to
+        self._recordings: dict[str, dict] | None = None  # replay mode: key -> recorded reply, read on first use
 
     # ---- providers -------------------------------------------------------
     def _client(self, provider: str):
@@ -266,10 +278,18 @@ class LLM:
         rid = self.ledger.reserve(provider, model, purpose, est)
 
         # 3. Call.
+        offline = self.settings.llm_mode != "live"
+        # Replay mode plays recordings back; a recording run reuses what it already recorded for the same
+        # conversation, so a run stopped part-way (spend cap, outage) resumes without paying twice.
+        replay = (self.settings.llm_mode == "replay" or bool(self.settings.record_path)) and (stateless or not tools)
+        key = recording_key(purpose, provider, model, messages, schema, tools)             if replay or self.settings.record_path else None
+        rec = self._recorded(key) if replay else None
         start = time.monotonic()
         try:
             calls: list[FunctionCall] = []
-            if self.settings.llm_mode == "mock":
+            if rec is not None:
+                text, usage, calls, resp_id, raw, items = _from_recording(rec)
+            elif offline:
                 text, usage, calls, resp_id, raw, items = self._mock_call(messages, purpose, schema, tools,
                                                                           previous_response_id, stateless)
             elif provider == "meta":
@@ -284,7 +304,7 @@ class LLM:
             status = getattr(exc, "status_code", None)
             maybe_billed = (status is not None and status >= 500) or exc.__class__.__name__ in (
                 "APIConnectionError", "APITimeoutError")
-            if self.settings.llm_mode != "mock" and maybe_billed:
+            if not offline and maybe_billed:
                 # Timeout or server error: the provider may have billed us. Count the worst case.
                 self.ledger.settle(rid, est, est_in, 0, max_tokens)
             else:
@@ -295,7 +315,7 @@ class LLM:
 
         # 4. Settle with the real cost.
         in_tok, cached_tok, out_tok = usage
-        actual = 0.0 if self.settings.llm_mode == "mock" else cost_usd(price, in_tok, out_tok, cached_tok)
+        actual = 0.0 if offline or rec is not None else cost_usd(price, in_tok, out_tok, cached_tok)
         self.ledger.settle(rid, actual, in_tok, cached_tok, out_tok)
         if tools and resp_id and not stateless:
             self._context_tokens.pop(previous_response_id or "", None)  # our chains are linear
@@ -307,8 +327,13 @@ class LLM:
         elif getattr((getattr(raw, "choices", None) or [None])[0], "finish_reason", None) == "length":  # Chat
             incomplete = "max_output_tokens"
         reasoning_tokens, reasoning_chars = _reasoning_usage(raw)
+        if rec is not None:
+            reasoning_tokens, actual = rec.get("reasoning_tokens"), rec["cost_usd"]
+        elif self.settings.record_path and not offline:
+            self._record(key, purpose, provider, model, text, calls, items, usage, actual, incomplete,
+                         reasoning_tokens)
         result = LLMResult(text, None, provider, model, in_tok, cached_tok, out_tok, actual, latency, resp_id, raw,
-                           calls, None, incomplete, items, reasoning_tokens, reasoning_chars)
+                           calls, None, incomplete, items, reasoning_tokens, reasoning_chars, rec is not None)
         if schema is not None and not calls:
             try:
                 result.parsed = _parse(text, schema)
@@ -386,6 +411,27 @@ class LLM:
                 time.sleep(_retry_delay(exc, attempt))
         raise AssertionError("unreachable")
 
+    # ---- recorded replies ----------------------------------------------------
+    def _recorded(self, key: str) -> dict | None:
+        if self._recordings is None:
+            path = Path(self.settings.record_path or self.settings.replay_path)
+            lines = path.read_text(encoding="utf-8").splitlines() if path.exists() else []
+            self._recordings = {r["key"]: r for r in map(json.loads, filter(None, lines))}  # the newest wins
+        return self._recordings.get(key)
+
+    def _record(self, key, purpose, provider, model, text, calls, items, usage, cost, incomplete, reasoning_tokens):
+        """Append one live reply: what came back and what it cost. Not the request: code + data rebuild it."""
+        kept = [d for d in map(_replayable, items) if d.get("type") != "reasoning"]  # reasoning is encrypted
+        row = {"key": key, "purpose": purpose, "provider": provider, "model": model,
+               "recorded_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "text": text,
+               "function_calls": [{"name": c.name, "arguments": c.arguments, "call_id": c.call_id} for c in calls],
+               "items": kept, "usage": list(usage), "cost_usd": cost, "incomplete": incomplete,
+               "reasoning_tokens": reasoning_tokens}
+        path = Path(self.settings.record_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+
     def _mock_call(self, messages, purpose, schema, tools=None, previous_response_id=None, stateless=False):
         fn = _mock_responders.get(purpose)
         if fn is None:
@@ -417,6 +463,30 @@ class LLM:
         # Like the real API: a reasoning item (encrypted, with a summary) comes first, then the answer.
         items = [{"type": "reasoning", "summary": [], "encrypted_content": "mock-reasoning"}, *out_items]
         return text, usage, calls, resp_id, raw, items
+
+
+_RANDOM_ID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
+
+
+def recording_key(purpose: str, provider: str, model: str, messages: list, schema: type[BaseModel] | None,
+                  tools: list[dict] | None) -> str:
+    """What a reply answered: the conversation without reasoning items (encrypted, different every run),
+    with random ids (rule ids) masked, plus the schema and tools it was asked with."""
+    convo = [m for m in map(_replayable, messages) if m.get("type") != "reasoning"]
+    blob = json.dumps({"purpose": purpose, "provider": provider, "model": model, "messages": convo,
+                       "schema": schema.model_json_schema() if schema else None,
+                       "tools": [t.get("name") for t in tools or []]},
+                      sort_keys=True, ensure_ascii=False, default=str)
+    return hashlib.sha256(_RANDOM_ID.sub("<id>", blob).encode("utf-8")).hexdigest()[:32]
+
+
+def _from_recording(rec: dict):
+    calls = [FunctionCall(c["name"], c["arguments"], c["call_id"]) for c in rec["function_calls"]]
+    raw = (SimpleNamespace(status="incomplete", incomplete_details=SimpleNamespace(reason=rec["incomplete"]))
+           if rec.get("incomplete") else None)
+    reasoning = {"type": "reasoning", "summary": [], "encrypted_content": "recorded"}
+    items = [reasoning, *rec["items"]] if rec["items"] else []
+    return rec["text"], tuple(rec["usage"]), calls, None, raw, items
 
 
 def _reasoning_usage(raw) -> tuple[int | None, int | None]:

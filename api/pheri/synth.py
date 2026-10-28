@@ -262,7 +262,9 @@ def brightdesk(rng: random.Random, fall_before_renewal: bool = True) -> dict:
                          "Company": c["company"], "Plan": c["plan"], "Seats": c["seats"],
                          "Signed Up": c["signup"].strftime(rng.choice(["%Y-%m-%d", "%d/%m/%Y"])),
                          "Country": c["country"], "MRR (USD)": plans[c["plan"]] * c["seats"],
-                         "Renewal": renewals[c["email"]]})
+                         "Renewal": renewals[c["email"]],
+                         # Only when the customer told us; blank means use the name, never a guess.
+                         "Pronouns": "she/her" if c is maya else ""})
     # A few duplicate CRM rows, as every real export has.
     for c in rng.sample(customers, 8):
         dup = dict(next(r for r in crm_rows if r["Customer Name"] == f"{c['first']} {c['last']}"))
@@ -314,7 +316,8 @@ def kettle(rng: random.Random) -> dict:
         customers.append({"id": cid, "email": email, "first_name": first, "last_name": last, "country": country,
                           "joined": joined.isoformat(),
                           "subscription": "monthly" if stage == "subscriber" else rng.choice(["", "", "", "paused"]),
-                          "marketing_opt_in": rng.choice(["yes", "no", "Y", "N", ""])})
+                          "marketing_opt_in": rng.choice(["yes", "no", "Y", "N", ""]),
+                          "pronouns": ""})  # unknown: Pheri uses the name, never a guess
         truth[email] = stage
         n_orders = {"new": rng.randint(0, 1), "loyal": rng.randint(5, 14), "subscriber": rng.randint(4, 10),
                     "lapsing": rng.randint(2, 6), "cart_abandoner": rng.randint(0, 2), "gift_buyer": rng.randint(1, 3)}[stage]

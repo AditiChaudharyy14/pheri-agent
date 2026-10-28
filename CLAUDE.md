@@ -5,11 +5,15 @@ Read this before every task. These rules are not optional.
 ## Status (update in every commit)
 - Done: spend guard, synthetic data, profiles, journey (Brightdesk 92.1%, Kettle 100%), rules, decide (tool loop,
   evidence by id), autonomy + approvals, guard + private mode (Muse Spark Open), evals, twin + Thompson (5,000,
-  12/12 learned right, close calls flagged), Wonder report (checked in code), FastAPI (mock), web scaffold + Next steps.
-- Doing: web app screens, one commit each, Playwright screenshots checked by eye. Next steps, Journey, Customer, Decision trace, Rules, Safety, Proof, Spend done (live spend from data/spend/live.json: refresh with python scripts/spend_snapshot.py).
-- Next: polish (all screens done),
-  README, deploy, demo video. Servers for screenshots: uvicorn :8000 (mock, no --reload: restart after API changes), next dev :3000.
-- Live spend: Meta $0.4782 of $130, Baseten $0.1447 of $90. Tests: 249 pass (mock).
+  12/12 learned right, close calls flagged), Wonder report (checked in code), FastAPI (mock), all 7 web screens
+  (live spend from data/spend/live.json: refresh with python scripts/spend_snapshot.py), pronouns (only Maya's
+  given; else the name), replay mode: live replies recorded in data/recorded/llm.jsonl (scripts/record_demo.py,
+  resumes without paying twice), PHERI_LLM_MODE=replay plays them back offline. Maya recorded ($0.0319, 3 turns).
+- Doing: Next steps feedback. Done: Maya's card specific (problem, goal, "renews in 8 days", "she").
+- Next: card footer (model · cost · turns · View trace), trace shows the recorded run, safe demo mode badge
+  ("Recorded from a live run"), deploy prep; then README, demo video.
+  Servers for screenshots: uvicorn :8000 (no --reload: restart after API changes), next dev :3000.
+- Live spend: Meta $0.5102 of $130, Baseten $0.1447 of $90. Tests: 256 pass (mock).
 
 ## What we are building
 Pheri: an AI agent that understands each customer, decides their next best action ("why this, why now"),

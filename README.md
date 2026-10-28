@@ -9,8 +9,8 @@ rules and approvals, and proves what worked with a holdout.
 Python 3.12+.
 
 ```bash
-pip install pydantic openai "psycopg[binary]" pytest fastapi httpx uvicorn
 cd api
+pip install -r requirements-dev.txt
 python -m pytest
 ```
 
@@ -117,6 +117,32 @@ bound; the semantic attacks are the ones it is not meant to catch.
 
 Keys go in `.env` (see `.env.example`), never in the repo. Every model call passes through
 `api/pheri/llm.py`, which enforces the spend caps and allows only synthetic data.
+
+## The web app, and the public demo
+
+```bash
+cd api && uvicorn pheri.app:app                      # API on :8000 (mock mode by default)
+cd web && npm ci && npm run dev                      # web app on :3000
+```
+
+The public demo runs the API with `PHERI_LLM_MODE=replay`. A live run records each model reply in
+`data/recorded/llm.jsonl` (`python scripts/record_demo.py --live`: it drives the API in-process, then
+replays the same requests and checks every one is found). Replay plays those replies back with no
+network, no model key and no spend, while code still runs every rule check, evidence check and the
+autonomy dial. A reply is found by the conversation it answered, so if a prompt or the data changes,
+that conversation falls back to the offline stand-in, and the page says so: every decision card
+names who decided ("Decided by Muse Spark 1.3 · $0.0166 · 3 turns", or "the offline stand-in"),
+and the header reads "Recorded from a live run". `api/tests/test_app.py` fails if Maya's recording
+stops matching the code.
+
+Deploy: `render.yaml` is a Render blueprint with two services. `pheri-api` (Python, replay mode, no
+keys) and `pheri-web` (Node). Set `PHERI_API_URL` on `pheri-web` to the API's public URL. The browser's
+`/api/...` calls go through `web/app/api/[...path]/route.ts`, which reads that URL at run time, so
+changing it needs a restart, not a rebuild. The demo keeps its state in memory: approvals and new rules
+are shared by everyone using it and reset when the API restarts.
+
+`data/spend/live.json` is what this week's live runs cost, totals only, from the local ledger
+(`python scripts/spend_snapshot.py`); the Spend page shows it.
 
 ## Built during the hackathon
 

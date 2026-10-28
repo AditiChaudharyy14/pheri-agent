@@ -1,0 +1,8 @@
+# What the API needs to run. openai and psycopg are imported only when used: live model calls, or a
+# DATABASE_URL. The public demo runs in replay mode and needs neither, but they stay so the same
+# install can run live on purpose. Versions as tested (Python 3.14).
+fastapi==0.162.0
+uvicorn==0.38.0
+pydantic==2.12.5
+openai==3.39.0
+psycopg[binary]==3.3.6

@@ -14,7 +14,9 @@ Read this before every task. These rules are not optional.
   Trace shows Maya's recorded run (3 turns, per-turn tokens and cost, "Recorded from a live run").
   Safe demo mode: PHERI_LLM_MODE=replay; the pill says "Recorded from a live run · synthetic data", Proof and Spend
   say when the stand-in wrote something (no Wonder reply recorded for the 5,000 twin).
-- Next: deploy prep (Render: API in replay mode, web), then README, demo video.
+  Deploy prep: render.yaml (pheri-api replay, no keys; pheri-web), api/requirements.txt (+ -dev), browser /api
+  via a run-time proxy route (a next.config rewrite was fixed at build time); `next build` passes with no API.
+- Next: deploy on Render (outward-facing: ask first), README polish, demo video.
   Servers for screenshots: uvicorn :8000 (no --reload: restart after API changes), next dev :3000.
 - Live spend: Meta $0.5102 of $130, Baseten $0.1447 of $90. Tests: 258 pass (mock + one replay test).
 

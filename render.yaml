@@ -1,0 +1,38 @@
+# Render blueprint for the public demo.
+#
+# The API replays the model replies recorded in a live run (data/recorded/llm.jsonl): no model key is
+# set here, nothing is sent to any model, and nothing is spent. Code still runs every check on every
+# request. To serve live on purpose instead, set PHERI_LLM_MODE=live, PHERI_API_ALLOW_LIVE=1 and the
+# keys as secrets in the dashboard, never in this file.
+#
+# The web app fetches the API from its server, and the browser reaches it through the /api rewrite, so
+# no CORS is needed. After the first deploy, set PHERI_API_URL on pheri-web to pheri-api's public URL.
+services:
+  - type: web
+    name: pheri-api
+    runtime: python
+    rootDir: api
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn pheri.app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.14.0
+      - key: PHERI_LLM_MODE
+        value: replay
+      - key: PHERI_LEDGER_PATH
+        value: /tmp/pheri-ledger.sqlite
+
+  - type: web
+    name: pheri-web
+    runtime: node
+    rootDir: web
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 24.14.1
+      - key: PHERI_API_URL
+        sync: false # e.g. https://pheri-api.onrender.com, set in the dashboard

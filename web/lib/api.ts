@@ -1,5 +1,5 @@
 // Typed access to the Pheri API (api/pheri/app.py). Server components call it directly; client components
-// call /api/... on this origin, which next.config.ts forwards to the API.
+// call /api/... on this origin, which app/api/[...path]/route.ts forwards to the API.
 
 export const API_URL = process.env.PHERI_API_URL ?? "http://127.0.0.1:8000";
 

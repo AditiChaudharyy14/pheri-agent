@@ -1,8 +1,7 @@
 import type { NextConfig } from "next";
 
-// The Pheri API (FastAPI, api/pheri/app.py). The browser calls /api/... on this origin and Next.js
-// forwards it, so no CORS is needed; server components call the API directly.
-const API = process.env.PHERI_API_URL ?? "http://127.0.0.1:8000";
+// The Pheri API (FastAPI, api/pheri/app.py), at PHERI_API_URL: server components call it directly, and
+// the browser's /api/... calls go through app/api/[...path]/route.ts, which reads the address at run time.
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
@@ -15,9 +14,6 @@ const nextConfig: NextConfig = {
         as: "*.css",
       },
     },
-  },
-  rewrites() {
-    return [{ source: "/api/:path*", destination: `${API}/:path*` }];
   },
 };
 

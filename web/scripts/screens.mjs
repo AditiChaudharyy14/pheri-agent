@@ -21,6 +21,11 @@ const PAGES = {
 
 // What a viewer would click on some pages; the result is screenshotted too.
 const ACTIONS = {
+  safety: async (page) => {
+    await page.getByRole("button", { name: /Private mode/ }).click();
+    await page.getByText("Baseten", { exact: true }).first().waitFor({ timeout: 30_000 });
+    await page.waitForTimeout(300);
+  },
   rules: async (page) => {
     await page.getByRole("button", { name: "No discounts above 15%" }).click();
     await page.getByRole("button", { name: "Preview" }).click();
@@ -34,6 +39,14 @@ const ACTIONS = {
     await page.getByRole("status").waitFor({ timeout: 30_000 });
     await page.getByRole("status").scrollIntoViewIfNeeded();
     await page.waitForTimeout(200);
+  },
+};
+
+// Put back what a click changed in the running API, so the next run starts from the same state.
+const UNDO = {
+  safety: async (page) => {
+    await page.getByRole("button", { name: /Meta Model API/ }).click();
+    await page.waitForTimeout(500);
   },
 };
 
@@ -55,6 +68,7 @@ for (const name of wanted) {
     await ACTIONS[name](page);
     await page.screenshot({ path: `screenshots/${name}-after.png` });
     console.log(`${name}: after the click -> screenshots/${name}-after.png`);
+    if (UNDO[name]) await UNDO[name](page);
   }
 }
 await browser.close();

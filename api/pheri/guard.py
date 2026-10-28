@@ -342,6 +342,14 @@ def _mock_language(text: str) -> str:
     return "pt" if pt > es else "es" if es else "en"
 
 
+_MOCK_SUMMARY = {
+    "question": "Asks a question.", "complaint": "Reports a problem.",
+    "objection": "Raises a concern about price or value.", "stop": "Asks not to be contacted.",
+    "purchase_intent": "Wants to buy or upgrade.", "attack": "Tries to change how the assistant behaves.",
+    "other": "Sends a short note.",
+}
+
+
 def _mock_guard(messages: list[dict], schema: dict | None) -> str:
     body = messages[-1]["content"]
     inner = body[body.index("<customer_reply_json>") + len("<customer_reply_json>"):body.rindex("</customer_reply_json>")]
@@ -351,7 +359,7 @@ def _mock_guard(messages: list[dict], schema: dict | None) -> str:
     if label is None:
         label = "question" if "?" in text else "other"
     return json.dumps({"label": label, "language": _mock_language(text),
-                       "summary": f"The customer sent a {label.replace('_', ' ')} message.",
+                       "summary": _MOCK_SUMMARY[label],
                        "attack_reason": "asks the assistant to change its behaviour" if label == "attack" else None})
 
 

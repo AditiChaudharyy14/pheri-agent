@@ -2,6 +2,14 @@
 
 Read this before every task. These rules are not optional.
 
+## Status (update in every commit)
+- Done: spend guard, synthetic data, profiles, journey (Brightdesk 92.1%, Kettle 100%), rules, decide (tool loop,
+  evidence by id), autonomy + approvals, guard + private mode (Muse Spark Open), evals, twin + Thompson (5,000,
+  12/12 learned right, close calls flagged), Wonder report (checked in code), FastAPI (mock), web scaffold + Next steps.
+- Doing: web app screens, one commit each, Playwright screenshots checked by eye.
+- Next: Journey, Customer, Rules, Safety, Proof, Spend screens; then polish, README, deploy, demo video.
+- Live spend: Meta $0.4782 of $130, Baseten $0.1447 of $90. Tests: 246 pass (mock).
+
 ## What we are building
 Pheri: an AI agent that understands each customer, decides their next best action ("why this, why now"),
 acts only inside the business's rules, permissions and approvals, and proves what worked with a holdout.

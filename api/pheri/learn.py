@@ -279,6 +279,19 @@ def write_report(results: dict, llm: LLM, data_class: str = "synthetic") -> Lear
 
 
 # ---- offline stand-in for Muse Wonder --------------------------------------------------------
+_SAID = {  # the same words the web app uses for each action
+    "send_help": "sending help", "book_call": "offering a call", "send_checkin": "checking in",
+    "offer_upgrade": "suggesting an upgrade", "offer_discount": "offering a discount",
+    "send_reminder": "a cart reminder", "recommend_product": "recommending a product",
+    "offer_subscription": "offering a subscription", "task_for_owner": "a task for the owner",
+    "no_action": "doing nothing",
+}
+
+
+def _said(action: str) -> str:
+    return _SAID.get(action, action.replace("_", " "))
+
+
 def _mock_report(messages: list[dict], schema: dict | None) -> str:
     facts = json.loads(messages[-1]["content"])["facts"]
     stages = sorted({k.split(".")[0] for k in facts if k.endswith(".verdict") and not k.startswith("overall")},
@@ -293,19 +306,22 @@ def _mock_report(messages: list[dict], schema: dict | None) -> str:
             text = (f"Not clear yet: {facts[ids[0]]} points against the holdout, with an interval from "
                     f"{facts[ids[1]]} to {facts[ids[2]]}.")
         else:
-            best = facts.get(f"{s}.best_action", "")
+            best = _said(facts.get(f"{s}.best_action", ""))
             if best and facts.get(f"{s}.best_call") == "close call":
-                best = f"{best}, a close call with {facts.get(f'{s}.runner_up')}"
+                best = f"{best}, a close call with {_said(facts.get(f'{s}.runner_up', ''))}"
             text = (f"Contacted customers responded {facts[ids[0]]} points {'more' if v == 'works' else 'less'} than "
                     f"the holdout (interval {facts[ids[1]]} to {facts[ids[2]]})" + (f"; best so far: {best}." if best
                                                                                    else "."))
         findings.append({"stage": s, "verdict": v, "text": text, "fact_ids": ids})
+    unclear = [f["stage"] for f in findings if f["verdict"] == "unclear"]
     return json.dumps({
         "headline": f"Pheri's contacts changed the response rate by {facts.get('overall.lift_pp', '0')} points "
                     "against the holdout" + (" (not clear yet)." if facts["overall.verdict"] == "unclear" else "."),
         "headline_fact_ids": ["overall.lift_pp"] if "overall.lift_pp" in facts else [],
         "findings": findings,
-        "caveats": [{"text": f"This test had {facts['customers']} customers, so many stages are still unclear.",
+        "caveats": [{"text": f"These are {facts['customers']} synthetic customers in a twin, not real ones"
+                             + (f"; still unclear: {', '.join(s.replace('_', ' ') for s in unclear)}." if unclear
+                                else "."),
                      "fact_ids": ["customers"]}]})
 
 

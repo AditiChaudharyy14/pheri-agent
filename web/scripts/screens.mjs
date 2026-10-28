@@ -16,6 +16,7 @@ const PAGES = {
   rules: "/brightdesk/rules",
   safety: "/brightdesk/safety",
   proof: "/brightdesk/proof",
+  "proof-kettle": "/kettle/proof",
   spend: "/brightdesk/spend",
 };
 

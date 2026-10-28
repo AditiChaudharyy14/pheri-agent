@@ -2,7 +2,7 @@
 
 /* Calm, premium, readable on a 1080p screen recording: warm paper, near-black ink, one teal accent.
    Headings in Newsreader (serif), body in IBM Plex Sans. */
-@theme {
+@theme static {
   --color-paper: #faf8f4;
   --color-surface: #ffffff;
   --color-sunk: #f3f0ea;
@@ -19,6 +19,9 @@
   --color-rose: #a2303a;
   --color-rose-soft: #f8e5e4;
   --color-slate-soft: #eceae5;
+  /* The one chart series colour: validated (dataviz validate_palette.js) for lightness, chroma, contrast on white. */
+  --color-chart: #0b8f86;
+  --color-grid: #ebe7df;
 
   --font-serif: var(--font-newsreader), Georgia, serif;
   --font-sans: var(--font-plex), "Segoe UI", system-ui, sans-serif;

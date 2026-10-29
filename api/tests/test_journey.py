@@ -22,7 +22,7 @@ def test_maya_is_stuck_because_of_failed_exports(brightdesk):
     assert len(first["refs"]) == 5 and all(r.startswith("events.jsonl#L") for r in first["refs"])
 
 
-# Measured on the seeded demo data (python -m pheri.journey): Brightdesk 92.1%, Kettle 100%.
+# Measured on the seeded demo data (python -m pheri.journey): Brightdesk 92.1%, Birgunj 98.7%.
 # Day 4: at-risk customers' usage now falls before renewal (synth.py), and a rule sees it: at-risk
 # recall went from 23/42 to 35/42. Those who went silent look exactly like quiet ones; the floor
 # sits just under what we measured.
@@ -38,11 +38,19 @@ def test_brightdesk_accuracy_floor():
         assert per[clear][0] == per[clear][1], acc.report()
 
 
-def test_kettle_accuracy_floor():
-    acc = accuracy("kettle")
+def test_birgunj_accuracy_floor():
+    """Every miss is the shop's real ambiguity, kept on purpose in synth.py: a festival buyer who once bought
+    something out of season no longer looks festival-only, so the order book says loyal (or gone quiet). Every
+    other stage has a signal of its own in the exports and is read right."""
+    acc = accuracy("birgunj")
     print(acc.report())
     assert acc.total == 300
-    assert acc.rate >= 0.99
+    assert acc.rate >= 0.98
+    per = acc.per_stage()
+    for s in ("new", "loyal", "wholesale", "asked_no_order", "gone_quiet", "complaint"):
+        assert per[s][0] == per[s][1], acc.report()
+    missed = {p for (t, p), v in acc.confusion.items() if t == "festival" and p != "festival"}
+    assert missed <= {"gone_quiet", "loyal"}
 
 
 def test_every_customer_gets_a_known_stage_with_reasons(brightdesk):
@@ -73,22 +81,29 @@ def test_first_matching_rule_wins():
     assert stage("brightdesk", _bd(usage_change_pct=-75, seat_limit_hits_30d=1)).stage == "expanding"
 
 
-def _kc(**over):
-    base = {"days_since_signup": 300, "orders": 6, "days_since_last_order": 20, "subscription": None,
-            "gift_only": False, "days_since_cart_abandoned": None}
+def _bg(**over):
+    base = {"days_since_signup": 300, "orders": 6, "days_since_last_order": 20, "segment": "retail",
+            "festival_only": False, "days_since_enquiry": None, "open_complaints": 0, "complaint_kind": None,
+            "reorder_every_days": 40, "next_festival": "tihar"}
     return {**base, **over}
 
 
-def test_kettle_rules():
-    assert stage("kettle", _kc()).stage == "loyal"
-    assert stage("kettle", _kc(subscription="monthly", days_since_last_order=100)).stage == "subscriber"
-    assert stage("kettle", _kc(days_since_cart_abandoned=2)).stage == "cart_abandoner"
-    # They came back and ordered after leaving the cart: not an abandoner any more.
-    assert stage("kettle", _kc(days_since_cart_abandoned=5, days_since_last_order=1)).stage == "loyal"
-    assert stage("kettle", _kc(days_since_signup=10, orders=0, days_since_last_order=None)).stage == "new"
-    assert stage("kettle", _kc(orders=0, days_since_last_order=None)).stage == "lapsing"
-    assert stage("kettle", _kc(days_since_last_order=61)).stage == "lapsing"
-    assert stage("kettle", _kc(gift_only=True)).stage == "gift_buyer"
+def test_birgunj_rules():
+    assert stage("birgunj", _bg()).stage == "loyal"
+    # A problem the shop still owes a fix for comes before any selling, even for a wholesale buyer.
+    assert stage("birgunj", _bg(open_complaints=1, complaint_kind="late", segment="wholesale")).stage == "complaint"
+    assert stage("birgunj", _bg(days_since_enquiry=2, days_since_last_order=40)).stage == "asked_no_order"
+    # They ordered after sending the cart: not waiting on an answer any more.
+    assert stage("birgunj", _bg(days_since_enquiry=5, days_since_last_order=1)).stage == "loyal"
+    assert stage("birgunj", _bg(days_since_enquiry=9, days_since_last_order=40)).stage == "loyal"  # not this week
+    assert stage("birgunj", _bg(days_since_signup=10, orders=0, days_since_last_order=None)).stage == "new"
+    assert stage("birgunj", _bg(orders=0, days_since_last_order=None)).stage == "gone_quiet"
+    assert stage("birgunj", _bg(days_since_last_order=61)).stage == "gone_quiet"
+    assert stage("birgunj", _bg(days_since_last_order=61, segment="wholesale")).stage == "gone_quiet"
+    assert stage("birgunj", _bg(segment="wholesale")).stage == "wholesale"
+    assert stage("birgunj", _bg(festival_only=True)).stage == "festival"
+    # Only ever bought for festivals: still a festival buyer a year on, not a customer gone quiet.
+    assert stage("birgunj", _bg(festival_only=True, days_since_last_order=370)).stage == "festival"
 
 
 def test_the_usage_fall_changes_only_at_risk_customers(tmp_path):
@@ -102,7 +117,7 @@ def test_the_usage_fall_changes_only_at_risk_customers(tmp_path):
 
     generate(tmp_path / "off", fall_before_renewal=False)
     generate(tmp_path / "on")
-    for slug in ("brightdesk", "kettle"):
+    for slug in ("brightdesk", "birgunj"):
         for f in (tmp_path / "off" / slug).iterdir():
             if not (slug == "brightdesk" and f.name == "events.jsonl"):
                 assert f.read_bytes() == (tmp_path / "on" / slug / f.name).read_bytes(), f.name

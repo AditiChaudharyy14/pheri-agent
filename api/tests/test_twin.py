@@ -10,7 +10,7 @@ from pheri.twin import (ACTIONS, BASELINE, RESPONSE, RandomPolicy, ThompsonPolic
                         seen_given_hidden, simulate, verdict, wilson)
 
 
-@pytest.mark.parametrize("business", ["brightdesk", "kettle"])
+@pytest.mark.parametrize("business", ["brightdesk", "birgunj"])
 def test_the_truth_table_covers_every_stage_and_action(business):
     assert set(RESPONSE[business]) == set(STAGES[business]) == set(BASELINE[business])
     for stage, row in RESPONSE[business].items():
@@ -27,8 +27,11 @@ def test_population_is_seeded_sized_and_holds_out_exactly_20_percent():
 
 
 def test_pheri_sees_the_stage_through_its_own_measured_mistakes():
-    # Kettle's journey rules are 300/300 right; Brightdesk's mix up quiet, healthy and at-risk.
-    assert all(c.seen_stage == c.hidden_stage for c in population("kettle", n=300).customers)
+    # Birgunj's journey rules miss only festival buyers out of season (seen as gone quiet or loyal); Brightdesk's
+    # mix up quiet, healthy and at-risk.
+    bg = population("birgunj", n=1000)
+    off = {(c.hidden_stage, c.seen_stage) for c in bg.customers if c.seen_stage != c.hidden_stage}
+    assert off and off <= {("festival", "gone_quiet"), ("festival", "loyal")}
     bd = population("brightdesk", n=1000)
     wrong = Counter((c.hidden_stage, c.seen_stage) for c in bd.customers if c.seen_stage != c.hidden_stage)
     assert wrong and {h for h, _ in wrong} <= {"quiet", "healthy", "at_risk_renewal"}
@@ -46,14 +49,14 @@ def test_the_owners_rule_holds_in_the_twin():
 
 
 def test_holdout_gets_no_action_and_responds_at_the_baseline():
-    twin = population("kettle", n=200)
+    twin = population("birgunj", n=200)
     records = simulate(twin, RandomPolicy())
     luck = {c.id: c.luck for c in twin.customers}
     for r in records:
         if r.holdout:
-            assert r.action is None and r.chance == BASELINE["kettle"][r.hidden_stage]
+            assert r.action is None and r.chance == BASELINE["birgunj"][r.hidden_stage]
         else:
-            assert r.chance == RESPONSE["kettle"][r.hidden_stage][r.action]
+            assert r.chance == RESPONSE["birgunj"][r.hidden_stage][r.action]
         assert r.responded is (luck[r.customer] < r.chance)
     assert len(records) == 200 and sum(r.holdout for r in records) == 40
 
@@ -85,7 +88,7 @@ def test_verdict_follows_the_interval():
     assert verdict((6.9, -2.9, 16.7)) == "unclear" and verdict(None) == "unclear"
 
 
-@pytest.mark.parametrize("business", ["brightdesk", "kettle"])
+@pytest.mark.parametrize("business", ["brightdesk", "birgunj"])
 def test_thompson_beats_random_and_learns_on_every_seed(business):
     from pheri.twin import min_tries_for
 
@@ -109,8 +112,8 @@ def test_thompson_beats_random_and_learns_on_every_seed(business):
 def test_results_are_chart_ready_and_honest():
     import json
 
-    res = run("kettle", n=200)
-    assert res == run("kettle", n=200)  # seeded: the same every time
+    res = run("birgunj", n=200)
+    assert res == run("birgunj", n=200)  # seeded: the same every time
     json.dumps(res)  # plain JSON
     assert set(res) >= {"overall", "stages", "learning_curve", "twin_truth", "holdout_share"}
     assert res["holdout_share"] == 0.2 and len(res["learning_curve"]) == res["rounds"]
@@ -140,7 +143,7 @@ def test_every_allowed_action_gets_its_minimum_tries_before_thompson_exploits():
     from pheri.twin import min_tries_for
 
     assert [min_tries_for("brightdesk", n) for n in (5000, 1000, 200)] == [20, 4, 1]  # a little, at every size
-    assert min_tries_for("kettle", 5000) == 20
+    assert min_tries_for("birgunj", 5000) == 14  # 7 stages x 6 actions share the same 12% of exploration
     policy = ThompsonPolicy(seed=1, min_tries=3)
     allowed = ("a", "b", "c")
     first = [policy.choose("stuck", allowed) for _ in range(9)]

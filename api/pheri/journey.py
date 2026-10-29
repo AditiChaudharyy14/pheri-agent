@@ -19,15 +19,15 @@ from .profile import Dataset, compute_facts, load
 from .synth import OUT, TODAY
 
 BRIGHTDESK_STAGES = ("onboarding", "stuck", "quiet", "healthy", "expanding", "at_risk_renewal")
-KETTLE_STAGES = ("new", "loyal", "subscriber", "lapsing", "cart_abandoner", "gift_buyer")
-STAGES = {"brightdesk": BRIGHTDESK_STAGES, "kettle": KETTLE_STAGES}
+BIRGUNJ_STAGES = ("new", "loyal", "wholesale", "festival", "asked_no_order", "gone_quiet", "complaint")
+STAGES = {"brightdesk": BRIGHTDESK_STAGES, "birgunj": BIRGUNJ_STAGES}
 
 ONBOARDING_DAYS = 14  # Brightdesk: the first two weeks are onboarding
 RENEWAL_WINDOW_DAYS = 30
 USAGE_FALL_PCT = -60  # Brightdesk: active days down 60% or more against their usual pace
-NEW_CUSTOMER_DAYS = 30  # Kettle: joined within a month
-LAPSED_AFTER_DAYS = 60  # Kettle: no order in two months
-CART_RECENT_DAYS = 7
+NEW_CUSTOMER_DAYS = 30  # Birgunj: joined within a month
+QUIET_AFTER_DAYS = 60  # Birgunj: no order in two months
+ENQUIRY_RECENT_DAYS = 7  # Birgunj: sent a WhatsApp cart this week and has not ordered since
 
 
 @dataclass
@@ -61,22 +61,24 @@ def _brightdesk(f: dict, p: dict) -> Journey:
     return Journey("healthy", _why(f, p, "active_days_30d"))
 
 
-def _kettle(f: dict, p: dict) -> Journey:
-    if f["subscription"] == "monthly":
-        return Journey("subscriber", _why(f, p, "subscription"))
-    cart, last_order = f["days_since_cart_abandoned"], f["days_since_last_order"]
-    if cart is not None and cart <= CART_RECENT_DAYS and (last_order is None or last_order > cart):
-        return Journey("cart_abandoner", _why(f, p, "days_since_cart_abandoned"))
+def _birgunj(f: dict, p: dict) -> Journey:
+    if f["open_complaints"] > 0:  # a problem the shop still owes a fix for comes before any selling
+        return Journey("complaint", _why(f, p, "open_complaints", "complaint_kind"))
+    enquiry, last_order = f["days_since_enquiry"], f["days_since_last_order"]
+    if enquiry is not None and enquiry <= ENQUIRY_RECENT_DAYS and (last_order is None or last_order > enquiry):
+        return Journey("asked_no_order", _why(f, p, "days_since_enquiry", "orders"))
     if f.get("days_since_signup") is not None and f["days_since_signup"] <= NEW_CUSTOMER_DAYS:
         return Journey("new", _why(f, p, "days_since_signup", "orders"))
-    if last_order is None or last_order >= LAPSED_AFTER_DAYS:
-        return Journey("lapsing", _why(f, p, "days_since_last_order", "orders"))
-    if f["gift_only"]:
-        return Journey("gift_buyer", _why(f, p, "gift_only", "orders"))
+    if f["festival_only"]:  # only ever bought for festivals: a festival buyer, even a year after the last one
+        return Journey("festival", _why(f, p, "festival_only", "next_festival"))
+    if last_order is None or last_order >= QUIET_AFTER_DAYS:
+        return Journey("gone_quiet", _why(f, p, "days_since_last_order", "orders"))
+    if f["segment"] == "wholesale":
+        return Journey("wholesale", _why(f, p, "segment", "reorder_every_days"))
     return Journey("loyal", _why(f, p, "orders", "days_since_last_order"))
 
 
-RULES = {"brightdesk": _brightdesk, "kettle": _kettle}
+RULES = {"brightdesk": _brightdesk, "birgunj": _birgunj}
 
 
 def stage(business: str, facts: dict, provenance: dict | None = None) -> Journey:

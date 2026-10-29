@@ -1,0 +1,976 @@
+order_no,phone,date,items,total_npr,payment,status,promised_by,delivered_on,town
+BSG-7511,+9779762996075,2025-01-29,Cotton saree; Pashmina shawl,4700,COD,delivered,2025-02-01,2025-02-01,Birgunj
+BSG-7268,00977 979 1508377,2025-02-04,Lehenga choli; Pashmina shawl,17200,COD,delivered,2025-02-07,2025-02-08,Simara
+BSG-7510,+977-9762996075,2025-04-15,Lehenga choli,14000,COD,delivered,2025-04-18,2025-04-18,Birgunj
+BSG-7267,+9779791508377,2025-04-18,Blouse stitching,600,COD,delivered,2025-04-21,2025-04-23,Simara
+BSG-7509,+9779762996075,2025-04-26,Georgette saree,2400,COD,delivered,2025-04-29,2025-04-30,Birgunj
+BSG-7579,+9779796485005,2025-05-18,Pashmina shawl,3200,eSewa,delivered,2025-05-21,2025-05-21,Birgunj
+BSG-7474,+977-9852643090,2025-05-23,Georgette saree; Cotton saree,3900,Khalti,delivered,2025-05-26,2025-05-26,Birgunj
+BSG-7569,+9779839538360,2025-06-03,Blouse stitching,600,eSewa,delivered,2025-06-06,2025-06-07,Hetauda
+BSG-7233,+917868256771,2025-06-10,Blouse stitching,600,UPI,delivered,2025-06-15,2025-06-16,Raxaul
+BSG-7172,+9779839042737,2025-06-19,Dhaka saree; Lehenga choli,17500,COD,delivered,2025-06-22,2025-06-25,Birgunj
+BSG-7508,+9779762996075,2025-06-28,Banarasi silk saree; Blouse stitching,9100,COD,returned,2025-07-01,2025-07-01,Birgunj
+BSG-7473,00977 985 2643090,2025-07-01,Kurta set; Pashmina shawl,6000,Khalti,delivered,2025-07-04,2025-07-05,Birgunj
+BSG-7816,00977 976 2565816,2025-07-10,Kurta set,2800,COD,delivered,2025-07-13,2025-07-14,Birgunj
+BSG-7895,9898928238,2025-07-13,Georgette saree; Pashmina shawl,5600,COD,delivered,2025-07-16,2025-07-16,Simara
+BSG-7815,00977 976 2565816,2025-07-16,Banarasi silk saree,8500,COD,delivered,2025-07-19,2025-07-19,Birgunj
+BSG-7266,9791508377,2025-07-18,Lehenga choli,14000,COD,delivered,2025-07-21,2025-07-22,Simara
+BSG-7324,+918136921582,2025-07-18,Dhaka saree; Georgette saree,5900,UPI,delivered,2025-07-23,2025-07-26,Bettiah
+BSG-7447,+9779730782013,2025-07-26,Lehenga choli,14000,COD,delivered,2025-07-29,2025-07-30,Kalaiya
+BSG-7568,+9779839538360,2025-07-27,Pashmina shawl,3200,eSewa,delivered,2025-07-30,2025-07-30,Hetauda
+BSG-7896,+9779898928238,2025-08-08,Banarasi silk saree,8500,COD,delivered,2025-08-11,2025-08-11,Simara
+BSG-7313,+977-9802693103,2025-08-14,Kurta set,2800,eSewa,delivered,2025-08-17,2025-08-19,Kathmandu
+BSG-7578,+9779796485005,2025-08-20,Banarasi silk saree,8500,eSewa,delivered,2025-08-23,2025-08-23,Birgunj
+BSG-7243,+917834516416,2025-08-21,Banarasi silk saree; Kurta set,11300,UPI,delivered,2025-08-26,2025-08-26,Raxaul
+BSG-7244,0091 783 4516416,2025-08-21,Dhaka saree; Kurta set,6300,UPI,delivered,2025-08-26,2025-08-27,Raxaul
+BSG-7555,9745722868,2025-08-24,Kurta set; Banarasi silk saree,11300,Khalti,delivered,2025-08-27,2025-08-27,Kalaiya
+BSG-7171,9839042737,2025-08-25,Georgette saree,2400,COD,delivered,2025-08-28,2025-08-31,Birgunj
+BSG-7395,00977 971 9035033,2025-08-29,Banarasi silk saree,8500,COD,delivered,2025-09-01,2025-09-02,Kathmandu
+BSG-7814,+9779762565816,2025-09-04,Blouse stitching,600,COD,delivered,2025-09-07,2025-09-07,Birgunj
+BSG-7446,+9779730782013,2025-09-07,Banarasi silk saree; Dhaka saree,12000,COD,delivered,2025-09-10,2025-09-10,Kalaiya
+BSG-7507,9762996075,2025-09-13,Cotton saree; Lehenga choli,15500,COD,returned,2025-09-16,2025-09-16,Birgunj
+BSG-7181,9816216830,2025-09-19,Dhaka saree,3500,COD,delivered,2025-09-22,2025-09-22,Kalaiya
+BSG-7512,00977 980 7391753,2025-09-19,Banarasi silk saree,8500,COD,delivered,2025-09-22,2025-09-22,Janakpur
+BSG-7939,+9779895297604,2025-09-19,Lehenga choli,14000,eSewa,delivered,2025-09-22,2025-09-22,Simara
+BSG-7720,+9779891346247,2025-09-20,Lehenga choli,14000,Bank,delivered,2025-09-23,2025-09-23,Janakpur
+BSG-7077,+9779744844221,2025-09-21,Lehenga choli,14000,COD,delivered,2025-09-24,2025-09-24,Birgunj
+BSG-7100,9725445236,2025-09-21,Lehenga choli,14000,COD,delivered,2025-09-24,2025-09-24,Parwanipur
+BSG-7265,+9779791508377,2025-09-21,Georgette saree,2400,COD,delivered,2025-09-24,2025-09-24,Simara
+BSG-7482,+977-9890486541,2025-09-21,Lehenga choli,14000,Khalti,delivered,2025-09-24,2025-09-24,Birgunj
+BSG-7185,+919285612408,2025-09-22,Dhaka saree,3500,UPI,delivered,2025-09-27,2025-09-27,Raxaul
+BSG-7658,+9779792524595,2025-09-22,Kurta set; Cotton saree,4300,COD,delivered,2025-09-25,2025-09-25,Birgunj
+BSG-7094,+977-9765587322,2025-09-23,Lehenga choli,14000,eSewa,delivered,2025-09-26,2025-09-26,Birgunj
+BSG-7723,+977-9778122995,2025-09-23,Lehenga choli,14000,Khalti,delivered,2025-09-26,2025-09-26,Birgunj
+BSG-7874,+9779792875663,2025-09-23,Banarasi silk saree,8500,COD,delivered,2025-09-26,2025-09-26,Birgunj
+BSG-7918,+9779732002282,2025-09-23,Lehenga choli,14000,eSewa,delivered,2025-09-26,2025-09-26,Janakpur
+BSG-7357,9700565901,2025-09-24,Banarasi silk saree,8500,COD,delivered,2025-09-27,2025-09-27,Simara
+BSG-7577,+977-9796485005,2025-09-24,Georgette saree,2400,eSewa,delivered,2025-09-27,2025-09-28,Birgunj
+BSG-7316,+9779800917750,2025-09-26,Banarasi silk saree,8500,Khalti,delivered,2025-09-29,2025-09-29,Simara
+BSG-7776,+9779700988494,2025-09-26,Dhaka saree,3500,COD,delivered,2025-09-29,2025-09-29,Hetauda
+BSG-7032,+91-8150674359,2025-09-27,Lehenga choli,14000,UPI,delivered,2025-10-02,2025-10-02,Raxaul
+BSG-7151,+977-9722836072,2025-09-27,Banarasi silk saree,8500,COD,delivered,2025-09-30,2025-09-30,Simara
+BSG-7753,+9779772537980,2025-09-27,Dhaka saree,3500,COD,delivered,2025-09-30,2025-09-30,Birgunj
+BSG-7204,+917583024777,2025-09-28,Lehenga choli,14000,UPI,delivered,2025-10-03,2025-10-03,Raxaul
+BSG-7314,+977-9779377346,2025-09-28,Dhaka saree,3500,COD,delivered,2025-10-01,2025-10-01,Janakpur
+BSG-7920,0091 690 1158860,2025-09-28,Dhaka saree,3500,COD,delivered,2025-10-03,2025-10-03,Raxaul
+BSG-7049,+918692605962,2025-09-29,Banarasi silk saree,8500,COD,delivered,2025-10-04,2025-10-04,Bettiah
+BSG-7556,9745722868,2025-09-29,Blouse stitching,600,Khalti,delivered,2025-10-02,2025-10-02,Kalaiya
+BSG-7232,+917868256771,2025-09-30,Kurta set; Blouse stitching,3400,UPI,delivered,2025-10-05,2025-10-05,Raxaul
+BSG-7284,+917873937731,2025-09-30,Pashmina shawl; Kurta set,6000,COD,delivered,2025-10-05,2025-10-05,Raxaul
+BSG-7773,0091 999 3741924,2025-10-01,Blouse stitching,600,COD,delivered,2025-10-06,2025-10-06,Raxaul
+BSG-7865,+916529846944,2025-10-02,Georgette saree; Dhaka saree,5900,UPI,delivered,2025-10-07,2025-10-07,Bettiah
+BSG-7472,+9779852643090,2025-10-03,Kurta set; Lehenga choli,16800,Khalti,delivered,2025-10-06,2025-10-08,Birgunj
+BSG-7496,+9779852988175,2025-10-03,Kurta set; Dhaka saree,6300,COD,delivered,2025-10-06,2025-10-06,Janakpur
+BSG-7196,9748106112,2025-10-04,Cotton saree; Pashmina shawl,4700,COD,delivered,2025-10-07,2025-10-07,Kathmandu
+BSG-7095,+9779765587322,2025-10-08,Kurta set,2800,eSewa,delivered,2025-10-11,2025-10-11,Birgunj
+BSG-7182,+9779816216830,2025-10-08,Banarasi silk saree,8500,COD,delivered,2025-10-11,2025-10-11,Kalaiya
+BSG-7064,+977-9743459532,2025-10-11,Dhaka saree; Georgette saree,5900,eSewa,delivered,2025-10-14,2025-10-17,Simara
+BSG-7197,+9779748106112,2025-10-11,Lehenga choli; Cotton saree,15500,COD,delivered,2025-10-14,2025-10-17,Kathmandu
+BSG-7513,00977 980 7391753,2025-10-11,Kurta set,2800,COD,delivered,2025-10-14,2025-10-14,Janakpur
+BSG-7894,+9779898928238,2025-10-11,Pashmina shawl,3200,COD,delivered,2025-10-14,2025-10-16,Simara
+BSG-7690,+9779867162255,2025-10-12,Banarasi silk saree,8500,Khalti,delivered,2025-10-15,2025-10-15,Kalaiya
+BSG-7317,00977 980 0917750,2025-10-13,Kurta set,2800,Khalti,delivered,2025-10-16,2025-10-16,Simara
+BSG-7399,+977-9752118543,2025-10-13,Kurta set; Lehenga choli,16800,COD,delivered,2025-10-16,2025-10-22,Kathmandu
+BSG-7486,+917082565323,2025-10-13,Cotton saree,1500,UPI,delivered,2025-10-18,2025-10-18,Raxaul
+BSG-7875,+977-9792875663,2025-10-13,Cotton saree,1500,COD,delivered,2025-10-16,2025-10-16,Birgunj
+BSG-7940,00977 989 5297604,2025-10-13,Georgette saree,2400,eSewa,delivered,2025-10-16,2025-10-16,Simara
+BSG-7078,+9779744844221,2025-10-14,Georgette saree,2400,COD,delivered,2025-10-17,2025-10-17,Birgunj
+BSG-7542,9884002005,2025-10-14,Cotton saree (Chhath yellow),1800,COD,delivered,2025-10-17,2025-10-17,Birgunj
+BSG-7567,+9779839538360,2025-10-14,Banarasi silk saree,8500,eSewa,delivered,2025-10-17,2025-10-17,Hetauda
+BSG-7223,+916396816263,2025-10-15,Cotton saree (Chhath yellow),1800,COD,delivered,2025-10-20,2025-10-20,Raxaul
+BSG-7921,0091 690 1158860,2025-10-15,Cotton saree,1500,COD,delivered,2025-10-20,2025-10-20,Raxaul
+BSG-7205,+917583024777,2025-10-16,Cotton saree,1500,UPI,delivered,2025-10-21,2025-10-21,Raxaul
+BSG-7626,9703233922,2025-10-16,Cotton saree (Chhath yellow),1800,eSewa,delivered,2025-10-19,2025-10-19,Birgunj
+BSG-7050,+91-8692605962,2025-10-17,Cotton saree,1500,COD,delivered,2025-10-22,2025-10-22,Bettiah
+BSG-7101,00977 972 5445236,2025-10-17,Banarasi silk saree,8500,COD,delivered,2025-10-20,2025-10-20,Parwanipur
+BSG-7103,00977 986 0140347,2025-10-17,Cotton saree (Chhath yellow),1800,COD,delivered,2025-10-20,2025-10-20,Hetauda
+BSG-7186,+91-9285612408,2025-10-17,Cotton saree,1500,UPI,delivered,2025-10-22,2025-10-22,Raxaul
+BSG-7485,+917082565323,2025-10-17,Georgette saree,2400,UPI,delivered,2025-10-22,2025-10-22,Raxaul
+BSG-7941,+977-9895297604,2025-10-18,Cotton saree (Chhath yellow),1800,eSewa,delivered,2025-10-21,2025-10-21,Simara
+BSG-7234,+9779862279831,2025-10-19,Cotton saree (Chhath yellow),1800,COD,delivered,2025-10-22,2025-10-22,Birgunj
+BSG-7777,+9779700988494,2025-10-19,Georgette saree,2400,COD,delivered,2025-10-22,2025-10-22,Hetauda
+BSG-7844,+977-9899361996,2025-10-19,Kurta set,2800,eSewa,delivered,2025-10-22,2025-10-22,Parwanipur
+BSG-7080,+9779872968234,2025-10-20,Cotton saree,1500,COD,delivered,2025-10-23,2025-10-23,Kalaiya
+BSG-7514,+9779807391753,2025-10-20,Cotton saree,1500,COD,delivered,2025-10-23,2025-10-23,Janakpur
+BSG-7778,+9779700988494,2025-10-20,Cotton saree (Chhath yellow),1800,COD,delivered,2025-10-23,2025-10-23,Hetauda
+BSG-7065,+9779743459532,2025-10-21,Blouse stitching; Lehenga choli,14600,eSewa,delivered,2025-10-24,2025-10-24,Simara
+BSG-7066,+9779837013239,2025-10-21,Cotton saree (Chhath yellow),1800,eSewa,delivered,2025-10-24,2025-10-24,Parwanipur
+BSG-7576,+9779796485005,2025-10-21,Blouse stitching,600,eSewa,delivered,2025-10-24,2025-10-25,Birgunj
+BSG-7096,+9779765587322,2025-10-22,Cotton saree (Chhath yellow),1800,eSewa,delivered,2025-10-25,2025-10-25,Birgunj
+BSG-7401,9880664313,2025-10-22,Cotton saree,1500,COD,delivered,2025-10-25,2025-10-25,Birgunj
+BSG-7845,+9779899361996,2025-10-22,Cotton saree,1500,eSewa,delivered,2025-10-25,2025-10-25,Parwanipur
+BSG-7170,00977 983 9042737,2025-10-23,Georgette saree,2400,COD,delivered,2025-10-26,2025-10-26,Birgunj
+BSG-7463,9712347050,2025-10-23,Cotton saree (Chhath yellow),1800,COD,delivered,2025-10-26,2025-10-26,Parwanipur
+BSG-7724,9778122995,2025-10-23,Cotton saree (Chhath yellow),1800,Khalti,delivered,2025-10-26,2025-10-26,Birgunj
+BSG-7183,9816216830,2025-10-24,Cotton saree (Chhath yellow),1800,COD,delivered,2025-10-27,2025-10-27,Kalaiya
+BSG-7315,9779377346,2025-10-24,Cotton saree (Chhath yellow),1800,COD,delivered,2025-10-27,2025-10-27,Janakpur
+BSG-7922,9703281771,2025-10-24,Cotton saree (Chhath yellow),1800,COD,delivered,2025-10-27,2025-10-27,Birgunj
+BSG-7483,+9779890486541,2025-10-25,Cotton saree,1500,Khalti,delivered,2025-10-28,2025-10-28,Birgunj
+BSG-7566,9839538360,2025-10-29,Dhaka saree; Cotton saree,5000,eSewa,delivered,2025-11-01,2025-11-03,Hetauda
+BSG-7323,+918136921582,2025-10-31,Banarasi silk saree,8500,UPI,delivered,2025-11-05,2025-11-08,Bettiah
+BSG-7772,+919993741924,2025-11-03,Kurta set,2800,COD,delivered,2025-11-08,2025-11-08,Raxaul
+BSG-7264,+9779791508377,2025-11-11,Dhaka saree; Lehenga choli,17500,COD,delivered,2025-11-14,2025-11-15,Simara
+BSG-7169,+9779839042737,2025-11-15,Lehenga choli; Cotton saree,15500,COD,delivered,2025-11-18,2025-11-19,Birgunj
+BSG-7657,+9779792524595,2025-11-15,Georgette saree; Blouse stitching,3000,COD,delivered,2025-11-18,2025-11-19,Birgunj
+BSG-7703,+977-9727375716,2025-11-15,Kurta set bundle x15,33000,Bank,delivered,2025-11-18,2025-11-20,Hetauda
+BSG-7312,00977 980 2693103,2025-11-17,Banarasi silk saree,8500,eSewa,delivered,2025-11-20,2025-11-20,Kathmandu
+BSG-7283,+917873937731,2025-11-18,Cotton saree,1500,COD,delivered,2025-11-23,2025-11-23,Raxaul
+BSG-7583,+919141768861,2025-11-18,Georgette saree bundle x10,21000,Bank,delivered,2025-11-23,2025-11-24,Sitamarhi
+BSG-7394,+9779719035033,2025-11-19,Georgette saree,2400,COD,delivered,2025-11-22,2025-11-24,Kathmandu
+BSG-7553,00977 974 5722868,2025-11-20,Blouse stitching; Lehenga choli,14600,Khalti,delivered,2025-11-23,2025-11-25,Kalaiya
+BSG-7322,+918136921582,2025-11-21,Blouse stitching,600,UPI,delivered,2025-11-26,2025-11-26,Bettiah
+BSG-7242,+917834516416,2025-11-23,Pashmina shawl,3200,UPI,delivered,2025-11-28,2025-11-28,Raxaul
+BSG-7445,+9779730782013,2025-11-23,Blouse stitching,600,COD,delivered,2025-11-26,2025-11-26,Kalaiya
+BSG-7321,+91-8136921582,2025-11-24,Kurta set,2800,UPI,delivered,2025-11-29,2025-11-29,Bettiah
+BSG-7761,+9779752833639,2025-11-25,Blouse stitching,600,Bank,delivered,2025-11-28,2025-11-28,Simara
+BSG-7400,+9779752118543,2025-11-27,Georgette saree; Pashmina shawl,5600,COD,delivered,2025-11-30,2025-12-01,Kathmandu
+BSG-7813,+977-9762565816,2025-11-27,Pashmina shawl,3200,COD,delivered,2025-11-30,2025-11-30,Birgunj
+BSG-7195,+9779748106112,2025-12-01,Dhaka saree; Banarasi silk saree,12000,COD,delivered,2025-12-04,2025-12-07,Kathmandu
+BSG-7060,+9779836372197,2025-12-02,Banarasi silk saree; Pashmina shawl,11700,eSewa,delivered,2025-12-05,2025-12-06,Birgunj
+BSG-7883,+916640725482,2025-12-04,Blouse stitching,600,Bank,delivered,2025-12-09,2025-12-11,Bettiah
+BSG-7134,9872155074,2025-12-06,Georgette saree bundle x10,21000,Bank,delivered,2025-12-09,2025-12-12,Janakpur
+BSG-7893,9898928238,2025-12-06,Pashmina shawl,3200,COD,delivered,2025-12-09,2025-12-09,Simara
+BSG-7311,+9779802693103,2025-12-10,Kurta set; Banarasi silk saree,11300,eSewa,delivered,2025-12-13,2025-12-13,Kathmandu
+BSG-7554,+9779745722868,2025-12-10,Blouse stitching; Lehenga choli,14600,Khalti,delivered,2025-12-13,2025-12-13,Kalaiya
+BSG-7565,00977 983 9538360,2025-12-10,Banarasi silk saree; Cotton saree,10000,eSewa,delivered,2025-12-13,2025-12-15,Hetauda
+BSG-7063,+9779743459532,2025-12-12,Kurta set; Blouse stitching,3400,eSewa,delivered,2025-12-15,2025-12-15,Simara
+BSG-7029,+91-9325638241,2025-12-16,Cotton saree bundle x20,26000,eSewa,delivered,2025-12-21,2025-12-21,Raxaul
+BSG-7495,9852988175,2025-12-16,Blouse stitching; Georgette saree,3000,COD,delivered,2025-12-19,2025-12-20,Janakpur
+BSG-7383,+917200362192,2025-12-18,Cotton saree bundle x20,26000,Bank,delivered,2025-12-23,2025-12-24,Motihari
+BSG-7506,+9779762996075,2025-12-19,Cotton saree,1500,COD,delivered,2025-12-22,2025-12-22,Birgunj
+BSG-7030,0091 932 5638241,2025-12-20,Cotton saree bundle x20,26000,eSewa,delivered,2025-12-25,2025-12-25,Raxaul
+BSG-7575,9796485005,2025-12-20,Dhaka saree; Blouse stitching,4100,eSewa,delivered,2025-12-23,2025-12-23,Birgunj
+BSG-7231,+91-7868256771,2025-12-21,Cotton saree; Dhaka saree,5000,UPI,delivered,2025-12-26,2025-12-26,Raxaul
+BSG-7398,00977 975 2118543,2025-12-21,Kurta set; Cotton saree,4300,COD,delivered,2025-12-24,2025-12-30,Kathmandu
+BSG-7582,+919141768861,2025-12-23,Georgette saree bundle x10,21000,Bank,delivered,2025-12-28,2025-12-28,Sitamarhi
+BSG-7479,+9779831920815,2025-12-24,Blouse stitching,600,COD,delivered,2025-12-27,2025-12-28,Hetauda
+BSG-7864,+91-6529846944,2025-12-24,Banarasi silk saree,8500,UPI,delivered,2025-12-29,2025-12-29,Bettiah
+BSG-7892,00977 989 8928238,2025-12-25,Cotton saree; Blouse stitching,2100,COD,delivered,2025-12-28,2025-12-30,Simara
+BSG-7966,+9779798837471,2025-12-25,Blouse stitching; Georgette saree,3000,COD,delivered,2025-12-28,2025-12-29,Hetauda
+BSG-7952,+9779852257247,2025-12-28,Georgette saree; Pashmina shawl,5600,COD,delivered,2025-12-31,2025-12-31,Kathmandu
+BSG-7444,+9779730782013,2026-01-03,Pashmina shawl; Dhaka saree,6700,COD,delivered,2026-01-06,2026-01-08,Kalaiya
+BSG-7293,+9779782768087,2026-01-04,Cotton saree,1500,COD,delivered,2026-01-07,2026-01-07,Birgunj
+BSG-7760,+9779752833639,2026-01-04,Georgette saree,2400,Bank,delivered,2026-01-07,2026-01-08,Simara
+BSG-7471,00977 985 2643090,2026-01-05,Lehenga choli; Cotton saree,15500,Khalti,delivered,2026-01-08,2026-01-09,Birgunj
+BSG-7631,+919837319892,2026-01-05,Pashmina shawl,3200,UPI,delivered,2026-01-10,2026-01-10,Motihari
+BSG-7637,+9779785379444,2026-01-06,Blouse stitching; Banarasi silk saree,9100,COD,delivered,2026-01-09,2026-01-09,Kathmandu
+BSG-7355,+91-8894721313,2026-01-07,Georgette saree; Lehenga choli,16400,UPI,delivered,2026-01-12,2026-01-12,Motihari
+BSG-7748,+9779750438541,2026-01-07,Pashmina shawl,3200,Bank,delivered,2026-01-10,2026-01-10,Kalaiya
+BSG-7241,+91-7834516416,2026-01-08,Dhaka saree; Georgette saree,5900,UPI,delivered,2026-01-13,2026-01-14,Raxaul
+BSG-7793,+918096482547,2026-01-09,Cotton saree bundle x20,26000,COD,delivered,2026-01-14,2026-01-14,Sitamarhi
+BSG-7717,+91-7913058964,2026-01-10,Kurta set; Dhaka saree,6300,COD,delivered,2026-01-15,2026-01-15,Raxaul
+BSG-7041,00977 972 1240352,2026-01-11,Banarasi silk saree,8500,eSewa,delivered,2026-01-14,2026-01-15,Kalaiya
+BSG-7974,9792436152,2026-01-11,Dhaka saree,3500,COD,delivered,2026-01-14,2026-01-14,Hetauda
+BSG-7168,00977 983 9042737,2026-01-13,Georgette saree; Kurta set,5200,COD,cod_refused,2026-01-16,,Birgunj
+BSG-7191,00977 971 4085265,2026-01-13,Dhaka saree; Blouse stitching,4100,eSewa,delivered,2026-01-16,2026-01-16,Hetauda
+BSG-7656,+9779792524595,2026-01-13,Pashmina shawl,3200,COD,delivered,2026-01-16,2026-01-16,Birgunj
+BSG-7133,+9779872155074,2026-01-14,Kurta set bundle x15,33000,Bank,delivered,2026-01-17,2026-01-23,Janakpur
+BSG-7290,+9779861407067,2026-01-14,Blouse stitching,600,COD,delivered,2026-01-17,2026-01-18,Birgunj
+BSG-7354,+91-8894721313,2026-01-14,Cotton saree; Kurta set,4300,UPI,delivered,2026-01-19,2026-01-19,Motihari
+BSG-7702,+9779727375716,2026-01-14,Georgette saree bundle x10,21000,Bank,delivered,2026-01-17,2026-01-17,Hetauda
+BSG-7947,+9779858906836,2026-01-15,Dhaka saree,3500,COD,delivered,2026-01-18,2026-01-20,Janakpur
+BSG-7282,+917873937731,2026-01-16,Pashmina shawl; Cotton saree,4700,COD,delivered,2026-01-21,2026-01-22,Raxaul
+BSG-7418,+918496621734,2026-01-16,Georgette saree bundle x10,21000,Bank,delivered,2026-01-21,2026-01-21,Sitamarhi
+BSG-7636,9785379444,2026-01-16,Kurta set; Cotton saree,4300,COD,delivered,2026-01-19,2026-01-19,Kathmandu
+BSG-7144,+9779799617102,2026-01-18,Cotton saree,1500,eSewa,delivered,2026-01-21,2026-01-21,Birgunj
+BSG-7645,9783806340,2026-01-18,Banarasi silk saree; Kurta set,11300,COD,delivered,2026-01-21,2026-01-21,Birgunj
+BSG-7647,+9779794182326,2026-01-18,Lehenga choli; Cotton saree,15500,COD,delivered,2026-01-21,2026-01-21,Kalaiya
+BSG-7678,+9779786091998,2026-01-19,Lehenga choli,14000,eSewa,delivered,2026-01-22,2026-01-25,Birgunj
+BSG-7784,+9779808982869,2026-01-19,Georgette saree,2400,eSewa,delivered,2026-01-22,2026-01-22,Kalaiya
+BSG-7771,+919993741924,2026-01-20,Dhaka saree; Blouse stitching,4100,COD,delivered,2026-01-25,2026-01-25,Raxaul
+BSG-7839,9834565967,2026-01-20,Kurta set,2800,COD,delivered,2026-01-23,2026-01-23,Birgunj
+BSG-7276,+9779757247524,2026-01-21,Blouse stitching; Pashmina shawl,3800,COD,delivered,2026-01-24,2026-01-24,Simara
+BSG-7320,+918136921582,2026-01-21,Georgette saree,2400,UPI,delivered,2026-01-26,2026-01-29,Bettiah
+BSG-7581,+91-9141768861,2026-01-21,Cotton saree bundle x20,26000,Bank,delivered,2026-01-26,2026-01-26,Sitamarhi
+BSG-7609,+977-9711201128,2026-01-22,Pashmina shawl; Blouse stitching,3800,COD,delivered,2026-01-25,2026-01-25,Birgunj
+BSG-7806,+9779722382944,2026-01-22,Cotton saree bundle x20,26000,UPI,delivered,2026-01-25,2026-01-27,Birgunj
+BSG-7131,+9779828471185,2026-01-23,Kurta set; Lehenga choli,16800,Khalti,delivered,2026-01-26,2026-01-26,Kathmandu
+BSG-7500,0091 805 3167439,2026-01-23,Blouse stitching,600,COD,delivered,2026-01-28,2026-01-28,Raxaul
+BSG-7143,+9779799617102,2026-01-24,Blouse stitching,600,eSewa,delivered,2026-01-27,2026-01-28,Birgunj
+BSG-7432,+916346453182,2026-01-24,Georgette saree bundle x10,21000,Bank,delivered,2026-01-29,2026-01-29,Raxaul
+BSG-7679,+9779786091998,2026-01-24,Dhaka saree; Georgette saree,5900,eSewa,delivered,2026-01-27,2026-01-30,Birgunj
+BSG-7663,+918626549579,2026-01-26,Cotton saree bundle x20,26000,UPI,delivered,2026-01-31,2026-02-01,Raxaul
+BSG-7552,+9779745722868,2026-01-27,Blouse stitching; Cotton saree,2100,Khalti,delivered,2026-01-30,2026-01-31,Kalaiya
+BSG-7733,+977-9782520954,2026-01-27,Lehenga choli; Banarasi silk saree,22500,eSewa,delivered,2026-01-30,2026-01-30,Parwanipur
+BSG-7059,+977-9836372197,2026-01-28,Kurta set; Blouse stitching,3400,eSewa,delivered,2026-01-31,2026-02-02,Birgunj
+BSG-7098,+9779700584234,2026-01-28,Cotton saree bundle x20,26000,Bank,delivered,2026-01-31,2026-01-31,Kalaiya
+BSG-7202,+9779882531810,2026-01-28,Pashmina shawl,3200,COD,delivered,2026-01-31,2026-01-31,Kathmandu
+BSG-7194,+9779748106112,2026-01-30,Kurta set,2800,COD,delivered,2026-02-02,2026-02-03,Kathmandu
+BSG-7534,+9779889067264,2026-01-30,Cotton saree; Kurta set,4300,eSewa,delivered,2026-02-02,2026-02-04,Birgunj
+BSG-7863,+916529846944,2026-01-30,Pashmina shawl,3200,UPI,delivered,2026-02-04,2026-02-05,Bettiah
+BSG-7062,9743459532,2026-01-31,Lehenga choli; Dhaka saree,17500,eSewa,delivered,2026-02-03,2026-02-09,Simara
+BSG-7877,+917271055877,2026-02-01,Kurta set bundle x15,33000,Bank,delivered,2026-02-06,2026-02-06,Raxaul
+BSG-7729,+916524567163,2026-02-02,Kurta set; Georgette saree,5200,UPI,delivered,2026-02-07,2026-02-07,Bettiah
+BSG-7831,00977 974 9934508,2026-02-02,Cotton saree bundle x20,26000,eSewa,delivered,2026-02-05,2026-02-05,Kalaiya
+BSG-7942,+9779878462316,2026-02-02,Georgette saree; Dhaka saree,5900,COD,delivered,2026-02-05,2026-02-05,Birgunj
+BSG-7574,9796485005,2026-02-04,Dhaka saree; Lehenga choli,17500,eSewa,delivered,2026-02-07,2026-02-07,Birgunj
+BSG-7608,+9779711201128,2026-02-04,Pashmina shawl; Kurta set,6000,COD,delivered,2026-02-07,2026-02-08,Birgunj
+BSG-7393,+977-9719035033,2026-02-05,Pashmina shawl; Kurta set,6000,COD,delivered,2026-02-08,2026-02-08,Kathmandu
+BSG-7732,+916165133226,2026-02-05,Cotton saree; Dhaka saree,5000,UPI,delivered,2026-02-10,2026-02-10,Raxaul
+BSG-7123,+9779808534396,2026-02-07,Kurta set bundle x15,33000,Bank,delivered,2026-02-10,2026-02-10,Janakpur
+BSG-7466,+916153473891,2026-02-07,Kurta set bundle x15,33000,eSewa,delivered,2026-02-12,2026-02-15,Raxaul
+BSG-7899,+977-9866265198,2026-02-07,Pashmina shawl; Dhaka saree,6700,Khalti,delivered,2026-02-10,2026-02-10,Birgunj
+BSG-7397,+9779752118543,2026-02-08,Pashmina shawl; Georgette saree,5600,COD,delivered,2026-02-11,2026-02-17,Kathmandu
+BSG-7564,+977-9839538360,2026-02-08,Pashmina shawl; Dhaka saree,6700,eSewa,delivered,2026-02-11,2026-02-12,Hetauda
+BSG-7807,+977-9722382944,2026-02-08,Cotton saree bundle x20,26000,UPI,delivered,2026-02-11,2026-02-11,Birgunj
+BSG-7840,00977 983 4565967,2026-02-08,Blouse stitching,600,COD,delivered,2026-02-11,2026-02-11,Birgunj
+BSG-7193,+977-9748106112,2026-02-09,Georgette saree,2400,COD,delivered,2026-02-12,2026-02-15,Kathmandu
+BSG-7669,+9779716158459,2026-02-10,Georgette saree,2400,COD,delivered,2026-02-13,2026-02-15,Hetauda
+BSG-7701,+9779727375716,2026-02-10,Cotton saree bundle x20,26000,Bank,delivered,2026-02-13,2026-02-13,Hetauda
+BSG-7199,9882531810,2026-02-11,Blouse stitching; Cotton saree,2100,COD,delivered,2026-02-14,2026-02-14,Kathmandu
+BSG-7254,+9779784889625,2026-02-11,Pashmina shawl,3200,COD,delivered,2026-02-14,2026-02-14,Birgunj
+BSG-7661,+917081421635,2026-02-11,Kurta set; Cotton saree,4300,UPI,delivered,2026-02-16,2026-02-16,Raxaul
+BSG-7004,+9779871054501,2026-02-12,Lehenga choli; Dhaka saree,17500,Khalti,delivered,2026-02-15,2026-02-15,Birgunj
+BSG-7142,+9779799617102,2026-02-12,Georgette saree,2400,eSewa,delivered,2026-02-15,2026-02-17,Birgunj
+BSG-7125,00977 980 8534396,2026-02-13,Kurta set bundle x15,33000,Bank,delivered,2026-02-16,2026-02-16,Janakpur
+BSG-7263,9791508377,2026-02-13,Pashmina shawl; Dhaka saree,6700,COD,delivered,2026-02-16,2026-02-16,Simara
+BSG-7759,+977-9752833639,2026-02-13,Cotton saree,1500,Bank,delivered,2026-02-16,2026-02-16,Simara
+BSG-7882,+91-6640725482,2026-02-13,Blouse stitching; Cotton saree,2100,Bank,delivered,2026-02-18,2026-02-18,Bettiah
+BSG-7951,9852257247,2026-02-13,Cotton saree; Lehenga choli,15500,COD,delivered,2026-02-16,2026-02-16,Kathmandu
+BSG-7607,9711201128,2026-02-14,Pashmina shawl,3200,COD,delivered,2026-02-17,2026-02-17,Birgunj
+BSG-7834,+91-9960249575,2026-02-14,Georgette saree bundle x10,21000,eSewa,delivered,2026-02-19,2026-02-19,Bettiah
+BSG-7021,+9779726177056,2026-02-15,Blouse stitching,600,eSewa,delivered,2026-02-18,2026-02-20,Kathmandu
+BSG-7274,+9779867039788,2026-02-15,Dhaka saree,3500,COD,delivered,2026-02-18,2026-02-18,Birgunj
+BSG-7333,+977-9758108166,2026-02-15,Dhaka saree,3500,eSewa,delivered,2026-02-18,2026-02-18,Birgunj
+BSG-7386,9778868024,2026-02-15,Pashmina shawl; Banarasi silk saree,11700,COD,delivered,2026-02-18,2026-02-18,Birgunj
+BSG-7812,+9779762565816,2026-02-15,Lehenga choli; Dhaka saree,17500,COD,delivered,2026-02-18,2026-02-19,Birgunj
+BSG-7230,+917868256771,2026-02-17,Kurta set; Pashmina shawl,6000,UPI,delivered,2026-02-22,2026-02-22,Raxaul
+BSG-7240,+917834516416,2026-02-17,Dhaka saree; Pashmina shawl,6700,UPI,delivered,2026-02-22,2026-02-22,Raxaul
+BSG-7505,+9779762996075,2026-02-17,Lehenga choli,14000,COD,delivered,2026-02-20,2026-02-20,Birgunj
+BSG-7497,+917810647896,2026-02-18,Banarasi silk saree; Pashmina shawl,11700,UPI,delivered,2026-02-23,2026-02-23,Raxaul
+BSG-7346,+9779729977439,2026-02-20,Georgette saree; Blouse stitching,3000,Bank,delivered,2026-02-23,2026-02-23,Birgunj
+BSG-7832,9749934508,2026-02-21,Cotton saree bundle x20,26000,eSewa,delivered,2026-02-24,2026-02-24,Kalaiya
+BSG-7965,+9779798837471,2026-02-21,Pashmina shawl,3200,COD,delivered,2026-02-24,2026-02-27,Hetauda
+BSG-7180,+917495999111,2026-02-23,Cotton saree bundle x20,26000,Bank,delivered,2026-02-28,2026-02-28,Motihari
+BSG-7200,+9779882531810,2026-02-24,Pashmina shawl,3200,COD,delivered,2026-02-27,2026-02-27,Kathmandu
+BSG-7533,+9779889067264,2026-02-24,Pashmina shawl; Georgette saree,5600,eSewa,delivered,2026-02-27,2026-02-28,Birgunj
+BSG-7179,+91-7495999111,2026-02-25,Georgette saree bundle x10,21000,Bank,delivered,2026-03-02,2026-03-03,Motihari
+BSG-7238,+9779812064108,2026-02-25,Dhaka saree; Pashmina shawl,6700,COD,delivered,2026-02-28,2026-03-06,Janakpur
+BSG-7310,+9779802693103,2026-02-25,Blouse stitching; Cotton saree,2100,eSewa,delivered,2026-02-28,2026-02-28,Kathmandu
+BSG-7382,+917200362192,2026-02-26,Kurta set bundle x15,33000,Bank,delivered,2026-03-03,2026-03-03,Motihari
+BSG-7973,+977-9792436152,2026-02-26,Blouse stitching,600,COD,delivered,2026-03-01,2026-03-04,Hetauda
+BSG-7040,+9779721240352,2026-02-27,Cotton saree; Lehenga choli,15500,eSewa,delivered,2026-03-02,2026-03-03,Kalaiya
+BSG-7659,+977-9774591565,2026-02-27,Cotton saree,1500,Khalti,delivered,2026-03-02,2026-03-02,Birgunj
+BSG-7752,+9779811391270,2026-02-27,Georgette saree,2400,eSewa,delivered,2026-03-02,2026-03-02,Parwanipur
+BSG-7830,+9779749934508,2026-02-27,Cotton saree bundle x20,26000,eSewa,delivered,2026-03-02,2026-03-04,Kalaiya
+BSG-7319,+91-8136921582,2026-02-28,Kurta set,2800,UPI,delivered,2026-03-05,2026-03-05,Bettiah
+BSG-7167,+9779839042737,2026-03-01,Kurta set; Blouse stitching,3400,COD,cod_refused,2026-03-04,,Birgunj
+BSG-7700,+9779727375716,2026-03-01,Cotton saree bundle x20,26000,Bank,delivered,2026-03-04,2026-03-04,Hetauda
+BSG-7731,+91-6165133226,2026-03-01,Dhaka saree; Lehenga choli,17500,UPI,delivered,2026-03-06,2026-03-07,Raxaul
+BSG-7742,+9779827635618,2026-03-01,Kurta set,2800,COD,delivered,2026-03-04,2026-03-04,Simara
+BSG-7841,9834565967,2026-03-02,Banarasi silk saree,8500,COD,delivered,2026-03-05,2026-03-05,Birgunj
+BSG-7580,0091 914 1768861,2026-03-03,Georgette saree bundle x10,21000,Bank,delivered,2026-03-08,2026-03-11,Sitamarhi
+BSG-7225,9809044516,2026-03-04,Cotton saree; Pashmina shawl,4700,eSewa,delivered,2026-03-07,2026-03-07,Kalaiya
+BSG-7494,00977 985 2988175,2026-03-04,Cotton saree,1500,COD,delivered,2026-03-07,2026-03-08,Janakpur
+BSG-7028,0091 932 5638241,2026-03-06,Kurta set bundle x15,33000,eSewa,delivered,2026-03-11,2026-03-12,Raxaul
+BSG-7392,9719035033,2026-03-06,Dhaka saree,3500,COD,delivered,2026-03-09,2026-03-09,Kathmandu
+BSG-7630,+919837319892,2026-03-07,Banarasi silk saree; Pashmina shawl,11700,UPI,delivered,2026-03-12,2026-03-13,Motihari
+BSG-7381,0091 720 0362192,2026-03-08,Georgette saree bundle x10,21000,Bank,delivered,2026-03-13,2026-03-13,Motihari
+BSG-7716,+91-8246890190,2026-03-08,Cotton saree bundle x20,26000,Bank,delivered,2026-03-13,2026-03-13,Motihari
+BSG-7718,+91-8515442816,2026-03-08,Cotton saree bundle x20,26000,eSewa,delivered,2026-03-13,2026-03-13,Bettiah
+BSG-7083,9796093211,2026-03-09,Dhaka saree; Pashmina shawl,6700,COD,delivered,2026-03-12,2026-03-12,Simara
+BSG-7291,+917106516331,2026-03-09,Lehenga choli,14000,UPI,delivered,2026-03-14,2026-03-14,Raxaul
+BSG-7119,+917305740043,2026-03-10,Georgette saree bundle x10,21000,Bank,delivered,2026-03-15,2026-03-17,Bettiah
+BSG-7470,9852643090,2026-03-10,Banarasi silk saree,8500,Khalti,delivered,2026-03-13,2026-03-14,Birgunj
+BSG-7460,+91-9105455942,2026-03-12,Kurta set bundle x15,33000,Bank,delivered,2026-03-17,2026-03-19,Bettiah
+BSG-7662,+91-8626549579,2026-03-12,Kurta set bundle x15,33000,UPI,delivered,2026-03-17,2026-03-20,Raxaul
+BSG-7215,9876740284,2026-03-13,Georgette saree bundle x10,21000,Bank,delivered,2026-03-16,2026-03-16,Kalaiya
+BSG-7551,+9779745722868,2026-03-13,Kurta set,2800,Khalti,delivered,2026-03-16,2026-03-16,Kalaiya
+BSG-7747,9750438541,2026-03-13,Lehenga choli; Dhaka saree,17500,Bank,delivered,2026-03-16,2026-03-16,Kalaiya
+BSG-7606,+9779711201128,2026-03-14,Cotton saree,1500,COD,delivered,2026-03-17,2026-03-19,Birgunj
+BSG-7396,+9779752118543,2026-03-15,Georgette saree; Pashmina shawl,5600,COD,delivered,2026-03-18,2026-03-21,Kathmandu
+BSG-7477,+9779831920815,2026-03-16,Blouse stitching; Cotton saree,2100,COD,delivered,2026-03-19,2026-03-22,Hetauda
+BSG-7741,+9779827635618,2026-03-16,Cotton saree,1500,COD,delivered,2026-03-19,2026-03-19,Simara
+BSG-7785,9808982869,2026-03-16,Dhaka saree,3500,eSewa,delivered,2026-03-19,2026-03-25,Kalaiya
+BSG-7961,9728889799,2026-03-16,Kurta set; Cotton saree,4300,COD,delivered,2026-03-19,2026-03-19,Kalaiya
+BSG-7239,9812064108,2026-03-18,Kurta set; Pashmina shawl,6000,COD,cod_refused,2026-03-21,,Janakpur
+BSG-7255,9784889625,2026-03-18,Georgette saree; Blouse stitching,3000,COD,delivered,2026-03-21,2026-03-21,Birgunj
+BSG-7127,+919599837267,2026-03-19,Georgette saree bundle x10,21000,Bank,delivered,2026-03-24,2026-03-24,Motihari
+BSG-7417,+918496621734,2026-03-19,Cotton saree bundle x20,26000,Bank,delivered,2026-03-24,2026-03-25,Sitamarhi
+BSG-7438,00977 986 0921154,2026-03-19,Cotton saree; Lehenga choli,15500,Bank,delivered,2026-03-22,2026-03-24,Birgunj
+BSG-7964,+9779798837471,2026-03-19,Cotton saree; Lehenga choli,15500,COD,delivered,2026-03-22,2026-03-23,Hetauda
+BSG-7058,+977-9836372197,2026-03-20,Lehenga choli; Banarasi silk saree,22500,eSewa,delivered,2026-03-23,2026-03-25,Birgunj
+BSG-7253,+9779784889625,2026-03-21,Cotton saree,1500,COD,delivered,2026-03-24,2026-03-24,Birgunj
+BSG-7828,9749934508,2026-03-21,Kurta set bundle x15,33000,eSewa,delivered,2026-03-24,2026-03-24,Kalaiya
+BSG-7478,+977-9831920815,2026-03-22,Blouse stitching,600,COD,delivered,2026-03-25,2026-03-26,Hetauda
+BSG-7728,+916524567163,2026-03-22,Georgette saree; Cotton saree,3900,UPI,delivered,2026-03-27,2026-03-30,Bettiah
+BSG-7905,+918190575396,2026-03-22,Pashmina shawl,3200,UPI,returned,2026-03-27,2026-03-27,Raxaul
+BSG-7250,+9779736455393,2026-03-23,Kurta set,2800,COD,delivered,2026-03-26,2026-03-26,Hetauda
+BSG-7803,+9779722382944,2026-03-23,Georgette saree bundle x10,21000,UPI,delivered,2026-03-26,2026-03-26,Birgunj
+BSG-7820,00977 979 1895356,2026-03-23,Cotton saree bundle x20,26000,Bank,delivered,2026-03-26,2026-04-01,Birgunj
+BSG-7141,9799617102,2026-03-25,Blouse stitching,600,eSewa,delivered,2026-03-28,2026-03-30,Birgunj
+BSG-7192,+9779748106112,2026-03-25,Banarasi silk saree; Cotton saree,10000,COD,delivered,2026-03-28,2026-03-28,Kathmandu
+BSG-7688,+9779835984098,2026-03-25,Lehenga choli; Kurta set,16800,Bank,delivered,2026-03-28,2026-03-28,Birgunj
+BSG-7280,+9779826964153,2026-03-26,Blouse stitching,600,COD,delivered,2026-03-29,2026-03-29,Birgunj
+BSG-7347,9729977439,2026-03-26,Georgette saree,2400,Bank,delivered,2026-03-29,2026-03-29,Birgunj
+BSG-7356,+9779833927154,2026-03-26,Lehenga choli; Dhaka saree,17500,Khalti,delivered,2026-03-29,2026-03-29,Birgunj
+BSG-7743,0091 808 0797706,2026-03-26,Lehenga choli; Georgette saree,16400,UPI,delivered,2026-03-31,2026-03-31,Raxaul
+BSG-7443,+9779730782013,2026-03-27,Georgette saree,2400,COD,delivered,2026-03-30,2026-03-30,Kalaiya
+BSG-7811,+9779762565816,2026-03-27,Blouse stitching; Kurta set,3400,COD,delivered,2026-03-30,2026-03-30,Birgunj
+BSG-7930,+9779840588647,2026-03-27,Dhaka saree,3500,eSewa,delivered,2026-03-30,2026-03-30,Simara
+BSG-7020,+9779726177056,2026-03-28,Dhaka saree,3500,eSewa,delivered,2026-03-31,2026-03-31,Kathmandu
+BSG-7689,+91-6681139217,2026-03-28,Georgette saree; Lehenga choli,16400,UPI,delivered,2026-04-02,2026-04-02,Raxaul
+BSG-7969,+9779776931959,2026-03-28,Blouse stitching; Kurta set,3400,COD,delivered,2026-03-31,2026-04-03,Birgunj
+BSG-7178,+917495999111,2026-03-29,Kurta set bundle x15,33000,Bank,delivered,2026-04-03,2026-04-03,Motihari
+BSG-7128,+919599837267,2026-03-30,Cotton saree bundle x20,26000,Bank,delivered,2026-04-04,2026-04-04,Motihari
+BSG-7493,9852988175,2026-03-30,Georgette saree,2400,COD,delivered,2026-04-02,2026-04-04,Janakpur
+BSG-7792,+918096482547,2026-03-30,Kurta set bundle x15,33000,COD,delivered,2026-04-04,2026-04-05,Sitamarhi
+BSG-7858,+9779712595739,2026-03-30,Blouse stitching,600,COD,delivered,2026-04-02,2026-04-02,Hetauda
+BSG-7891,+9779898928238,2026-03-30,Pashmina shawl,3200,COD,delivered,2026-04-02,2026-04-03,Simara
+BSG-7301,+9779865558647,2026-03-31,Georgette saree; Lehenga choli,16400,COD,delivered,2026-04-03,2026-04-03,Kathmandu
+BSG-7655,+9779792524595,2026-03-31,Banarasi silk saree,8500,COD,delivered,2026-04-03,2026-04-03,Birgunj
+BSG-7668,+9779716158459,2026-03-31,Blouse stitching,600,COD,delivered,2026-04-03,2026-04-03,Hetauda
+BSG-7775,+977-9748585434,2026-03-31,Dhaka saree; Cotton saree,5000,COD,delivered,2026-04-03,2026-04-04,Kathmandu
+BSG-7791,+918096482547,2026-03-31,Kurta set bundle x15,33000,COD,delivered,2026-04-05,2026-04-05,Sitamarhi
+BSG-7862,+91-6529846944,2026-03-31,Dhaka saree; Banarasi silk saree,12000,UPI,delivered,2026-04-05,2026-04-06,Bettiah
+BSG-7431,+91-6346453182,2026-04-01,Georgette saree bundle x10,21000,Bank,delivered,2026-04-06,2026-04-07,Raxaul
+BSG-7916,+9779863924186,2026-04-01,Cotton saree bundle x20,26000,eSewa,delivered,2026-04-04,2026-04-04,Janakpur
+BSG-7424,+9779774196990,2026-04-02,Georgette saree,2400,COD,delivered,2026-04-05,2026-04-05,Birgunj
+BSG-7295,+977-9794887019,2026-04-03,Banarasi silk saree,8500,COD,delivered,2026-04-06,2026-04-06,Birgunj
+BSG-7783,+9779808982869,2026-04-04,Banarasi silk saree,8500,eSewa,delivered,2026-04-07,2026-04-10,Kalaiya
+BSG-7805,+977-9722382944,2026-04-04,Georgette saree bundle x10,21000,UPI,delivered,2026-04-07,2026-04-08,Birgunj
+BSG-7857,9712595739,2026-04-04,Blouse stitching; Cotton saree,2100,COD,delivered,2026-04-07,2026-04-07,Hetauda
+BSG-7959,+917625135764,2026-04-04,Lehenga choli; Cotton saree,15500,UPI,delivered,2026-04-09,2026-04-09,Bettiah
+BSG-7277,+9779757247524,2026-04-05,Lehenga choli; Banarasi silk saree,22500,COD,delivered,2026-04-08,2026-04-08,Simara
+BSG-7451,+916595962487,2026-04-05,Lehenga choli,14000,UPI,delivered,2026-04-10,2026-04-10,Raxaul
+BSG-7917,+9779863924186,2026-04-05,Kurta set bundle x15,33000,eSewa,delivered,2026-04-08,2026-04-08,Janakpur
+BSG-7150,+977-9896002040,2026-04-06,Lehenga choli; Dhaka saree,17500,COD,delivered,2026-04-09,2026-04-09,Birgunj
+BSG-7909,9830743044,2026-04-07,Pashmina shawl; Cotton saree,4700,COD,delivered,2026-04-10,2026-04-11,Hetauda
+BSG-7190,+91-7297856050,2026-04-08,Kurta set; Blouse stitching,3400,UPI,delivered,2026-04-13,2026-04-13,Raxaul
+BSG-7563,00977 983 9538360,2026-04-08,Cotton saree; Pashmina shawl,4700,eSewa,delivered,2026-04-11,2026-04-12,Hetauda
+BSG-7437,9860921154,2026-04-09,Kurta set; Georgette saree,5200,Bank,delivered,2026-04-12,2026-04-12,Birgunj
+BSG-7458,+91-9105455942,2026-04-09,Cotton saree bundle x20,26000,Bank,delivered,2026-04-14,2026-04-14,Bettiah
+BSG-7758,+977-9752833639,2026-04-09,Cotton saree; Kurta set,4300,Bank,delivered,2026-04-12,2026-04-13,Simara
+BSG-7829,9749934508,2026-04-09,Cotton saree bundle x20,26000,eSewa,delivered,2026-04-12,2026-04-12,Kalaiya
+BSG-7946,+9779858906836,2026-04-09,Dhaka saree; Pashmina shawl,6700,COD,delivered,2026-04-12,2026-04-13,Janakpur
+BSG-7039,+977-9721240352,2026-04-10,Blouse stitching,600,eSewa,delivered,2026-04-13,2026-04-13,Kalaiya
+BSG-7325,9871856082,2026-04-10,Georgette saree,2400,Khalti,delivered,2026-04-13,2026-04-13,Birgunj
+BSG-7416,+918496621734,2026-04-10,Cotton saree bundle x20,26000,Bank,delivered,2026-04-15,2026-04-15,Sitamarhi
+BSG-7573,+977-9796485005,2026-04-10,Kurta set,2800,eSewa,delivered,2026-04-13,2026-04-15,Birgunj
+BSG-7804,+9779722382944,2026-04-10,Kurta set bundle x15,33000,UPI,delivered,2026-04-13,2026-04-13,Birgunj
+BSG-7156,+91-7950245245,2026-04-11,Blouse stitching; Kurta set,3400,COD,delivered,2026-04-16,2026-04-17,Raxaul
+BSG-7341,+91-7079521525,2026-04-11,Cotton saree bundle x20,26000,COD,delivered,2026-04-16,2026-04-18,Bettiah
+BSG-7465,+916153473891,2026-04-12,Georgette saree bundle x10,21000,eSewa,delivered,2026-04-17,2026-04-18,Raxaul
+BSG-7201,+977-9882531810,2026-04-13,Kurta set; Pashmina shawl,6000,COD,delivered,2026-04-16,2026-04-16,Kathmandu
+BSG-7698,+9779727375716,2026-04-14,Georgette saree bundle x10,21000,Bank,delivered,2026-04-17,2026-04-17,Hetauda
+BSG-7003,00977 987 1054501,2026-04-15,Kurta set,2800,Khalti,delivered,2026-04-18,2026-04-18,Birgunj
+BSG-7071,+9779800779733,2026-04-15,Lehenga choli,14000,Khalti,delivered,2026-04-18,2026-04-24,Birgunj
+BSG-7118,0091 730 5740043,2026-04-15,Cotton saree bundle x20,26000,Bank,delivered,2026-04-20,2026-04-20,Bettiah
+BSG-7423,+977-9774196990,2026-04-15,Georgette saree; Kurta set,5200,COD,delivered,2026-04-18,2026-04-19,Birgunj
+BSG-7332,+977-9758108166,2026-04-16,Kurta set; Pashmina shawl,6000,eSewa,delivered,2026-04-19,2026-04-20,Birgunj
+BSG-7380,+91-7200362192,2026-04-17,Georgette saree bundle x10,21000,Bank,delivered,2026-04-22,2026-04-22,Motihari
+BSG-7590,+977-9744856701,2026-04-17,Georgette saree bundle x10,21000,Bank,delivered,2026-04-20,2026-04-20,Hetauda
+BSG-7856,+9779712595739,2026-04-17,Lehenga choli; Blouse stitching,14600,COD,delivered,2026-04-20,2026-04-20,Hetauda
+BSG-7027,+919325638241,2026-04-18,Cotton saree bundle x20,26000,eSewa,delivered,2026-04-23,2026-04-25,Raxaul
+BSG-7699,9727375716,2026-04-19,Kurta set bundle x15,33000,Bank,delivered,2026-04-22,2026-04-24,Hetauda
+BSG-7827,+977-9749934508,2026-04-19,Kurta set bundle x15,33000,eSewa,delivered,2026-04-22,2026-04-24,Kalaiya
+BSG-7001,+9779871054501,2026-04-20,Banarasi silk saree; Cotton saree,10000,Khalti,delivered,2026-04-23,2026-04-23,Birgunj
+BSG-7229,+91-7868256771,2026-04-20,Pashmina shawl,3200,UPI,delivered,2026-04-25,2026-04-25,Raxaul
+BSG-7654,9792524595,2026-04-20,Lehenga choli,14000,COD,delivered,2026-04-23,2026-04-24,Birgunj
+BSG-7819,9791895356,2026-04-20,Kurta set bundle x15,33000,Bank,delivered,2026-04-23,2026-04-29,Birgunj
+BSG-7870,+9779757368120,2026-04-20,Pashmina shawl; Cotton saree,4700,COD,delivered,2026-04-23,2026-04-24,Birgunj
+BSG-7962,+9779728889799,2026-04-20,Dhaka saree,3500,COD,delivered,2026-04-23,2026-04-23,Kalaiya
+BSG-7294,+977-9782768087,2026-04-21,Banarasi silk saree,8500,COD,delivered,2026-04-24,2026-04-24,Birgunj
+BSG-7459,0091 910 5455942,2026-04-21,Cotton saree bundle x20,26000,Bank,delivered,2026-04-26,2026-04-28,Bettiah
+BSG-7562,+9779839538360,2026-04-23,Pashmina shawl; Lehenga choli,17200,eSewa,delivered,2026-04-26,2026-04-26,Hetauda
+BSG-7890,+977-9898928238,2026-04-23,Lehenga choli; Kurta set,16800,COD,delivered,2026-04-26,2026-04-27,Simara
+BSG-7122,+9779808534396,2026-04-24,Cotton saree bundle x20,26000,Bank,delivered,2026-04-27,2026-04-27,Janakpur
+BSG-7164,9780855820,2026-04-25,Dhaka saree; Blouse stitching,4100,COD,delivered,2026-04-28,2026-05-01,Birgunj
+BSG-7289,9861407067,2026-04-25,Banarasi silk saree,8500,COD,delivered,2026-04-28,2026-05-04,Birgunj
+BSG-7309,+9779802693103,2026-04-25,Lehenga choli,14000,eSewa,delivered,2026-04-28,2026-04-30,Kathmandu
+BSG-7624,+918294024910,2026-04-26,Georgette saree,2400,UPI,delivered,2026-05-01,2026-05-02,Bettiah
+BSG-7770,+919993741924,2026-04-26,Blouse stitching; Cotton saree,2100,COD,delivered,2026-05-01,2026-05-01,Raxaul
+BSG-7715,+918246890190,2026-04-27,Kurta set bundle x15,33000,Bank,delivered,2026-05-02,2026-05-03,Motihari
+BSG-7898,+9779866265198,2026-04-27,Dhaka saree,3500,Khalti,delivered,2026-04-30,2026-04-30,Birgunj
+BSG-7279,+977-9826964153,2026-04-28,Kurta set,2800,COD,delivered,2026-05-01,2026-05-01,Birgunj
+BSG-7430,0091 634 6453182,2026-04-28,Georgette saree bundle x10,21000,Bank,delivered,2026-05-03,2026-05-03,Raxaul
+BSG-7462,+977-9866329718,2026-04-28,Georgette saree; Cotton saree,3900,COD,delivered,2026-05-01,2026-05-01,Birgunj
+BSG-7617,9750416854,2026-04-28,Cotton saree bundle x20,26000,Bank,delivered,2026-05-01,2026-05-01,Birgunj
+BSG-7730,+916165133226,2026-04-28,Kurta set; Banarasi silk saree,11300,UPI,delivered,2026-05-03,2026-05-09,Raxaul
+BSG-7970,+9779776931959,2026-04-28,Banarasi silk saree; Blouse stitching,9100,COD,delivered,2026-05-01,2026-05-04,Birgunj
+BSG-7712,+91-8246890190,2026-04-29,Kurta set bundle x15,33000,Bank,delivered,2026-05-04,2026-05-04,Motihari
+BSG-7950,+977-9852257247,2026-04-29,Banarasi silk saree,8500,COD,delivered,2026-05-02,2026-05-03,Kathmandu
+BSG-7532,+9779889067264,2026-04-30,Blouse stitching,600,eSewa,delivered,2026-05-03,2026-05-05,Birgunj
+BSG-7057,9836372197,2026-05-01,Lehenga choli; Cotton saree,15500,eSewa,delivered,2026-05-04,2026-05-04,Birgunj
+BSG-7113,+91-8667342319,2026-05-02,Kurta set bundle x15,33000,COD,delivered,2026-05-07,2026-05-08,Raxaul
+BSG-7262,+9779791508377,2026-05-02,Dhaka saree,3500,COD,delivered,2026-05-05,2026-05-05,Simara
+BSG-7369,+9779893536262,2026-05-02,Kurta set; Georgette saree,5200,eSewa,delivered,2026-05-05,2026-05-05,Birgunj
+BSG-7112,+918667342319,2026-05-03,Kurta set bundle x15,33000,COD,delivered,2026-05-08,2026-05-09,Raxaul
+BSG-7492,+977-9852988175,2026-05-03,Banarasi silk saree; Georgette saree,10900,COD,delivered,2026-05-06,2026-05-08,Janakpur
+BSG-7527,+9779807065090,2026-05-03,Kurta set; Lehenga choli,16800,eSewa,delivered,2026-05-06,2026-05-06,Hetauda
+BSG-7605,+9779711201128,2026-05-03,Dhaka saree; Lehenga choli,17500,COD,delivered,2026-05-06,2026-05-08,Birgunj
+BSG-7642,+9779751360658,2026-05-03,Dhaka saree; Kurta set,6300,COD,delivered,2026-05-06,2026-05-06,Birgunj
+BSG-7053,+9779723740161,2026-05-04,Kurta set; Cotton saree,4300,COD,delivered,2026-05-07,2026-05-07,Kalaiya
+BSG-7208,+9779796433351,2026-05-04,Pashmina shawl; Lehenga choli,17200,COD,delivered,2026-05-07,2026-05-07,Kalaiya
+BSG-7469,+9779852643090,2026-05-05,Georgette saree,2400,Khalti,delivered,2026-05-08,2026-05-10,Birgunj
+BSG-7938,9853379145,2026-05-05,Lehenga choli,14000,eSewa,delivered,2026-05-08,2026-05-08,Birgunj
+BSG-7345,+9779729977439,2026-05-06,Pashmina shawl; Blouse stitching,3800,Bank,delivered,2026-05-09,2026-05-09,Birgunj
+BSG-7640,+977-9751360658,2026-05-06,Lehenga choli,14000,COD,delivered,2026-05-09,2026-05-09,Birgunj
+BSG-7740,+9779827635618,2026-05-06,Pashmina shawl; Cotton saree,4700,COD,delivered,2026-05-09,2026-05-10,Simara
+BSG-7936,+91-9926636301,2026-05-06,Cotton saree bundle x20,26000,Bank,delivered,2026-05-11,2026-05-13,Motihari
+BSG-7442,00977 973 0782013,2026-05-07,Cotton saree,1500,COD,delivered,2026-05-10,2026-05-11,Kalaiya
+BSG-7550,+977-9745722868,2026-05-07,Blouse stitching; Lehenga choli,14600,Khalti,delivered,2026-05-10,2026-05-12,Kalaiya
+BSG-7713,+91-8246890190,2026-05-07,Cotton saree bundle x20,26000,Bank,delivered,2026-05-12,2026-05-14,Motihari
+BSG-7464,+916153473891,2026-05-08,Georgette saree bundle x10,21000,eSewa,delivered,2026-05-13,2026-05-13,Raxaul
+BSG-7677,+9779786091998,2026-05-08,Blouse stitching; Kurta set,3400,eSewa,delivered,2026-05-11,2026-05-14,Birgunj
+BSG-7727,+916524567163,2026-05-08,Blouse stitching,600,UPI,delivered,2026-05-13,2026-05-14,Bettiah
+BSG-7751,+9779811391270,2026-05-08,Lehenga choli,14000,eSewa,delivered,2026-05-11,2026-05-12,Parwanipur
+BSG-7052,+918692605962,2026-05-09,Blouse stitching; Cotton saree,2100,COD,delivered,2026-05-14,2026-05-14,Bettiah
+BSG-7782,+977-9808982869,2026-05-09,Dhaka saree; Lehenga choli,17500,eSewa,delivered,2026-05-12,2026-05-13,Kalaiya
+BSG-7848,+919462574612,2026-05-09,Kurta set bundle x15,33000,eSewa,delivered,2026-05-14,2026-05-15,Sitamarhi
+BSG-7881,+91-6640725482,2026-05-09,Georgette saree; Kurta set,5200,Bank,delivered,2026-05-14,2026-05-15,Bettiah
+BSG-7177,+917495999111,2026-05-10,Cotton saree bundle x20,26000,Bank,delivered,2026-05-15,2026-05-15,Motihari
+BSG-7214,+9779876740284,2026-05-10,Cotton saree bundle x20,26000,Bank,delivered,2026-05-13,2026-05-13,Kalaiya
+BSG-7681,+9779875472056,2026-05-10,Georgette saree,2400,COD,delivered,2026-05-13,2026-05-13,Parwanipur
+BSG-7687,+9779835984098,2026-05-10,Lehenga choli,14000,Bank,delivered,2026-05-13,2026-05-15,Birgunj
+BSG-7802,+9779722382944,2026-05-10,Kurta set bundle x15,33000,UPI,delivered,2026-05-13,2026-05-13,Birgunj
+BSG-7937,+91-9926636301,2026-05-10,Georgette saree bundle x10,21000,Bank,delivered,2026-05-15,2026-05-16,Motihari
+BSG-7953,+91-7598824839,2026-05-10,Banarasi silk saree,8500,COD,delivered,2026-05-15,2026-05-15,Raxaul
+BSG-7237,+9779812064108,2026-05-11,Blouse stitching; Pashmina shawl,3800,COD,delivered,2026-05-14,2026-05-20,Janakpur
+BSG-7635,+977-9785379444,2026-05-11,Kurta set,2800,COD,delivered,2026-05-14,2026-05-14,Kathmandu
+BSG-7794,+91-6105436514,2026-05-12,Banarasi silk saree; Lehenga choli,22500,COD,delivered,2026-05-17,2026-05-17,Raxaul
+BSG-7026,+919325638241,2026-05-13,Kurta set bundle x15,33000,eSewa,delivered,2026-05-18,2026-05-18,Raxaul
+BSG-7140,00977 979 9617102,2026-05-13,Blouse stitching,600,eSewa,delivered,2026-05-16,2026-05-16,Birgunj
+BSG-7375,+9779726397715,2026-05-13,Banarasi silk saree; Dhaka saree,12000,COD,delivered,2026-05-16,2026-05-16,Janakpur
+BSG-7526,+9779807065090,2026-05-13,Georgette saree,2400,eSewa,delivered,2026-05-16,2026-05-16,Hetauda
+BSG-7629,+919837319892,2026-05-13,Banarasi silk saree,8500,UPI,delivered,2026-05-18,2026-05-18,Motihari
+BSG-7929,9840588647,2026-05-13,Lehenga choli; Cotton saree,15500,eSewa,delivered,2026-05-16,2026-05-17,Simara
+BSG-7288,+9779861407067,2026-05-14,Pashmina shawl; Kurta set,6000,COD,delivered,2026-05-17,2026-05-18,Birgunj
+BSG-7391,9719035033,2026-05-14,Georgette saree; Blouse stitching,3000,COD,delivered,2026-05-17,2026-05-17,Kathmandu
+BSG-7019,+9779726177056,2026-05-16,Lehenga choli; Pashmina shawl,17200,eSewa,delivered,2026-05-19,2026-05-19,Kathmandu
+BSG-7111,+918667342319,2026-05-16,Georgette saree bundle x10,21000,COD,delivered,2026-05-21,2026-05-23,Raxaul
+BSG-7296,+9779794887019,2026-05-16,Lehenga choli,14000,COD,delivered,2026-05-19,2026-05-19,Birgunj
+BSG-7411,+91-9475724952,2026-05-16,Georgette saree bundle x10,21000,UPI,delivered,2026-05-21,2026-05-21,Raxaul
+BSG-7415,+918496621734,2026-05-16,Kurta set bundle x15,33000,Bank,delivered,2026-05-21,2026-05-21,Sitamarhi
+BSG-7958,0091 762 5135764,2026-05-16,Cotton saree; Kurta set,4300,UPI,delivered,2026-05-21,2026-05-23,Bettiah
+BSG-7163,00977 978 0855820,2026-05-17,Kurta set,2800,COD,delivered,2026-05-20,2026-05-21,Birgunj
+BSG-7089,+977-9874173138,2026-05-18,Kurta set,2800,Khalti,delivered,2026-05-21,2026-05-21,Kalaiya
+BSG-7826,9749934508,2026-05-18,Georgette saree bundle x10,21000,eSewa,delivered,2026-05-21,2026-05-22,Kalaiya
+BSG-7588,+9779744856701,2026-05-19,Kurta set bundle x15,33000,Bank,delivered,2026-05-22,2026-05-22,Hetauda
+BSG-7249,+9779736455393,2026-05-21,Kurta set,2800,COD,delivered,2026-05-24,2026-05-25,Hetauda
+BSG-7504,+9779762996075,2026-05-22,Dhaka saree,3500,COD,delivered,2026-05-25,2026-05-26,Birgunj
+BSG-7810,+9779762565816,2026-05-22,Kurta set,2800,COD,delivered,2026-05-25,2026-05-26,Birgunj
+BSG-7222,+9779773572549,2026-05-23,Kurta set bundle x15,33000,UPI,delivered,2026-05-26,2026-05-26,Hetauda
+BSG-7604,+9779711201128,2026-05-23,Lehenga choli,14000,COD,delivered,2026-05-26,2026-05-28,Birgunj
+BSG-7790,+91-8096482547,2026-05-23,Georgette saree bundle x10,21000,COD,delivered,2026-05-28,2026-05-28,Sitamarhi
+BSG-7549,+9779745722868,2026-05-24,Lehenga choli; Cotton saree,15500,Khalti,delivered,2026-05-27,2026-05-27,Kalaiya
+BSG-7410,+919475724952,2026-05-25,Georgette saree bundle x10,21000,UPI,delivered,2026-05-30,2026-05-30,Raxaul
+BSG-7641,+9779751360658,2026-05-26,Georgette saree,2400,COD,delivered,2026-05-29,2026-05-29,Birgunj
+BSG-7935,0091 992 6636301,2026-05-26,Kurta set bundle x15,33000,Bank,delivered,2026-05-31,2026-05-31,Motihari
+BSG-7343,9858866463,2026-05-27,Georgette saree bundle x10,21000,Bank,delivered,2026-05-30,2026-05-31,Janakpur
+BSG-7739,9827635618,2026-05-27,Pashmina shawl,3200,COD,delivered,2026-05-30,2026-05-30,Simara
+BSG-7746,9750438541,2026-05-27,Dhaka saree,3500,Bank,delivered,2026-05-30,2026-06-01,Kalaiya
+BSG-7139,+977-9799617102,2026-05-28,Banarasi silk saree; Lehenga choli,22500,eSewa,delivered,2026-05-31,2026-05-31,Birgunj
+BSG-7592,+916802137168,2026-05-29,Georgette saree; Pashmina shawl,5600,UPI,delivered,2026-06-03,2026-06-06,Raxaul
+BSG-7070,+9779800779733,2026-05-30,Banarasi silk saree,8500,Khalti,delivered,2026-06-02,2026-06-03,Birgunj
+BSG-7476,+9779831920815,2026-05-30,Kurta set,2800,COD,delivered,2026-06-02,2026-06-08,Hetauda
+BSG-7491,+9779852988175,2026-05-30,Banarasi silk saree,8500,COD,delivered,2026-06-02,2026-06-02,Janakpur
+BSG-7429,+91-6346453182,2026-05-31,Kurta set bundle x15,33000,Bank,delivered,2026-06-05,2026-06-05,Raxaul
+BSG-7908,9830743044,2026-05-31,Georgette saree; Dhaka saree,5900,COD,delivered,2026-06-03,2026-06-05,Hetauda
+BSG-7945,9858906836,2026-05-31,Lehenga choli,14000,COD,delivered,2026-06-03,2026-06-03,Janakpur
+BSG-7189,+91-7297856050,2026-06-01,Lehenga choli; Blouse stitching,14600,UPI,delivered,2026-06-06,2026-06-06,Raxaul
+BSG-7714,0091 824 6890190,2026-06-01,Georgette saree bundle x10,21000,Bank,delivered,2026-06-06,2026-06-07,Motihari
+BSG-7340,+91-7079521525,2026-06-02,Cotton saree bundle x20,26000,COD,delivered,2026-06-07,2026-06-09,Bettiah
+BSG-7342,+91-7079521525,2026-06-02,Cotton saree bundle x20,26000,COD,delivered,2026-06-07,2026-06-07,Bettiah
+BSG-7531,00977 988 9067264,2026-06-02,Cotton saree,1500,eSewa,delivered,2026-06-05,2026-06-07,Birgunj
+BSG-7561,+9779839538360,2026-06-02,Lehenga choli,14000,eSewa,delivered,2026-06-05,2026-06-05,Hetauda
+BSG-7616,00977 975 0416854,2026-06-02,Cotton saree bundle x20,26000,Bank,delivered,2026-06-05,2026-06-06,Birgunj
+BSG-7767,+917064077780,2026-06-02,Cotton saree bundle x20,26000,Bank,delivered,2026-06-07,2026-06-07,Raxaul
+BSG-7869,9757368120,2026-06-02,Dhaka saree,3500,COD,delivered,2026-06-05,2026-06-06,Birgunj
+BSG-7149,+9779896002040,2026-06-03,Cotton saree; Blouse stitching,2100,COD,delivered,2026-06-06,2026-06-06,Birgunj
+BSG-7259,+916909560292,2026-06-03,Georgette saree,2400,UPI,delivered,2026-06-08,2026-06-08,Sitamarhi
+BSG-7615,+9779750416854,2026-06-03,Kurta set bundle x15,33000,Bank,delivered,2026-06-06,2026-06-06,Birgunj
+BSG-7117,+917305740043,2026-06-04,Cotton saree bundle x20,26000,Bank,delivered,2026-06-09,2026-06-11,Bettiah
+BSG-7287,+9779861407067,2026-06-04,Cotton saree,1500,COD,delivered,2026-06-07,2026-06-10,Birgunj
+BSG-7436,+977-9860921154,2026-06-04,Pashmina shawl,3200,Bank,delivered,2026-06-07,2026-06-09,Birgunj
+BSG-7541,+9779800821283,2026-06-04,Cotton saree bundle x20,26000,Bank,delivered,2026-06-07,2026-06-08,Janakpur
+BSG-7589,+9779744856701,2026-06-04,Kurta set bundle x15,33000,Bank,delivered,2026-06-07,2026-06-07,Hetauda
+BSG-7904,+918190575396,2026-06-04,Kurta set,2800,UPI,delivered,2026-06-09,2026-06-09,Raxaul
+BSG-7374,00977 972 6397715,2026-06-05,Lehenga choli,14000,COD,delivered,2026-06-08,2026-06-10,Janakpur
+BSG-7379,0091 720 0362192,2026-06-05,Cotton saree bundle x20,26000,Bank,delivered,2026-06-10,2026-06-12,Motihari
+BSG-7801,9722382944,2026-06-06,Georgette saree bundle x10,21000,UPI,delivered,2026-06-09,2026-06-11,Birgunj
+BSG-7046,+91-7482280287,2026-06-07,Kurta set bundle x15,33000,Bank,delivered,2026-06-12,2026-06-12,Motihari
+BSG-7086,+9779796093211,2026-06-07,Georgette saree; Pashmina shawl,5600,COD,delivered,2026-06-10,2026-06-10,Simara
+BSG-7623,+918294024910,2026-06-07,Georgette saree,2400,UPI,delivered,2026-06-12,2026-06-12,Bettiah
+BSG-7676,+9779786091998,2026-06-07,Dhaka saree,3500,eSewa,delivered,2026-06-10,2026-06-16,Birgunj
+BSG-7861,0091 652 9846944,2026-06-07,Pashmina shawl; Kurta set,6000,UPI,delivered,2026-06-12,2026-06-12,Bettiah
+BSG-7359,+9779700565901,2026-06-08,Pashmina shawl; Georgette saree,5600,COD,delivered,2026-06-11,2026-06-11,Simara
+BSG-7972,+9779896159841,2026-06-08,Kurta set; Dhaka saree,6300,eSewa,delivered,2026-06-11,2026-06-11,Birgunj
+BSG-7686,+9779835984098,2026-06-09,Blouse stitching,600,Bank,delivered,2026-06-12,2026-06-14,Birgunj
+BSG-7836,9702055696,2026-06-09,Blouse stitching,600,Khalti,delivered,2026-06-12,2026-06-12,Birgunj
+BSG-7025,+91-9325638241,2026-06-10,Kurta set bundle x15,33000,eSewa,delivered,2026-06-15,2026-06-15,Raxaul
+BSG-7047,+91-7482280287,2026-06-10,Kurta set bundle x15,33000,Bank,delivered,2026-06-15,2026-06-15,Motihari
+BSG-7220,9773572549,2026-06-10,Georgette saree bundle x10,21000,UPI,delivered,2026-06-13,2026-06-14,Hetauda
+BSG-7572,+9779796485005,2026-06-10,Blouse stitching; Georgette saree,3000,eSewa,delivered,2026-06-13,2026-06-13,Birgunj
+BSG-7331,00977 975 8108166,2026-06-11,Lehenga choli,14000,eSewa,delivered,2026-06-14,2026-06-14,Birgunj
+BSG-7252,+9779705256387,2026-06-12,Pashmina shawl,3200,eSewa,delivered,2026-06-15,2026-06-15,Parwanipur
+BSG-7660,+9779774591565,2026-06-12,Dhaka saree,3500,Khalti,delivered,2026-06-15,2026-06-15,Birgunj
+BSG-7667,+977-9716158459,2026-06-12,Georgette saree,2400,COD,delivered,2026-06-15,2026-06-17,Hetauda
+BSG-7697,+9779727375716,2026-06-13,Cotton saree bundle x20,26000,Bank,delivered,2026-06-16,2026-06-16,Hetauda
+BSG-7757,+9779752833639,2026-06-13,Dhaka saree; Georgette saree,5900,Bank,delivered,2026-06-16,2026-06-16,Simara
+BSG-7789,+918096482547,2026-06-13,Cotton saree bundle x20,26000,COD,delivered,2026-06-18,2026-06-18,Sitamarhi
+BSG-7162,+9779780855820,2026-06-14,Blouse stitching,600,COD,cod_refused,2026-06-17,,Birgunj
+BSG-7306,+9779718590720,2026-06-14,Pashmina shawl,3200,eSewa,delivered,2026-06-17,2026-06-17,Simara
+BSG-7326,+9779871856082,2026-06-14,Cotton saree,1500,Khalti,delivered,2026-06-17,2026-06-17,Birgunj
+BSG-7726,+916524567163,2026-06-14,Cotton saree; Lehenga choli,15500,UPI,delivered,2026-06-19,2026-06-22,Bettiah
+BSG-7915,+977-9863924186,2026-06-14,Cotton saree bundle x20,26000,eSewa,delivered,2026-06-17,2026-06-17,Janakpur
+BSG-7450,+916595962487,2026-06-15,Dhaka saree; Pashmina shawl,6700,UPI,delivered,2026-06-20,2026-06-22,Raxaul
+BSG-7339,+917079521525,2026-06-16,Kurta set bundle x15,33000,COD,delivered,2026-06-21,2026-06-21,Bettiah
+BSG-7711,+918246890190,2026-06-16,Kurta set bundle x15,33000,Bank,delivered,2026-06-21,2026-06-22,Motihari
+BSG-7889,9898928238,2026-06-16,Dhaka saree; Banarasi silk saree,12000,COD,delivered,2026-06-19,2026-06-19,Simara
+BSG-7069,+9779800779733,2026-06-18,Cotton saree; Kurta set,4300,Khalti,delivered,2026-06-21,2026-06-21,Birgunj
+BSG-7498,+91-8053167439,2026-06-18,Pashmina shawl,3200,COD,delivered,2026-06-23,2026-06-23,Raxaul
+BSG-7766,+91-7064077780,2026-06-18,Cotton saree bundle x20,26000,Bank,delivered,2026-06-23,2026-06-23,Raxaul
+BSG-7833,+919960249575,2026-06-18,Kurta set bundle x15,33000,eSewa,delivered,2026-06-23,2026-06-23,Bettiah
+BSG-7653,9792524595,2026-06-19,Dhaka saree,3500,COD,delivered,2026-06-22,2026-06-22,Birgunj
+BSG-7035,+9779812615631,2026-06-20,Kurta set bundle x15,33000,Bank,delivered,2026-06-23,2026-06-26,Parwanipur
+BSG-7373,+9779726397715,2026-06-20,Georgette saree,2400,COD,delivered,2026-06-23,2026-06-24,Janakpur
+BSG-7422,+977-9774196990,2026-06-20,Banarasi silk saree; Dhaka saree,12000,COD,delivered,2026-06-23,2026-06-25,Birgunj
+BSG-7614,+9779750416854,2026-06-20,Kurta set bundle x15,33000,Bank,delivered,2026-06-23,2026-06-23,Birgunj
+BSG-7634,+9779785379444,2026-06-20,Dhaka saree; Banarasi silk saree,12000,COD,delivered,2026-06-23,2026-06-23,Kathmandu
+BSG-7847,+91-9462574612,2026-06-20,Kurta set bundle x15,33000,eSewa,delivered,2026-06-25,2026-06-28,Sitamarhi
+BSG-7710,+91-8246890190,2026-06-21,Georgette saree bundle x10,21000,Bank,delivered,2026-06-26,2026-06-26,Motihari
+BSG-7800,+9779722382944,2026-06-21,Kurta set bundle x15,33000,UPI,delivered,2026-06-24,2026-06-24,Birgunj
+BSG-7855,9712595739,2026-06-21,Pashmina shawl; Lehenga choli,17200,COD,delivered,2026-06-24,2026-06-24,Hetauda
+BSG-7871,+9779755363674,2026-06-21,Blouse stitching; Cotton saree,2100,COD,delivered,2026-06-24,2026-06-24,Janakpur
+BSG-7409,0091 947 5724952,2026-06-22,Kurta set bundle x15,33000,UPI,delivered,2026-06-27,2026-06-29,Raxaul
+BSG-7968,+977-9776931959,2026-06-22,Banarasi silk saree,8500,COD,delivered,2026-06-25,2026-06-26,Birgunj
+BSG-7155,+917950245245,2026-06-23,Blouse stitching; Pashmina shawl,3800,COD,delivered,2026-06-28,2026-06-28,Raxaul
+BSG-7457,+919105455942,2026-06-23,Cotton saree bundle x20,26000,Bank,delivered,2026-06-28,2026-06-28,Bettiah
+BSG-7919,+9779732002282,2026-06-23,Pashmina shawl,3200,eSewa,delivered,2026-06-26,2026-06-26,Janakpur
+BSG-7013,+91-6546614886,2026-06-24,Kurta set bundle x15,33000,Bank,delivered,2026-06-29,2026-06-29,Raxaul
+BSG-7085,+9779796093211,2026-06-24,Kurta set; Banarasi silk saree,11300,COD,delivered,2026-06-27,2026-06-27,Simara
+BSG-7428,+91-6346453182,2026-06-24,Cotton saree bundle x20,26000,Bank,delivered,2026-06-29,2026-06-29,Raxaul
+BSG-7435,+9779860921154,2026-06-24,Pashmina shawl,3200,Bank,delivered,2026-06-27,2026-06-28,Birgunj
+BSG-7038,+9779721240352,2026-06-25,Kurta set; Pashmina shawl,6000,eSewa,delivered,2026-06-28,2026-06-28,Kalaiya
+BSG-7176,+917495999111,2026-06-25,Cotton saree bundle x20,26000,Bank,delivered,2026-06-30,2026-06-30,Motihari
+BSG-7221,9773572549,2026-06-25,Georgette saree bundle x10,21000,UPI,delivered,2026-06-28,2026-06-30,Hetauda
+BSG-7236,9812064108,2026-06-25,Lehenga choli,14000,COD,delivered,2026-06-28,2026-07-01,Janakpur
+BSG-7368,+9779893536262,2026-06-25,Georgette saree,2400,eSewa,delivered,2026-06-28,2026-06-28,Birgunj
+BSG-7914,+977-9863924186,2026-06-25,Cotton saree bundle x20,26000,eSewa,delivered,2026-06-28,2026-06-28,Janakpur
+BSG-7012,+916546614886,2026-06-26,Cotton saree bundle x20,26000,Bank,delivered,2026-07-01,2026-07-01,Raxaul
+BSG-7475,+9779831920815,2026-06-26,Blouse stitching,600,COD,delivered,2026-06-29,2026-06-30,Hetauda
+BSG-7591,+916802137168,2026-06-26,Georgette saree; Blouse stitching,3000,UPI,delivered,2026-07-01,2026-07-07,Raxaul
+BSG-7649,9794182326,2026-06-26,Banarasi silk saree; Dhaka saree,12000,COD,delivered,2026-06-29,2026-06-29,Kalaiya
+BSG-7110,+918667342319,2026-06-27,Georgette saree bundle x10,21000,COD,delivered,2026-07-02,2026-07-02,Raxaul
+BSG-7603,+9779711201128,2026-06-27,Cotton saree; Georgette saree,3900,COD,delivered,2026-06-30,2026-07-02,Birgunj
+BSG-7018,+9779726177056,2026-06-28,Lehenga choli,14000,eSewa,delivered,2026-07-01,2026-07-01,Kathmandu
+BSG-7273,+918997590685,2026-06-28,Cotton saree bundle x20,26000,Bank,delivered,2026-07-03,2026-07-03,Sitamarhi
+BSG-7769,+919993741924,2026-06-28,Blouse stitching,600,COD,delivered,2026-07-03,2026-07-05,Raxaul
+BSG-7872,+9779755363674,2026-06-28,Kurta set; Pashmina shawl,6000,COD,delivered,2026-07-01,2026-07-01,Janakpur
+BSG-7213,+977-9876740284,2026-06-29,Kurta set bundle x15,33000,Bank,returned,2026-07-02,2026-07-04,Kalaiya
+BSG-7414,+918496621734,2026-06-29,Cotton saree bundle x20,26000,Bank,delivered,2026-07-04,2026-07-04,Sitamarhi
+BSG-7056,9836372197,2026-06-30,Georgette saree,2400,eSewa,delivered,2026-07-03,2026-07-03,Birgunj
+BSG-7261,+9779791508377,2026-06-30,Dhaka saree,3500,COD,delivered,2026-07-03,2026-07-04,Simara
+BSG-7248,00977 973 6455393,2026-07-01,Kurta set; Pashmina shawl,6000,COD,delivered,2026-07-04,2026-07-04,Hetauda
+BSG-7456,+91-9105455942,2026-07-02,Georgette saree bundle x10,21000,Bank,delivered,2026-07-07,2026-07-07,Bettiah
+BSG-7934,+919926636301,2026-07-03,Kurta set bundle x15,33000,Bank,delivered,2026-07-08,2026-07-08,Motihari
+BSG-7949,+9779852257247,2026-07-04,Lehenga choli,14000,COD,delivered,2026-07-07,2026-07-07,Kathmandu
+BSG-7148,+9779896002040,2026-07-05,Georgette saree,2400,COD,delivered,2026-07-08,2026-07-10,Birgunj
+BSG-7330,9758108166,2026-07-06,Pashmina shawl,3200,eSewa,delivered,2026-07-09,2026-07-09,Birgunj
+BSG-7481,+9779707940836,2026-07-06,Banarasi silk saree,8500,eSewa,delivered,2026-07-09,2026-07-10,Simara
+BSG-7644,+977-9783806340,2026-07-06,Banarasi silk saree; Cotton saree,10000,COD,delivered,2026-07-09,2026-07-09,Birgunj
+BSG-7781,+9779808982869,2026-07-06,Pashmina shawl; Georgette saree,5600,eSewa,delivered,2026-07-09,2026-07-12,Kalaiya
+BSG-7219,+977-9773572549,2026-07-07,Kurta set bundle x15,33000,UPI,delivered,2026-07-10,2026-07-11,Hetauda
+BSG-7308,+9779802693103,2026-07-07,Georgette saree,2400,eSewa,delivered,2026-07-10,2026-07-12,Kathmandu
+BSG-7441,+9779730782013,2026-07-07,Dhaka saree,3500,COD,delivered,2026-07-10,2026-07-10,Kalaiya
+BSG-7587,+9779744856701,2026-07-07,Kurta set bundle x15,33000,Bank,delivered,2026-07-10,2026-07-12,Hetauda
+BSG-7622,+918294024910,2026-07-07,Pashmina shawl,3200,UPI,delivered,2026-07-12,2026-07-14,Bettiah
+BSG-7468,+9779852643090,2026-07-08,Cotton saree; Blouse stitching,2100,Khalti,delivered,2026-07-11,2026-07-11,Birgunj
+BSG-7685,+9779835984098,2026-07-08,Kurta set; Cotton saree,4300,Bank,delivered,2026-07-11,2026-07-11,Birgunj
+BSG-7228,0091 786 8256771,2026-07-09,Banarasi silk saree,8500,UPI,delivered,2026-07-14,2026-07-15,Raxaul
+BSG-7525,+977-9872612489,2026-07-09,Cotton saree bundle x20,26000,eSewa,returned,2026-07-12,2026-07-12,Janakpur
+BSG-7596,0091 715 5665886,2026-07-09,Cotton saree bundle x20,26000,COD,delivered,2026-07-14,2026-07-14,Sitamarhi
+BSG-7628,+919837319892,2026-07-09,Dhaka saree,3500,UPI,delivered,2026-07-14,2026-07-16,Motihari
+BSG-7408,+91-9475724952,2026-07-10,Georgette saree bundle x10,21000,UPI,delivered,2026-07-15,2026-07-15,Raxaul
+BSG-7490,+977-9852988175,2026-07-10,Kurta set,2800,COD,delivered,2026-07-13,2026-07-13,Janakpur
+BSG-7548,+9779745722868,2026-07-10,Georgette saree,2400,Khalti,delivered,2026-07-13,2026-07-15,Kalaiya
+BSG-7880,+916640725482,2026-07-10,Dhaka saree; Banarasi silk saree,12000,Bank,delivered,2026-07-15,2026-07-17,Bettiah
+BSG-7738,9827635618,2026-07-11,Dhaka saree; Georgette saree,5900,COD,delivered,2026-07-14,2026-07-14,Simara
+BSG-7378,+917200362192,2026-07-12,Georgette saree bundle x10,21000,Bank,returned,2026-07-17,2026-07-17,Motihari
+BSG-7560,+9779839538360,2026-07-12,Banarasi silk saree; Cotton saree,10000,eSewa,delivered,2026-07-15,2026-07-15,Hetauda
+BSG-7109,+918667342319,2026-07-13,Kurta set bundle x15,33000,COD,delivered,2026-07-18,2026-07-19,Raxaul
+BSG-7390,9719035033,2026-07-13,Pashmina shawl,3200,COD,delivered,2026-07-16,2026-07-18,Kathmandu
+BSG-7928,+9779840588647,2026-07-13,Cotton saree,1500,eSewa,delivered,2026-07-16,2026-07-17,Simara
+BSG-7008,+91-8949442174,2026-07-14,Georgette saree; Blouse stitching,3000,UPI,delivered,2026-07-19,2026-07-19,Raxaul
+BSG-7116,+91-7305740043,2026-07-14,Georgette saree bundle x10,21000,Bank,delivered,2026-07-19,2026-07-19,Bettiah
+BSG-7299,0091 915 8674439,2026-07-14,Georgette saree bundle x10,21000,Bank,delivered,2026-07-19,2026-07-25,Raxaul
+BSG-7006,+918949442174,2026-07-15,Lehenga choli; Banarasi silk saree,22500,UPI,delivered,2026-07-20,2026-07-20,Raxaul
+BSG-7014,+91-6546614886,2026-07-15,Georgette saree bundle x10,21000,Bank,delivered,2026-07-20,2026-07-20,Raxaul
+BSG-7648,9794182326,2026-07-15,Kurta set; Dhaka saree,6300,COD,delivered,2026-07-18,2026-07-18,Kalaiya
+BSG-7666,00977 971 6158459,2026-07-15,Pashmina shawl; Cotton saree,4700,COD,delivered,2026-07-18,2026-07-19,Hetauda
+BSG-7675,+9779786091998,2026-07-15,Lehenga choli; Pashmina shawl,17200,eSewa,delivered,2026-07-18,2026-07-24,Birgunj
+BSG-7338,0091 707 9521525,2026-07-16,Kurta set bundle x15,33000,COD,delivered,2026-07-21,2026-07-22,Bettiah
+BSG-7073,+917334822617,2026-07-17,Georgette saree,2400,UPI,delivered,2026-07-22,2026-07-22,Raxaul
+BSG-7161,+91-7388452800,2026-07-17,Georgette saree bundle x10,21000,Bank,delivered,2026-07-22,2026-07-22,Bettiah
+BSG-7818,+9779791895356,2026-07-17,Cotton saree bundle x20,26000,Bank,delivered,2026-07-20,2026-07-23,Birgunj
+BSG-7957,+917625135764,2026-07-17,Georgette saree,2400,UPI,delivered,2026-07-22,2026-07-22,Bettiah
+BSG-7954,+917598824839,2026-07-18,Pashmina shawl; Blouse stitching,3800,COD,delivered,2026-07-23,2026-07-23,Raxaul
+BSG-7272,+91-8997590685,2026-07-19,Kurta set bundle x15,33000,Bank,delivered,2026-07-24,2026-07-24,Sitamarhi
+BSG-7540,9800821283,2026-07-19,Kurta set bundle x15,33000,Bank,delivered,2026-07-22,2026-07-22,Janakpur
+BSG-7695,+9779727375716,2026-07-19,Cotton saree bundle x20,26000,Bank,delivered,2026-07-22,2026-07-23,Hetauda
+BSG-7745,+9779750438541,2026-07-19,Dhaka saree,3500,Bank,delivered,2026-07-22,2026-07-24,Kalaiya
+BSG-7455,+91-9105455942,2026-07-20,Cotton saree bundle x20,26000,Bank,delivered,2026-07-25,2026-07-25,Bettiah
+BSG-7503,9762996075,2026-07-20,Cotton saree; Blouse stitching,2100,COD,delivered,2026-07-23,2026-07-24,Birgunj
+BSG-7557,9745524887,2026-07-20,Georgette saree; Banarasi silk saree,10900,eSewa,delivered,2026-07-23,2026-07-26,Birgunj
+BSG-7750,+9779811391270,2026-07-20,Blouse stitching; Dhaka saree,4100,eSewa,delivered,2026-07-23,2026-07-24,Parwanipur
+BSG-7045,0091 748 2280287,2026-07-21,Kurta set bundle x15,33000,Bank,delivered,2026-07-26,2026-07-27,Motihari
+BSG-7297,+9779794887019,2026-07-21,Dhaka saree; Kurta set,6300,COD,delivered,2026-07-24,2026-07-24,Birgunj
+BSG-7860,+916529846944,2026-07-21,Pashmina shawl,3200,UPI,delivered,2026-07-26,2026-07-27,Bettiah
+BSG-7709,+91-8246890190,2026-07-22,Cotton saree bundle x20,26000,Bank,delivered,2026-07-27,2026-07-28,Motihari
+BSG-7696,+9779727375716,2026-07-23,Georgette saree bundle x10,21000,Bank,delivered,2026-07-26,2026-07-27,Hetauda
+BSG-7900,+9779866265198,2026-07-23,Pashmina shawl,3200,Khalti,delivered,2026-07-26,2026-07-26,Birgunj
+BSG-7165,+9779867375656,2026-07-24,Dhaka saree,3500,Khalti,delivered,2026-07-27,2026-07-27,Birgunj
+BSG-7524,+977-9872612489,2026-07-24,Kurta set bundle x15,33000,eSewa,delivered,2026-07-27,2026-07-28,Janakpur
+BSG-7824,+977-9749934508,2026-07-24,Kurta set bundle x15,33000,eSewa,delivered,2026-07-27,2026-07-27,Kalaiya
+BSG-7854,+9779712595739,2026-07-24,Cotton saree; Kurta set,4300,COD,delivered,2026-07-27,2026-07-27,Hetauda
+BSG-7967,+9779776931959,2026-07-24,Banarasi silk saree; Pashmina shawl,11700,COD,delivered,2026-07-27,2026-08-02,Birgunj
+BSG-7530,+977-9889067264,2026-07-25,Banarasi silk saree; Georgette saree,10900,eSewa,delivered,2026-07-28,2026-07-28,Birgunj
+BSG-7138,+977-9799617102,2026-07-26,Lehenga choli; Pashmina shawl,17200,eSewa,delivered,2026-07-29,2026-07-30,Birgunj
+BSG-7571,9796485005,2026-07-26,Pashmina shawl,3200,eSewa,delivered,2026-07-29,2026-07-30,Birgunj
+BSG-7613,+9779750416854,2026-07-26,Kurta set bundle x15,33000,Bank,delivered,2026-07-29,2026-07-29,Birgunj
+BSG-7756,+977-9752833639,2026-07-26,Blouse stitching; Cotton saree,2100,Bank,delivered,2026-07-29,2026-07-29,Simara
+BSG-7825,+9779749934508,2026-07-26,Kurta set bundle x15,33000,eSewa,delivered,2026-07-29,2026-07-30,Kalaiya
+BSG-7960,00977 972 8889799,2026-07-26,Blouse stitching,600,COD,delivered,2026-07-29,2026-07-29,Kalaiya
+BSG-7521,+918699980553,2026-07-27,Kurta set bundle x15,33000,Bank,delivered,2026-08-01,2026-08-01,Sitamarhi
+BSG-7674,+91-8465101672,2026-07-27,Cotton saree bundle x20,26000,COD,delivered,2026-08-01,2026-08-01,Bettiah
+BSG-7068,+9779800779733,2026-07-29,Pashmina shawl,3200,Khalti,delivered,2026-08-01,2026-08-02,Birgunj
+BSG-7076,00977 974 8817775,2026-07-29,Pashmina shawl; Dhaka saree,6700,COD,delivered,2026-08-01,2026-08-01,Birgunj
+BSG-7275,+9779867039788,2026-07-29,Dhaka saree; Kurta set,6300,COD,delivered,2026-08-01,2026-08-01,Birgunj
+BSG-7329,+9779758108166,2026-07-29,Kurta set; Georgette saree,5200,eSewa,delivered,2026-08-01,2026-08-01,Birgunj
+BSG-7516,9817523317,2026-07-29,Blouse stitching,600,COD,delivered,2026-08-01,2026-08-01,Birgunj
+BSG-7809,9762565816,2026-07-29,Pashmina shawl; Lehenga choli,17200,COD,delivered,2026-08-01,2026-08-01,Birgunj
+BSG-7850,00977 977 1503730,2026-07-29,Lehenga choli; Banarasi silk saree,22500,COD,delivered,2026-08-01,2026-08-01,Birgunj
+BSG-7427,+916346453182,2026-07-30,Georgette saree bundle x10,21000,Bank,delivered,2026-08-04,2026-08-04,Raxaul
+BSG-7586,9744856701,2026-07-30,Cotton saree bundle x20,26000,Bank,delivered,2026-08-02,2026-08-04,Hetauda
+BSG-7212,9876740284,2026-07-31,Kurta set bundle x15,33000,Bank,delivered,2026-08-03,2026-08-05,Kalaiya
+BSG-7367,+9779893536262,2026-07-31,Kurta set; Lehenga choli,16800,eSewa,delivered,2026-08-03,2026-08-03,Birgunj
+BSG-7765,+917064077780,2026-07-31,Cotton saree bundle x20,26000,Bank,delivered,2026-08-05,2026-08-05,Raxaul
+BSG-7868,00977 975 7368120,2026-07-31,Cotton saree; Pashmina shawl,4700,COD,delivered,2026-08-03,2026-08-05,Birgunj
+BSG-7907,+977-9830743044,2026-07-31,Dhaka saree,3500,COD,delivered,2026-08-03,2026-08-03,Hetauda
+BSG-7024,+91-9325638241,2026-08-01,Cotton saree bundle x20,26000,eSewa,delivered,2026-08-06,2026-08-08,Raxaul
+BSG-7449,+916595962487,2026-08-01,Kurta set; Banarasi silk saree,11300,UPI,delivered,2026-08-06,2026-08-07,Raxaul
+BSG-7286,00977 986 1407067,2026-08-02,Dhaka saree,3500,COD,delivered,2026-08-05,2026-08-06,Birgunj
+BSG-7364,+91-7414522489,2026-08-02,Cotton saree bundle x20,26000,eSewa,delivered,2026-08-07,2026-08-08,Raxaul
+BSG-7539,9800821283,2026-08-02,Georgette saree bundle x10,21000,Bank,delivered,2026-08-05,2026-08-05,Janakpur
+BSG-7885,+9779881789798,2026-08-02,Cotton saree; Blouse stitching,2100,COD,delivered,2026-08-05,2026-08-05,Birgunj
+BSG-7421,+9779774196990,2026-08-03,Blouse stitching; Dhaka saree,4100,COD,delivered,2026-08-06,2026-08-08,Birgunj
+BSG-7599,+977-9742892571,2026-08-03,Cotton saree; Kurta set,4300,COD,delivered,2026-08-06,2026-08-07,Kathmandu
+BSG-7788,+91-8096482547,2026-08-03,Cotton saree bundle x20,26000,COD,delivered,2026-08-08,2026-08-08,Sitamarhi
+BSG-7130,+977-9828471185,2026-08-04,Georgette saree; Blouse stitching,3000,Khalti,delivered,2026-08-07,2026-08-07,Kathmandu
+BSG-7137,+9779799617102,2026-08-04,Banarasi silk saree,8500,eSewa,delivered,2026-08-07,2026-08-09,Birgunj
+BSG-7175,+917495999111,2026-08-04,Kurta set bundle x15,33000,Bank,returned,2026-08-09,2026-08-09,Motihari
+BSG-7209,9796433351,2026-08-04,Cotton saree; Dhaka saree,5000,COD,delivered,2026-08-07,2026-08-07,Kalaiya
+BSG-7372,+9779726397715,2026-08-04,Cotton saree,1500,COD,delivered,2026-08-07,2026-08-07,Janakpur
+BSG-7602,+9779711201128,2026-08-05,Lehenga choli; Blouse stitching,14600,COD,delivered,2026-08-08,2026-08-08,Birgunj
+BSG-7799,+9779722382944,2026-08-05,Kurta set bundle x15,33000,UPI,delivered,2026-08-08,2026-08-10,Birgunj
+BSG-7434,+9779860921154,2026-08-06,Georgette saree; Banarasi silk saree,10900,Bank,delivered,2026-08-09,2026-08-11,Birgunj
+BSG-7353,0091 998 9644554,2026-08-07,Cotton saree bundle x20,26000,eSewa,delivered,2026-08-12,2026-08-12,Raxaul
+BSG-7903,0091 819 0575396,2026-08-07,Dhaka saree; Banarasi silk saree,12000,UPI,delivered,2026-08-12,2026-08-13,Raxaul
+BSG-7160,0091 738 8452800,2026-08-08,Georgette saree bundle x10,21000,Bank,delivered,2026-08-13,2026-08-13,Bettiah
+BSG-7034,9812615631,2026-08-09,Cotton saree bundle x20,26000,Bank,delivered,2026-08-12,2026-08-18,Parwanipur
+BSG-7454,+919105455942,2026-08-09,Kurta set bundle x15,33000,Bank,delivered,2026-08-14,2026-08-15,Bettiah
+BSG-7708,+91-8246890190,2026-08-09,Kurta set bundle x15,33000,Bank,delivered,2026-08-14,2026-08-14,Motihari
+BSG-7888,+9779898928238,2026-08-09,Georgette saree; Blouse stitching,3000,COD,delivered,2026-08-12,2026-08-13,Simara
+BSG-7305,00977 975 5592826,2026-08-10,Kurta set bundle x15,33000,COD,delivered,2026-08-13,2026-08-13,Birgunj
+BSG-7737,9827635618,2026-08-11,Pashmina shawl; Dhaka saree,6700,COD,delivered,2026-08-14,2026-08-14,Simara
+BSG-7913,+977-9863924186,2026-08-11,Cotton saree bundle x20,26000,eSewa,delivered,2026-08-14,2026-08-16,Janakpur
+BSG-7652,+977-9792524595,2026-08-12,Dhaka saree,3500,COD,delivered,2026-08-15,2026-08-15,Birgunj
+BSG-7853,+9779712595739,2026-08-12,Blouse stitching,600,COD,delivered,2026-08-15,2026-08-15,Hetauda
+BSG-7337,+91-7079521525,2026-08-13,Kurta set bundle x15,33000,COD,delivered,2026-08-18,2026-08-18,Bettiah
+BSG-7633,+91-9760000795,2026-08-13,Kurta set; Pashmina shawl,6000,UPI,delivered,2026-08-18,2026-08-18,Motihari
+BSG-7944,00977 985 8906836,2026-08-13,Dhaka saree; Kurta set,6300,COD,delivered,2026-08-16,2026-08-17,Janakpur
+BSG-7154,+91-7950245245,2026-08-14,Banarasi silk saree,8500,COD,returned,2026-08-19,2026-08-19,Raxaul
+BSG-7413,+91-8496621734,2026-08-14,Georgette saree bundle x10,21000,Bank,delivered,2026-08-19,2026-08-21,Sitamarhi
+BSG-7520,+918699980553,2026-08-14,Georgette saree bundle x10,21000,Bank,delivered,2026-08-19,2026-08-19,Sitamarhi
+BSG-7538,+977-9800821283,2026-08-14,Georgette saree bundle x10,21000,Bank,delivered,2026-08-17,2026-08-17,Janakpur
+BSG-7817,+9779791895356,2026-08-14,Cotton saree bundle x20,26000,Bank,delivered,2026-08-17,2026-08-18,Birgunj
+BSG-7612,+9779750416854,2026-08-15,Cotton saree bundle x20,26000,Bank,delivered,2026-08-18,2026-08-18,Birgunj
+BSG-7017,9726177056,2026-08-16,Pashmina shawl,3200,eSewa,delivered,2026-08-19,2026-08-19,Kathmandu
+BSG-7258,0091 690 9560292,2026-08-16,Pashmina shawl; Banarasi silk saree,11700,UPI,delivered,2026-08-21,2026-08-23,Sitamarhi
+BSG-7377,+91-7200362192,2026-08-16,Georgette saree bundle x10,21000,Bank,returned,2026-08-21,2026-08-21,Motihari
+BSG-7388,9803031032,2026-08-16,Banarasi silk saree; Dhaka saree,12000,COD,delivered,2026-08-19,2026-08-20,Parwanipur
+BSG-7093,+918965164000,2026-08-17,Kurta set bundle x15,33000,Bank,delivered,2026-08-22,2026-08-24,Raxaul
+BSG-7108,+918667342319,2026-08-17,Kurta set bundle x15,33000,COD,delivered,2026-08-22,2026-08-23,Raxaul
+BSG-7115,+91-7305740043,2026-08-17,Cotton saree bundle x20,26000,Bank,delivered,2026-08-22,2026-08-24,Bettiah
+BSG-7271,+918997590685,2026-08-17,Georgette saree bundle x10,21000,Bank,delivered,2026-08-22,2026-08-22,Sitamarhi
+BSG-7037,+9779721240352,2026-08-18,Blouse stitching,600,eSewa,delivered,2026-08-21,2026-08-21,Kalaiya
+BSG-7055,+977-9836372197,2026-08-18,Lehenga choli; Cotton saree,15500,eSewa,returned,2026-08-21,2026-08-22,Birgunj
+BSG-7933,+91-9926636301,2026-08-18,Kurta set bundle x15,33000,Bank,delivered,2026-08-23,2026-08-23,Motihari
+BSG-7559,+977-9839538360,2026-08-19,Georgette saree; Blouse stitching,3000,eSewa,delivered,2026-08-22,2026-08-24,Hetauda
+BSG-7764,+917064077780,2026-08-19,Kurta set bundle x15,33000,Bank,delivered,2026-08-24,2026-08-24,Raxaul
+BSG-7247,+9779736455393,2026-08-20,Banarasi silk saree,8500,COD,delivered,2026-08-23,2026-08-24,Hetauda
+BSG-7011,+91-6546614886,2026-08-21,Cotton saree bundle x20,26000,Bank,delivered,2026-08-26,2026-08-26,Raxaul
+BSG-7547,9745722868,2026-08-21,Lehenga choli; Dhaka saree,17500,Khalti,delivered,2026-08-24,2026-08-24,Kalaiya
+BSG-7621,+91-8294024910,2026-08-21,Banarasi silk saree; Cotton saree,10000,UPI,delivered,2026-08-26,2026-08-26,Bettiah
+BSG-7823,+9779749934508,2026-08-21,Kurta set bundle x15,33000,eSewa,delivered,2026-08-24,2026-08-24,Kalaiya
+BSG-7927,+9779840588647,2026-08-21,Banarasi silk saree,8500,eSewa,delivered,2026-08-24,2026-08-24,Simara
+BSG-7124,+977-9808534396,2026-08-22,Kurta set bundle x15,33000,Bank,delivered,2026-08-25,2026-08-25,Janakpur
+BSG-7595,+917155665886,2026-08-22,Cotton saree bundle x20,26000,COD,delivered,2026-08-27,2026-08-29,Sitamarhi
+BSG-7684,00977 983 5984098,2026-08-22,Dhaka saree,3500,Bank,delivered,2026-08-25,2026-08-25,Birgunj
+BSG-7694,+9779727375716,2026-08-22,Kurta set bundle x15,33000,Bank,delivered,2026-08-25,2026-08-25,Hetauda
+BSG-7639,+9779751360658,2026-08-23,Kurta set,2800,COD,delivered,2026-08-26,2026-08-26,Birgunj
+BSG-7780,+9779808982869,2026-08-23,Blouse stitching,600,eSewa,delivered,2026-08-26,2026-09-01,Kalaiya
+BSG-7352,+919989644554,2026-08-24,Cotton saree bundle x20,26000,eSewa,delivered,2026-08-29,2026-08-29,Raxaul
+BSG-7362,+91-7414522489,2026-08-24,Georgette saree bundle x10,21000,eSewa,delivered,2026-08-29,2026-08-29,Raxaul
+BSG-7461,+977-9866329718,2026-08-24,Kurta set; Pashmina shawl,6000,COD,delivered,2026-08-27,2026-08-27,Birgunj
+BSG-7218,+9779773572549,2026-08-25,Kurta set bundle x15,33000,UPI,delivered,2026-08-28,2026-08-30,Hetauda
+BSG-7673,+918465101672,2026-08-25,Kurta set bundle x15,33000,COD,delivered,2026-08-30,2026-08-30,Bettiah
+BSG-7044,0091 748 2280287,2026-08-26,Cotton saree bundle x20,26000,Bank,delivered,2026-08-31,2026-08-31,Motihari
+BSG-7107,0091 866 7342319,2026-08-26,Cotton saree bundle x20,26000,COD,delivered,2026-08-31,2026-09-01,Raxaul
+BSG-7363,+917414522489,2026-08-26,Kurta set bundle x15,33000,eSewa,delivered,2026-08-31,2026-09-02,Raxaul
+BSG-7407,+919475724952,2026-08-26,Kurta set bundle x15,33000,UPI,delivered,2026-08-31,2026-08-31,Raxaul
+BSG-7489,+9779852988175,2026-08-26,Lehenga choli; Kurta set,16800,COD,delivered,2026-08-29,2026-08-29,Janakpur
+BSG-7366,+9779893536262,2026-08-28,Cotton saree; Lehenga choli,15500,eSewa,delivered,2026-08-31,2026-09-01,Birgunj
+BSG-7798,+9779722382944,2026-08-28,Georgette saree bundle x10,21000,UPI,delivered,2026-08-31,2026-08-31,Birgunj
+BSG-7304,+9779755592826,2026-08-29,Kurta set bundle x15,33000,COD,delivered,2026-09-01,2026-09-02,Birgunj
+BSG-7787,+918096482547,2026-08-29,Kurta set bundle x15,33000,COD,delivered,2026-09-03,2026-09-03,Sitamarhi
+BSG-7348,+9779729977439,2026-08-30,Dhaka saree; Georgette saree,5900,Bank,delivered,2026-09-02,2026-09-02,Birgunj
+BSG-7120,00977 981 6820687,2026-08-31,Kurta set; Cotton saree,4300,Bank,delivered,2026-09-03,2026-09-03,Kalaiya
+BSG-7707,+91-8246890190,2026-08-31,Cotton saree bundle x20,26000,Bank,delivered,2026-09-05,2026-09-07,Motihari
+BSG-7147,+9779896002040,2026-09-01,Kurta set; Georgette saree,5200,COD,delivered,2026-09-04,2026-09-04,Birgunj
+BSG-7499,0091 805 3167439,2026-09-01,Dhaka saree,3500,COD,delivered,2026-09-06,2026-09-06,Raxaul
+BSG-7174,+917495999111,2026-09-02,Kurta set bundle x15,33000,Bank,delivered,2026-09-07,2026-09-09,Motihari
+BSG-7440,+9779730782013,2026-09-02,Kurta set; Cotton saree,4300,COD,delivered,2026-09-05,2026-09-07,Kalaiya
+BSG-7665,+9779716158459,2026-09-02,Kurta set,2800,COD,delivered,2026-09-05,2026-09-07,Hetauda
+BSG-7081,+9779820823938,2026-09-04,Dhaka saree; Blouse stitching,4100,Bank,delivered,2026-09-07,2026-09-07,Birgunj
+BSG-7426,+91-6346453182,2026-09-04,Kurta set bundle x15,33000,Bank,delivered,2026-09-09,2026-09-11,Raxaul
+BSG-7956,+91-7625135764,2026-09-04,Pashmina shawl; Dhaka saree,6700,UPI,delivered,2026-09-09,2026-09-11,Bettiah
+BSG-7084,+9779796093211,2026-09-05,Pashmina shawl,3200,COD,delivered,2026-09-08,2026-09-08,Simara
+BSG-7211,00977 987 6740284,2026-09-05,Kurta set bundle x15,33000,Bank,returned,2026-09-08,2026-09-08,Kalaiya
+BSG-7389,+977-9719035033,2026-09-05,Banarasi silk saree,8500,COD,delivered,2026-09-08,2026-09-10,Kathmandu
+BSG-7601,9711201128,2026-09-05,Blouse stitching; Lehenga choli,14600,COD,delivered,2026-09-08,2026-09-08,Birgunj
+BSG-7519,+918699980553,2026-09-06,Cotton saree bundle x20,26000,Bank,delivered,2026-09-11,2026-09-11,Sitamarhi
+BSG-7585,00977 974 4856701,2026-09-06,Georgette saree bundle x10,21000,Bank,delivered,2026-09-09,2026-09-10,Hetauda
+BSG-7912,9863924186,2026-09-06,Cotton saree bundle x20,26000,eSewa,delivered,2026-09-09,2026-09-10,Janakpur
+BSG-7932,+919926636301,2026-09-07,Cotton saree bundle x20,26000,Bank,delivered,2026-09-12,2026-09-13,Motihari
+BSG-7307,+9779802693103,2026-09-08,Cotton saree,1500,eSewa,delivered,2026-09-11,2026-09-13,Kathmandu
+BSG-7420,+9779774196990,2026-09-08,Cotton saree,1500,COD,delivered,2026-09-11,2026-09-11,Birgunj
+BSG-7523,+977-9872612489,2026-09-08,Georgette saree bundle x10,21000,eSewa,returned,2026-09-11,2026-09-11,Janakpur
+BSG-7625,+977-9808170152,2026-09-08,Pashmina shawl,3200,COD,delivered,2026-09-11,2026-09-11,Birgunj
+BSG-7537,+9779800821283,2026-09-09,Georgette saree bundle x10,21000,Bank,delivered,2026-09-12,2026-09-12,Janakpur
+BSG-7672,+91-8465101672,2026-09-09,Kurta set bundle x15,33000,COD,delivered,2026-09-14,2026-09-14,Bettiah
+BSG-7009,+918949442174,2026-09-10,Cotton saree; Banarasi silk saree,10000,UPI,delivered,2026-09-15,2026-09-15,Raxaul
+BSG-7043,+917482280287,2026-09-10,Kurta set bundle x15,33000,Bank,delivered,2026-09-15,2026-09-15,Motihari
+BSG-7406,+919475724952,2026-09-10,Kurta set bundle x15,33000,UPI,delivered,2026-09-15,2026-09-15,Raxaul
+BSG-7453,+919105455942,2026-09-10,Cotton saree bundle x20,26000,Bank,delivered,2026-09-15,2026-09-17,Bettiah
+BSG-7838,00977 983 4565967,2026-09-10,Blouse stitching,600,COD,delivered,2026-09-13,2026-09-13,Birgunj
+BSG-7217,+9779773572549,2026-09-11,Kurta set bundle x15,33000,UPI,delivered,2026-09-14,2026-09-14,Hetauda
+BSG-7260,+9779791508377,2026-09-11,Blouse stitching; Banarasi silk saree,9100,COD,delivered,2026-09-14,2026-09-14,Simara
+BSG-7328,00977 975 8108166,2026-09-11,Kurta set,2800,eSewa,delivered,2026-09-14,2026-09-15,Birgunj
+BSG-7371,9726397715,2026-09-11,Kurta set,2800,COD,delivered,2026-09-14,2026-09-14,Janakpur
+BSG-7611,00977 975 0416854,2026-09-11,Kurta set bundle x15,33000,Bank,delivered,2026-09-14,2026-09-15,Birgunj
+BSG-7768,+91-9993741924,2026-09-11,Dhaka saree,3500,COD,delivered,2026-09-16,2026-09-16,Raxaul
+BSG-7023,+919325638241,2026-09-12,Kurta set bundle x15,33000,eSewa,delivered,2026-09-17,2026-09-18,Raxaul
+BSG-7744,+9779750438541,2026-09-12,Georgette saree,2400,Bank,delivered,2026-09-15,2026-09-15,Kalaiya
+BSG-7867,+9779757368120,2026-09-12,Cotton saree; Dhaka saree,5000,COD,delivered,2026-09-15,2026-09-15,Birgunj
+BSG-7136,+9779799617102,2026-09-13,Dhaka saree; Cotton saree,5000,eSewa,delivered,2026-09-16,2026-09-18,Birgunj
+BSG-7852,00977 971 2595739,2026-09-13,Kurta set; Lehenga choli,16800,COD,delivered,2026-09-16,2026-09-16,Hetauda
+BSG-7007,+91-8949442174,2026-09-14,Banarasi silk saree,8500,UPI,delivered,2026-09-19,2026-09-19,Raxaul
+BSG-7270,+918997590685,2026-09-14,Cotton saree bundle x20,26000,Bank,delivered,2026-09-19,2026-09-19,Sitamarhi
+BSG-7529,+9779889067264,2026-09-14,Banarasi silk saree,8500,eSewa,delivered,2026-09-17,2026-09-17,Birgunj
+BSG-7736,+9779827635618,2026-09-14,Blouse stitching; Dhaka saree,4100,COD,delivered,2026-09-17,2026-09-17,Simara
+BSG-7763,+91-7064077780,2026-09-14,Cotton saree bundle x20,26000,Bank,delivered,2026-09-19,2026-09-19,Raxaul
+BSG-7879,+916640725482,2026-09-14,Banarasi silk saree,8500,Bank,delivered,2026-09-19,2026-09-19,Bettiah
+BSG-7948,+977-9852257247,2026-09-14,Lehenga choli; Georgette saree,16400,COD,delivered,2026-09-17,2026-09-17,Kathmandu
+BSG-7227,+91-7868256771,2026-09-15,Cotton saree,1500,UPI,delivered,2026-09-20,2026-09-20,Raxaul
+BSG-7859,+916529846944,2026-09-15,Georgette saree,2400,UPI,delivered,2026-09-20,2026-09-20,Bettiah
+BSG-7092,+918965164000,2026-09-16,Kurta set bundle x15,33000,Bank,delivered,2026-09-21,2026-09-23,Raxaul
+BSG-7336,+917079521525,2026-09-16,Georgette saree bundle x10,21000,COD,delivered,2026-09-21,2026-09-21,Bettiah
+BSG-7384,+9779889419782,2026-09-16,Banarasi silk saree,8500,eSewa,delivered,2026-09-19,2026-09-19,Parwanipur
+BSG-7570,+9779796485005,2026-09-16,Lehenga choli,14000,eSewa,delivered,2026-09-19,2026-09-19,Birgunj
+BSG-7822,+977-9749934508,2026-09-16,Georgette saree bundle x10,21000,eSewa,delivered,2026-09-19,2026-09-21,Kalaiya
+BSG-7002,+977-9871054501,2026-09-17,Lehenga choli; Pashmina shawl,17200,Khalti,delivered,2026-09-20,2026-09-20,Birgunj
+BSG-7361,+91-7414522489,2026-09-17,Georgette saree bundle x10,21000,eSewa,delivered,2026-09-22,2026-09-24,Raxaul
+BSG-7467,9852643090,2026-09-18,Lehenga choli; Kurta set,16800,Khalti,delivered,2026-09-21,2026-09-21,Birgunj
+BSG-7619,+977-9795230509,2026-09-18,Kurta set,2800,eSewa,delivered,2026-09-21,2026-09-21,Birgunj
+BSG-7627,+91-9837319892,2026-09-18,Banarasi silk saree; Kurta set,11300,UPI,delivered,2026-09-23,2026-09-23,Motihari
+BSG-7693,+9779727375716,2026-09-18,Georgette saree bundle x10,21000,Bank,delivered,2026-09-21,2026-09-21,Hetauda
+BSG-7433,+9779860921154,2026-09-20,Blouse stitching; Banarasi silk saree,9100,Bank,delivered,2026-09-23,2026-09-24,Birgunj
+BSG-7159,+917388452800,2026-09-21,Cotton saree bundle x20,26000,Bank,delivered,2026-09-26,2026-09-27,Bettiah
+BSG-7755,+9779752833639,2026-09-21,Georgette saree; Banarasi silk saree,10900,Bank,delivered,2026-09-24,2026-09-24,Simara
+BSG-7594,+91-7155665886,2026-09-22,Georgette saree bundle x10,21000,COD,delivered,2026-09-27,2026-09-29,Sitamarhi
+BSG-7405,+919475724952,2026-09-23,Kurta set bundle x15,33000,UPI,delivered,2026-09-28,2026-09-30,Raxaul
+BSG-7448,+91-6595962487,2026-09-23,Kurta set,2800,UPI,delivered,2026-09-28,2026-09-28,Raxaul
+BSG-7683,+977-9835984098,2026-09-23,Kurta set,2800,Bank,delivered,2026-09-26,2026-09-26,Birgunj
+BSG-7808,9762565816,2026-09-23,Cotton saree; Kurta set,4300,COD,delivered,2026-09-26,2026-09-26,Birgunj
+BSG-7303,9755592826,2026-09-24,Kurta set bundle x15,33000,COD,delivered,2026-09-27,2026-09-27,Birgunj
+BSG-7376,+917200362192,2026-09-24,Georgette saree bundle x10,21000,Bank,returned,2026-09-29,2026-09-29,Motihari
+BSG-7546,00977 974 5722868,2026-09-24,Banarasi silk saree; Georgette saree,10900,Khalti,delivered,2026-09-27,2026-09-29,Kalaiya
+BSG-7412,0091 849 6621734,2026-09-25,Kurta set bundle x15,33000,Bank,delivered,2026-09-30,2026-09-30,Sitamarhi
+BSG-7706,+91-8246890190,2026-09-25,Cotton saree bundle x20,26000,Bank,delivered,2026-09-30,2026-10-01,Motihari
+BSG-7749,+9779811391270,2026-09-25,Kurta set,2800,eSewa,delivered,2026-09-28,2026-09-28,Parwanipur
+BSG-7106,+91-8667342319,2026-09-26,Georgette saree bundle x10,21000,COD,delivered,2026-10-01,2026-10-01,Raxaul
+BSG-7114,+91-7305740043,2026-09-26,Cotton saree bundle x20,26000,Bank,delivered,2026-10-01,2026-10-01,Bettiah
+BSG-7887,+9779898928238,2026-09-26,Banarasi silk saree,8500,COD,delivered,2026-09-29,2026-10-01,Simara
+BSG-7072,0091 733 4822617,2026-09-27,Lehenga choli,14000,UPI,delivered,2026-10-02,2026-10-04,Raxaul
+BSG-7598,+977-9742892571,2026-09-27,Pashmina shawl; Cotton saree,4700,COD,delivered,2026-09-30,2026-09-30,Kathmandu
+BSG-7797,+9779722382944,2026-09-27,Kurta set bundle x15,33000,UPI,delivered,2026-09-30,2026-10-02,Birgunj
+BSG-7016,+9779726177056,2026-09-28,Dhaka saree,3500,eSewa,delivered,2026-10-01,2026-10-02,Kathmandu
+BSG-7632,+919760000795,2026-09-28,Blouse stitching,600,UPI,delivered,2026-10-03,2026-10-05,Motihari
+BSG-7906,+9779830743044,2026-09-28,Lehenga choli,14000,COD,delivered,2026-10-01,2026-10-03,Hetauda
+BSG-7335,+917079521525,2026-09-30,Georgette saree bundle x10,21000,COD,delivered,2026-10-05,2026-10-05,Bettiah
+BSG-7351,+919989644554,2026-09-30,Georgette saree bundle x10,21000,eSewa,delivered,2026-10-05,2026-10-06,Raxaul
+BSG-7558,+9779839538360,2026-09-30,Cotton saree; Blouse stitching,2100,eSewa,delivered,2026-10-03,2026-10-05,Hetauda
+BSG-7584,+9779744856701,2026-10-02,Cotton saree bundle x20,26000,Bank,delivered,2026-10-05,2026-10-05,Hetauda
+BSG-7786,+918096482547,2026-10-02,Kurta set bundle x15,33000,COD,delivered,2026-10-07,2026-10-07,Sitamarhi
+BSG-7502,+9779762996075,2026-10-03,Kurta set; Cotton saree,4300,COD,delivered,2026-10-06,2026-10-08,Birgunj
+BSG-7075,+9779748817775,2026-10-05,Kurta set,2800,COD,delivered,2026-10-08,2026-10-09,Birgunj
+BSG-7121,+91-9411836800,2026-10-05,Cotton saree; Lehenga choli,15500,COD,delivered,2026-10-10,2026-10-10,Sitamarhi
+BSG-7173,+917495999111,2026-10-05,Cotton saree bundle x20,26000,Bank,delivered,2026-10-10,2026-10-11,Motihari
+BSG-7365,+9779893536262,2026-10-05,Georgette saree,2400,eSewa,delivered,2026-10-08,2026-10-08,Birgunj
+BSG-7651,9792524595,2026-10-05,Kurta set; Pashmina shawl,6000,COD,delivered,2026-10-08,2026-10-08,Birgunj
+BSG-7452,+919105455942,2026-10-06,Kurta set bundle x15,33000,Bank,delivered,2026-10-11,2026-10-11,Bettiah
+BSG-7488,00977 985 2988175,2026-10-06,Cotton saree; Georgette saree,3900,COD,delivered,2026-10-09,2026-10-10,Janakpur
+BSG-7610,+9779750416854,2026-10-06,Cotton saree bundle x20,26000,Bank,delivered,2026-10-09,2026-10-09,Birgunj
+BSG-7051,+918692605962,2026-10-07,Banarasi silk saree,8500,COD,delivered,2026-10-12,2026-10-12,Bettiah
+BSG-7088,9874173138,2026-10-07,Lehenga choli,14000,Khalti,delivered,2026-10-10,2026-10-10,Kalaiya
+BSG-7104,+977-9860140347,2026-10-07,Dhaka saree,3500,COD,delivered,2026-10-10,2026-10-10,Hetauda
+BSG-7518,+918699980553,2026-10-07,Kurta set bundle x15,33000,Bank,delivered,2026-10-12,2026-10-12,Sitamarhi
+BSG-7536,+9779800821283,2026-10-07,Cotton saree bundle x20,26000,Bank,delivered,2026-10-10,2026-10-10,Janakpur
+BSG-7543,+9779884002005,2026-10-07,Dhaka saree,3500,COD,delivered,2026-10-10,2026-10-10,Birgunj
+BSG-7671,+918465101672,2026-10-07,Georgette saree bundle x10,21000,COD,delivered,2026-10-12,2026-10-12,Bettiah
+BSG-7184,+9779816216830,2026-10-08,Dhaka saree,3500,COD,delivered,2026-10-11,2026-10-11,Kalaiya
+BSG-7216,9773572549,2026-10-08,Kurta set bundle x15,33000,UPI,delivered,2026-10-11,2026-10-12,Hetauda
+BSG-7402,9880664313,2026-10-08,Lehenga choli,14000,COD,delivered,2026-10-11,2026-10-11,Birgunj
+BSG-7515,+9779807391753,2026-10-08,Dhaka saree,3500,COD,delivered,2026-10-11,2026-10-11,Janakpur
+BSG-7911,+9779863924186,2026-10-08,Cotton saree bundle x20,26000,eSewa,delivered,2026-10-11,2026-10-12,Janakpur
+BSG-7067,+977-9837013239,2026-10-09,Banarasi silk saree,8500,eSewa,delivered,2026-10-12,2026-10-12,Parwanipur
+BSG-7210,+9779876740284,2026-10-09,Georgette saree bundle x10,21000,Bank,delivered,2026-10-12,2026-10-14,Kalaiya
+BSG-7246,00977 973 6455393,2026-10-09,Cotton saree,1500,COD,delivered,2026-10-12,2026-10-14,Hetauda
+BSG-7925,+919034290367,2026-10-09,Dhaka saree,3500,Bank,delivered,2026-10-14,2026-10-14,Raxaul
+BSG-7054,+977-9836372197,2026-10-10,Cotton saree; Kurta set,4300,eSewa,delivered,2026-10-13,2026-10-13,Birgunj
+BSG-7102,9725445236,2026-10-10,Lehenga choli,14000,COD,delivered,2026-10-13,2026-10-13,Parwanipur
+BSG-7404,+919475724952,2026-10-10,Cotton saree bundle x20,26000,UPI,delivered,2026-10-15,2026-10-15,Raxaul
+BSG-7425,+916346453182,2026-10-10,Kurta set bundle x15,33000,Bank,delivered,2026-10-15,2026-10-17,Raxaul
+BSG-7522,+9779872612489,2026-10-10,Georgette saree bundle x10,21000,eSewa,delivered,2026-10-13,2026-10-13,Janakpur
+BSG-7597,+9779769111594,2026-10-10,Lehenga choli,14000,eSewa,delivered,2026-10-13,2026-10-13,Hetauda
+BSG-7600,+977-9711201128,2026-10-10,Banarasi silk saree; Cotton saree,10000,COD,delivered,2026-10-13,2026-10-13,Birgunj
+BSG-7821,+9779749934508,2026-10-10,Cotton saree bundle x20,26000,eSewa,delivered,2026-10-13,2026-10-14,Kalaiya
+BSG-7876,9792875663,2026-10-10,Dhaka saree,3500,COD,delivered,2026-10-13,2026-10-13,Birgunj
+BSG-7897,+977-9811659673,2026-10-10,Banarasi silk saree,8500,Khalti,delivered,2026-10-13,2026-10-13,Hetauda
+BSG-7031,+9779746018158,2026-10-11,Lehenga choli,14000,Khalti,delivered,2026-10-14,2026-10-14,Birgunj
+BSG-7206,+917583024777,2026-10-11,Dhaka saree,3500,UPI,delivered,2026-10-16,2026-10-16,Raxaul
+BSG-7484,+9779890486541,2026-10-11,Lehenga choli,14000,Khalti,delivered,2026-10-14,2026-10-14,Birgunj
+BSG-7620,+91-8294024910,2026-10-11,Pashmina shawl,3200,UPI,delivered,2026-10-16,2026-10-16,Bettiah
+BSG-7692,9727375716,2026-10-11,Kurta set bundle x15,33000,Bank,delivered,2026-10-14,2026-10-14,Hetauda
+BSG-7721,9891346247,2026-10-11,Banarasi silk saree,8500,Bank,delivered,2026-10-14,2026-10-14,Janakpur
+BSG-7754,+91-6879262845,2026-10-11,Dhaka saree,3500,UPI,delivered,2026-10-16,2026-10-16,Motihari
+BSG-7152,+9779736173727,2026-10-12,Lehenga choli,14000,COD,delivered,2026-10-15,2026-10-15,Birgunj
+BSG-7774,+9779787280656,2026-10-12,Banarasi silk saree,8500,eSewa,delivered,2026-10-15,2026-10-15,Birgunj
+BSG-7849,+9779771503730,2026-10-12,Dhaka saree,3500,COD,delivered,2026-10-15,2026-10-15,Birgunj
+BSG-7873,+9779847827318,2026-10-12,Dhaka saree,3500,COD,delivered,2026-10-15,2026-10-15,Parwanipur
+BSG-7923,00977 970 3281771,2026-10-12,Banarasi silk saree,8500,COD,delivered,2026-10-15,2026-10-15,Birgunj
+BSG-7975,00977 984 8772891,2026-10-12,Dhaka saree,3500,eSewa,delivered,2026-10-15,2026-10-15,Kathmandu
+BSG-7036,+9779721240352,2026-10-13,Dhaka saree; Pashmina shawl,6700,eSewa,delivered,2026-10-16,2026-10-16,Kalaiya
+BSG-7042,+917482280287,2026-10-13,Georgette saree bundle x10,21000,Bank,delivered,2026-10-18,2026-10-18,Motihari
+BSG-7327,00977 975 8108166,2026-10-13,Pashmina shawl; Georgette saree,5600,eSewa,delivered,2026-10-16,2026-10-16,Birgunj
+BSG-7358,+9779700565901,2026-10-13,Banarasi silk saree,8500,COD,delivered,2026-10-16,2026-10-16,Simara
+BSG-7360,+917414522489,2026-10-13,Cotton saree bundle x20,26000,eSewa,delivered,2026-10-18,2026-10-19,Raxaul
+BSG-7387,+9779803031032,2026-10-13,Dhaka saree,3500,COD,delivered,2026-10-16,2026-10-16,Parwanipur
+BSG-7664,+9779716158459,2026-10-13,Georgette saree; Kurta set,5200,COD,delivered,2026-10-16,2026-10-16,Hetauda
+BSG-7926,00977 984 0588647,2026-10-13,Cotton saree; Kurta set,4300,eSewa,delivered,2026-10-16,2026-10-16,Simara
+BSG-7931,+91-9926636301,2026-10-13,Cotton saree bundle x20,26000,Bank,delivered,2026-10-18,2026-10-18,Motihari
+BSG-7269,+918997590685,2026-10-14,Kurta set bundle x15,33000,Bank,delivered,2026-10-19,2026-10-19,Sitamarhi
+BSG-7535,+9779747884884,2026-10-14,Banarasi silk saree,8500,eSewa,delivered,2026-10-17,2026-10-17,Birgunj
+BSG-7705,+91-8246890190,2026-10-14,Kurta set bundle x15,33000,Bank,delivered,2026-10-19,2026-10-21,Motihari
+BSG-7135,9799617102,2026-10-15,Pashmina shawl,3200,eSewa,delivered,2026-10-18,2026-10-20,Birgunj
+BSG-7207,+9779895031668,2026-10-15,Banarasi silk saree,8500,Khalti,delivered,2026-10-18,2026-10-18,Birgunj
+BSG-7257,+91-6909560292,2026-10-15,Kurta set; Pashmina shawl,6000,UPI,delivered,2026-10-20,2026-10-20,Sitamarhi
+BSG-7370,00977 972 6397715,2026-10-15,Kurta set,2800,COD,delivered,2026-10-18,2026-10-18,Janakpur
+BSG-7487,+917082565323,2026-10-15,Dhaka saree,3500,UPI,delivered,2026-10-20,2026-10-20,Raxaul
+BSG-7846,+9779899361996,2026-10-15,Dhaka saree,3500,eSewa,delivered,2026-10-18,2026-10-18,Parwanipur
+BSG-7126,+9779808534396,2026-10-16,Cotton saree bundle x20,26000,Bank,wrong_colour,2026-10-19,2026-10-19,Janakpur
+BSG-7245,+917379003009,2026-10-16,Pashmina shawl,3200,Bank,late,2026-10-21,,Bettiah
+BSG-7643,00977 975 1360658,2026-10-16,Lehenga choli,14000,COD,return_requested,2026-10-19,2026-10-19,Birgunj
+BSG-7646,+977-9783806340,2026-10-16,Kurta set,2800,COD,late,2026-10-19,,Birgunj
+BSG-7691,+977-9867162255,2026-10-16,Dhaka saree,3500,Khalti,delivered,2026-10-19,2026-10-19,Kalaiya
+BSG-7779,+9779700988494,2026-10-16,Dhaka saree,3500,COD,delivered,2026-10-19,2026-10-19,Hetauda
+BSG-7048,+977-9803933451,2026-10-17,Banarasi silk saree; Cotton saree,10000,COD,late,2026-10-20,,Birgunj
+BSG-7097,00977 976 5587322,2026-10-17,Banarasi silk saree,8500,eSewa,delivered,2026-10-20,2026-10-20,Birgunj
+BSG-7650,+9779794182326,2026-10-17,Lehenga choli,14000,COD,late,2026-10-20,,Kalaiya
+BSG-7680,+9779752698959,2026-10-17,Dhaka saree,3500,COD,delivered,2026-10-20,2026-10-20,Birgunj
+BSG-7837,+9779702055696,2026-10-17,Cotton saree; Dhaka saree,5000,Khalti,return_requested,2026-10-20,2026-10-20,Birgunj
+BSG-7129,+919599837267,2026-10-18,Kurta set bundle x15,33000,Bank,return_requested,2026-10-23,2026-10-23,Motihari
+BSG-7235,+9779862279831,2026-10-18,Lehenga choli,14000,COD,delivered,2026-10-21,2026-10-21,Birgunj
+BSG-7403,9884930272,2026-10-18,Lehenga choli,14000,COD,delivered,2026-10-21,2026-10-21,Birgunj
+BSG-7735,9827635618,2026-10-18,Banarasi silk saree,8500,COD,delivered,2026-10-21,2026-10-22,Simara
+BSG-7842,+9779834565967,2026-10-18,Banarasi silk saree,8500,COD,late,2026-10-21,,Birgunj
+BSG-7943,+9779858906836,2026-10-18,Kurta set,2800,COD,delivered,2026-10-21,2026-10-21,Janakpur
+BSG-7005,+9779871054501,2026-10-19,Kurta set; Lehenga choli,16800,Khalti,return_requested,2026-10-22,2026-10-22,Birgunj
+BSG-7015,+916546614886,2026-10-19,Kurta set bundle x15,33000,Bank,return_requested,2026-10-24,2026-10-24,Raxaul
+BSG-7079,+9779744844221,2026-10-19,Lehenga choli,14000,COD,delivered,2026-10-22,2026-10-22,Birgunj
+BSG-7099,+9779700584234,2026-10-19,Kurta set bundle x15,33000,Bank,late,2026-10-22,,Kalaiya
+BSG-7132,+9779828471185,2026-10-19,Blouse stitching,600,Khalti,late,2026-10-22,,Kathmandu
+BSG-7145,+9779737228608,2026-10-19,Lehenga choli,14000,eSewa,delivered,2026-10-22,2026-10-22,Kathmandu
+BSG-7146,9896002040,2026-10-19,Blouse stitching; Georgette saree,3000,COD,delivered,2026-10-22,2026-10-23,Birgunj
+BSG-7187,+919285612408,2026-10-19,Lehenga choli,14000,UPI,delivered,2026-10-24,2026-10-24,Raxaul
+BSG-7203,+9779882531810,2026-10-19,Blouse stitching; Dhaka saree,4100,COD,late,2026-10-22,,Kathmandu
+BSG-7224,+91-6396816263,2026-10-19,Dhaka saree,3500,COD,delivered,2026-10-24,2026-10-24,Raxaul
+BSG-7251,+91-6279100247,2026-10-19,Georgette saree bundle x10,21000,Bank,wrong_colour,2026-10-24,2026-10-24,Raxaul
+BSG-7278,9757247524,2026-10-19,Lehenga choli; Banarasi silk saree,22500,COD,late,2026-10-22,,Simara
+BSG-7593,+917155665886,2026-10-19,Georgette saree bundle x10,21000,COD,delivered,2026-10-24,2026-10-24,Sitamarhi
+BSG-7795,+9779773343283,2026-10-19,Dhaka saree,3500,COD,delivered,2026-10-22,2026-10-22,Kalaiya
+BSG-7796,+9779722382944,2026-10-19,Kurta set bundle x15,33000,UPI,delivered,2026-10-22,2026-10-22,Birgunj
+BSG-7851,+977-9712595739,2026-10-19,Cotton saree; Georgette saree,3900,COD,delivered,2026-10-22,2026-10-22,Hetauda
+BSG-7963,+9779728889799,2026-10-19,Georgette saree,2400,COD,late,2026-10-22,,Kalaiya
+BSG-7010,0091 894 9442174,2026-10-20,Kurta set; Blouse stitching,3400,UPI,return_requested,2026-10-25,2026-10-25,Raxaul
+BSG-7022,+91-9325638241,2026-10-20,Georgette saree bundle x10,21000,eSewa,delivered,2026-10-25,2026-10-27,Raxaul
+BSG-7166,+977-9786367805,2026-10-20,Pashmina shawl; Banarasi silk saree,11700,Khalti,delivered,2026-10-23,2026-10-23,Birgunj
+BSG-7188,+916536492406,2026-10-20,Cotton saree bundle x20,26000,Bank,wrong_colour,2026-10-25,2026-10-25,Sitamarhi
+BSG-7292,+91-7106516331,2026-10-20,Dhaka saree,3500,UPI,late,2026-10-25,,Raxaul
+BSG-7762,+917064077780,2026-10-20,Kurta set bundle x15,33000,Bank,delivered,2026-10-25,2026-10-26,Raxaul
+BSG-7835,+919960249575,2026-10-20,Kurta set bundle x15,33000,eSewa,late,2026-10-25,,Bettiah
+BSG-7924,+91-6192191184,2026-10-20,Dhaka saree; Lehenga choli,17500,UPI,delivered,2026-10-25,2026-10-25,Raxaul
+BSG-7087,+9779796093211,2026-10-21,Cotton saree; Georgette saree,3900,COD,late,2026-10-24,,Simara
+BSG-7158,+917388452800,2026-10-21,Georgette saree bundle x10,21000,Bank,delivered,2026-10-26,2026-10-26,Bettiah
+BSG-7256,+9779784889625,2026-10-21,Georgette saree; Kurta set,5200,COD,late,2026-10-24,,Birgunj
+BSG-7349,+9779729977439,2026-10-21,Dhaka saree; Kurta set,6300,Bank,wrong_colour,2026-10-24,2026-10-24,Birgunj
+BSG-7866,+9779757368120,2026-10-21,Pashmina shawl; Dhaka saree,6700,COD,delivered,2026-10-24,2026-10-26,Birgunj
+BSG-7285,9785947184,2026-10-22,Cotton saree,1500,COD,delivered,2026-10-25,2026-10-25,Simara
+BSG-7385,9889419782,2026-10-22,Dhaka saree; Kurta set,6300,eSewa,return_requested,2026-10-25,2026-10-25,Parwanipur
+BSG-7544,9713606673,2026-10-22,Georgette saree; Cotton saree,3900,COD,late,2026-10-25,,Parwanipur
+BSG-7719,+91-8515442816,2026-10-22,Kurta set bundle x15,33000,eSewa,return_requested,2026-10-27,2026-10-27,Bettiah
+BSG-7725,+9779818290687,2026-10-22,Kurta set,2800,COD,delivered,2026-10-25,2026-10-25,Simara
+BSG-7901,00977 986 6265198,2026-10-22,Kurta set,2800,Khalti,late,2026-10-25,,Birgunj
+BSG-7153,+917950245245,2026-10-23,Lehenga choli,14000,COD,delivered,2026-10-28,2026-10-28,Raxaul
+BSG-7226,+9779809044516,2026-10-23,Blouse stitching; Cotton saree,2100,eSewa,late,2026-10-26,,Kalaiya
+BSG-7501,+918053167439,2026-10-23,Cotton saree; Pashmina shawl,4700,COD,wrong_colour,2026-10-28,2026-10-28,Raxaul
+BSG-7638,+9779785379444,2026-10-23,Banarasi silk saree; Blouse stitching,9100,COD,late,2026-10-26,,Kathmandu
+BSG-7157,00977 986 5803542,2026-10-24,Blouse stitching,600,COD,late,2026-10-27,,Hetauda
+BSG-7281,+9779732136611,2026-10-24,Banarasi silk saree,8500,eSewa,late,2026-10-27,,Birgunj
+BSG-7298,+9779794887019,2026-10-24,Banarasi silk saree,8500,COD,damaged,2026-10-27,2026-10-27,Birgunj
+BSG-7300,+9779813929155,2026-10-24,Lehenga choli; Georgette saree,16400,Khalti,delivered,2026-10-27,2026-10-27,Janakpur
+BSG-7302,+9779755592826,2026-10-24,Cotton saree bundle x20,26000,COD,returned,2026-10-27,2026-10-27,Birgunj
+BSG-7334,+91-7079521525,2026-10-24,Georgette saree bundle x10,21000,COD,delivered,2026-10-29,2026-10-29,Bettiah
+BSG-7419,+977-9774196990,2026-10-24,Blouse stitching,600,COD,delivered,2026-10-27,2026-10-27,Birgunj
+BSG-7545,+9779818910502,2026-10-24,Blouse stitching; Dhaka saree,4100,COD,late,2026-10-27,,Simara
+BSG-7886,9881789798,2026-10-24,Dhaka saree,3500,COD,late,2026-10-27,,Birgunj
+BSG-7902,+918190575396,2026-10-24,Dhaka saree; Cotton saree,5000,UPI,delivered,2026-10-29,2026-10-30,Raxaul
+BSG-7105,+918667342319,2026-10-25,Cotton saree bundle x20,26000,COD,delivered,2026-10-30,2026-10-30,Raxaul
+BSG-7439,+977-9730782013,2026-10-25,Banarasi silk saree; Dhaka saree,12000,COD,delivered,2026-10-28,2026-10-28,Kalaiya
+BSG-7955,+91-7625135764,2026-10-25,Lehenga choli,14000,UPI,delivered,2026-10-30,2026-10-30,Bettiah
+BSG-7033,+9779809968200,2026-10-26,Georgette saree,2400,Khalti,delivered,2026-10-29,2026-10-29,Birgunj
+BSG-7074,+9779825940413,2026-10-26,Blouse stitching; Pashmina shawl,3800,COD,delivered,2026-10-29,2026-10-29,Birgunj
+BSG-7082,+9779831380373,2026-10-26,Banarasi silk saree; Blouse stitching,9100,COD,delivered,2026-10-29,2026-10-29,Hetauda
+BSG-7091,+91-8965164000,2026-10-26,Kurta set bundle x15,33000,Bank,delivered,2026-10-31,2026-10-31,Raxaul
+BSG-7517,+9779774156229,2026-10-26,Pashmina shawl,3200,COD,wrong_colour,2026-10-29,2026-10-29,Parwanipur
+BSG-7618,+91-9893525613,2026-10-26,Georgette saree bundle x10,21000,UPI,return_requested,2026-10-31,2026-10-31,Raxaul
+BSG-7878,+977-9789421810,2026-10-26,Kurta set,2800,Bank,delivered,2026-10-29,2026-10-29,Kalaiya
+BSG-7318,+9779728903331,2026-10-27,Georgette saree; Dhaka saree,5900,COD,delivered,2026-10-30,2026-10-30,Janakpur
+BSG-7350,+919989644554,2026-10-27,Georgette saree bundle x10,21000,eSewa,delivered,2026-11-01,2026-11-01,Raxaul
+BSG-7528,+9779889067264,2026-10-27,Lehenga choli,14000,eSewa,delivered,2026-10-30,2026-11-01,Birgunj
+BSG-7670,+91-8465101672,2026-10-27,Georgette saree bundle x10,21000,COD,delivered,2026-11-01,2026-11-01,Bettiah
+BSG-7682,00977 983 5984098,2026-10-27,Pashmina shawl; Georgette saree,5600,Bank,delivered,2026-10-30,2026-10-31,Birgunj
+BSG-7704,+9779857179132,2026-10-27,Georgette saree,2400,COD,delivered,2026-10-30,2026-10-30,Janakpur
+BSG-7734,9782520954,2026-10-27,Cotton saree; Georgette saree,3900,eSewa,return_requested,2026-10-30,2026-10-30,Parwanipur
+BSG-7910,+91-6236195055,2026-10-27,Blouse stitching; Kurta set,3400,UPI,delivered,2026-11-01,2026-11-01,Raxaul
+BSG-7061,9844919678,2026-10-28,Cotton saree,1500,Khalti,delivered,2026-10-31,2026-10-31,Birgunj
+BSG-7480,9875919070,2026-10-28,Banarasi silk saree,8500,Khalti,delivered,2026-10-31,2026-10-31,Birgunj
+BSG-7971,+9779888361798,2026-10-28,Dhaka saree; Blouse stitching,4100,eSewa,delivered,2026-10-31,2026-10-31,Birgunj
+BSG-7198,9783569762,2026-10-29,Lehenga choli; Banarasi silk saree,22500,eSewa,delivered,2026-11-01,2026-11-01,Birgunj
+BSG-7884,+9779885242331,2026-10-29,Georgette saree,2400,eSewa,delivered,2026-11-01,2026-11-01,Birgunj
+BSG-7090,9866361792,2026-10-30,Lehenga choli; Dhaka saree,17500,eSewa,delivered,2026-11-02,2026-11-02,Kalaiya
+BSG-7344,+9779775985567,2026-10-30,Cotton saree,1500,eSewa,delivered,2026-11-02,2026-11-02,Birgunj
+BSG-7722,+977-9761205051,2026-10-30,Cotton saree,1500,Khalti,delivered,2026-11-02,2026-11-02,Hetauda
+BSG-7843,+977-9755450478,2026-10-30,Kurta set,2800,eSewa,delivered,2026-11-02,2026-11-02,Simara

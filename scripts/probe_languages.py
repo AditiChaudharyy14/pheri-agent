@@ -52,7 +52,7 @@ def main() -> int:
         print(f"\n== {provider} / {model}")
         for r in rows:
             messages = [{"role": "system", "content": g.SYSTEM},
-                        {"role": "user", "content": g._payload(r["text"], "kettle", "whatsapp")}]
+                        {"role": "user", "content": g._payload(r["text"], "birgunj", "whatsapp")}]
             try:
                 res = llm.complete_json(messages, schema=g.GuardOutput, provider=provider, model=model,
                                         purpose=g.PURPOSE, effort=where["effort"], max_tokens=g.MAX_OUTPUT_TOKENS)

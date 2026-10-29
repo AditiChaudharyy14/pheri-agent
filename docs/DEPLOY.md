@@ -103,7 +103,7 @@ Wait for **pheri-web** to show "Your service is live", then open its URL.
    - **Rules**: under the rules, "Before Pheri writes a message" shows the stage and plan scores, with
      "Money actions need 100%" and "Nudges need 80%".
 7. **Spend**: Meta and Baseten spend against the caps. "This server" says **Replay mode**.
-8. Switch to **Kettle & Co**. Every card reads "Decided by Muse Spark 1.3".
+8. Switch to **Birgunj Saree Ghar**. Every card reads "Decided by Muse Spark 1.3".
 
 ## 5. Before recording the demo video
 

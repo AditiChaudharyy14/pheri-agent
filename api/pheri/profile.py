@@ -26,7 +26,7 @@ from pydantic import BaseModel
 
 from .llm import LLM, register_mock
 from .privacy import PRIVATE_EFFORT, PRIVATE_PROVIDER
-from .synth import OUT, TODAY
+from .synth import FESTIVAL_WINDOW_DAYS, FESTIVALS, OUT, TODAY
 
 PURPOSE = "profile_insights"
 MAX_SOURCES = 12  # most recent text sources sent per customer
@@ -34,7 +34,7 @@ MAX_SOURCE_CHARS = 1500  # per source, in the prompt only; quotes are still chec
 MAX_OUTPUT_TOKENS = 2000  # reasoning tokens count toward it; 1500 ran out on 2 of 20 live calls
 PRIVATE_MAX_OUTPUT_TOKENS = 4000  # Muse Spark Open always reasons: give it more room than Muse Spark
 MIN_QUOTE_CHARS = 4  # "CSV" alone proves nothing; quote the sentence
-CUSTOMER_WRITTEN = {"ticket", "message"}  # sales notes are written by staff, not by the customer
+CUSTOMER_WRITTEN = {"ticket", "message", "voice_note"}  # sales notes are written by staff, not by the customer
 RECENT_DAYS = 30  # the window behind every *_30d fact
 MIN_USUAL_DAYS = 4  # active days in the 60 before, below which "their usual pace" means nothing
 
@@ -42,6 +42,17 @@ MIN_USUAL_DAYS = 4  # active days in the 60 before, below which "their usual pac
 # ---- identity --------------------------------------------------------------------
 def norm_email(raw: str | None) -> str:
     return unicodedata.normalize("NFC", (raw or "").strip()).lower()
+
+
+def norm_phone(raw: str | None) -> str:
+    """One spelling per number: +977 / +91 kept, spaces, dashes and a leading 00 dropped. A bare ten-digit
+    number is Nepali (98.. or 97..): the shop's own sheet writes Indian numbers with +91 every time."""
+    digits = re.sub(r"\D", "", raw or "")
+    if digits.startswith("00"):
+        digits = digits[2:]
+    if len(digits) == 10 and digits[:2] in ("98", "97", "96"):
+        digits = "977" + digits
+    return f"+{digits}" if digits else ""
 
 
 def norm_name(raw: str | None) -> str:
@@ -124,14 +135,15 @@ def _json(path: Path) -> list[dict]:
     return json.loads(path.read_text(encoding="utf-8")) if path.exists() else []
 
 
-def _add_people(ds: Dataset, people: list[tuple[str, str, str, dict]], build: Callable[[dict, str], Customer]):
-    """people: (ref, raw email, name, row). Same email + same name = one customer; different names = set aside."""
+def _add_people(ds: Dataset, people: list[tuple[str, str, str, dict]], build: Callable[[dict, str], Customer],
+                norm: Callable[[str | None], str] = norm_email):
+    """people: (ref, raw email or phone, name, row). Same key + same name = one customer; different names = set aside."""
     groups: dict[str, list[tuple[str, str, str, dict]]] = {}
     for person in people:
-        groups.setdefault(norm_email(person[1]), []).append(person)
+        groups.setdefault(norm(person[1]), []).append(person)
     for key, group in groups.items():
         if not key:
-            ds.unresolved += [{"ref": ref, "reason": "no email"} for ref, *_ in group]
+            ds.unresolved += [{"ref": ref, "reason": "no email or phone"} for ref, *_ in group]
             continue
         if len({norm_name(name) for _, _, name, _ in group}) > 1:
             ds.ambiguous.add(key)
@@ -145,11 +157,13 @@ def _add_people(ds: Dataset, people: list[tuple[str, str, str, dict]], build: Ca
         ds.duplicates += c.refs[1:]
 
 
-def _owner(ds: Dataset, raw_email: str | None, ref: str) -> Customer | None:
-    key = norm_email(raw_email)
+def _owner(ds: Dataset, raw_email: str | None, ref: str, norm: Callable[[str | None], str] = norm_email,
+           aliases: dict[str, str] | None = None) -> Customer | None:
+    """aliases: other handles (an Instagram name) -> the customer's key."""
+    key = (aliases or {}).get((raw_email or "").strip().lower()) or norm(raw_email)
     c = ds.customers.get(key)
     if c is None:
-        reason = "email shared by different people" if key in ds.ambiguous else f"no customer with email {key!r}"
+        reason = "shared by different people" if key in ds.ambiguous else f"no customer with {key!r}"
         ds.unresolved.append({"ref": ref, "reason": reason})
         return None
     c.aliases.add(raw_email)
@@ -222,34 +236,39 @@ def _yes_no(raw: str) -> bool | None:
     return {"yes": True, "y": True, "no": False, "n": False}.get(raw.strip().lower())
 
 
-def load_kettle(folder: Path = OUT / "kettle") -> Dataset:
-    ds = Dataset("kettle")
-    people = [(f"customers.csv#L{i}", r["email"], f"{r['first_name']} {r['last_name']}", r)
-              for i, r in _csv_rows(folder / "customers.csv")]
+def load_birgunj(folder: Path = OUT / "birgunj") -> Dataset:
+    """A small shop's exports: the customer sheet (people keyed by phone; some entered twice), the order book,
+    WhatsApp/Instagram catalogue events, and the messages (from a number, or from an Instagram handle)."""
+    ds = Dataset("birgunj")
+    people = [(f"customers.csv#L{i}", r["phone"], r["name"], r) for i, r in _csv_rows(folder / "customers.csv")]
     _add_people(ds, people, lambda r, key: Customer(
-        key=key, name=f"{r['first_name']} {r['last_name']}".strip(), external_id=r["id"],
-        pronouns=(r.get("pronouns") or "").strip() or None,
-        attrs={"signed_up": parse_date(r["joined"]), "country": r["country"],
-               "subscription": r["subscription"] or None, "marketing_opt_in": _yes_no(r["marketing_opt_in"])}))
+        key=key, name=r["name"].strip(), external_id=r["id"], pronouns=(r.get("pronouns") or "").strip() or None,
+        attrs={"signed_up": parse_date(r["joined"]), "country": r["country"], "town": r["town"],
+               "segment": r["type"], "instagram": r["instagram"].strip().lower() or None}), norm=norm_phone)
+    handles = {c.attrs["instagram"]: k for k, c in ds.customers.items() if c.attrs["instagram"]}
 
     for i, r in _csv_rows(folder / "orders.csv"):
         ref = f"orders.csv#L{i}"
-        if c := _owner(ds, r["email"], ref):
-            c.orders.append({"order_id": r["order_id"], "date": parse_date(r["date"]),
-                             "total_usd": float(r["total_usd"]), "items": r["items"], "_ref": ref})
+        if c := _owner(ds, r["phone"], ref, norm_phone):
+            c.orders.append({"order_id": r["order_no"], "date": parse_date(r["date"]), "total_npr": float(r["total_npr"]),
+                             "items": r["items"], "payment": r["payment"], "status": r["status"],
+                             "promised_by": parse_date(r["promised_by"]),
+                             "delivered_on": parse_date(r["delivered_on"]) if r["delivered_on"] else None, "_ref": ref})
 
     for i, e in _jsonl(folder / "events.jsonl"):
         ref = f"events.jsonl#L{i}"
-        if c := _owner(ds, e.get("email"), ref):
+        if c := _owner(ds, e.get("phone"), ref, norm_phone):
             c.events.append({**e, "_ref": ref})
 
     for m in _json(folder / "messages.json"):
-        if c := _owner(ds, m.get("from"), f"messages.json:{m['id']}"):
-            c.sources.append(Source(m["id"], "message", m["text"], m.get("received_at"), m.get("lang")))
+        if c := _owner(ds, m.get("from"), f"messages.json:{m['id']}", norm_phone, handles):
+            # A voice note has no text until it is transcribed (see voice.py): it is still the customer's message.
+            c.sources.append(Source(m["id"], "voice_note" if m.get("kind") == "voice_note" else "message",
+                                    m.get("text") or "", m.get("received_at"), m.get("lang")))
     return ds
 
 
-LOADERS = {"brightdesk": load_brightdesk, "kettle": load_kettle}
+LOADERS = {"brightdesk": load_brightdesk, "birgunj": load_birgunj}
 
 
 def load(business: str, folder: Path | None = None) -> Dataset:
@@ -308,28 +327,56 @@ def compute_facts(c: Customer, business: str, today: date = TODAY) -> tuple[dict
         for k in ("plan", "seats", "mrr_usd"):
             facts[k], prov[k] = c.attrs[k], c.refs[:1]
         facts["renewal_in_days"], prov["renewal_in_days"] = (c.attrs["renewal"] - today).days, c.refs[:1]
-    elif business == "kettle":
+    elif business == "birgunj":
         refs = [o["_ref"] for o in c.orders]
+        facts["town"], prov["town"] = c.attrs["town"], c.refs[:1]
+        facts["segment"], prov["segment"] = c.attrs["segment"], c.refs[:1]
         facts["orders"], prov["orders"] = len(c.orders), refs
-        facts["total_spend_usd"], prov["total_spend_usd"] = round(sum(o["total_usd"] for o in c.orders), 2), refs
+        paid = [o for o in c.orders if o["status"] not in ("cod_refused", "returned")]
+        facts["total_spend_npr"], prov["total_spend_npr"] = round(sum(o["total_npr"] for o in paid)), [o["_ref"] for o in paid]
         if c.orders:
             last = max(c.orders, key=lambda o: o["date"])
             facts["days_since_last_order"], prov["days_since_last_order"] = (today - last["date"]).days, [last["_ref"]]
+            facts["last_order_items"], prov["last_order_items"] = last["items"], [last["_ref"]]
+            payments = [o["payment"] for o in c.orders]
+            facts["usual_payment"] = max(sorted(set(payments)), key=payments.count)
+            prov["usual_payment"] = refs
         else:
-            facts["days_since_last_order"], prov["days_since_last_order"] = None, []
-        facts["subscription"], prov["subscription"] = c.attrs["subscription"], c.refs[:1]
-        facts["gift_only"], prov["gift_only"] = bool(c.orders) and all(_all_gifts(o["items"]) for o in c.orders), refs
-        carts = sorted((e for e in c.events if e["type"] == "cart_abandoned"), key=lambda e: e["ts"])
-        if carts:
-            facts["days_since_cart_abandoned"] = (today - _ts_date(carts[-1]["ts"])).days
-            prov["days_since_cart_abandoned"] = [carts[-1]["_ref"]]
-        else:
-            facts["days_since_cart_abandoned"], prov["days_since_cart_abandoned"] = None, []
+            for k in ("days_since_last_order", "last_order_items", "usual_payment"):
+                facts[k], prov[k] = None, []
+        problems = [o for o in c.orders if o["status"] in OPEN_PROBLEMS and (today - o["date"]).days < RECENT_DAYS]
+        facts["open_complaints"], prov["open_complaints"] = len(problems), [o["_ref"] for o in problems]
+        facts["complaint_kind"] = problems[-1]["status"] if problems else None
+        prov["complaint_kind"] = prov["open_complaints"][-1:]
+        late = [o for o in problems if o["status"] == "late"]
+        facts["days_late"] = max((today - o["promised_by"]).days for o in late) if late else None
+        prov["days_late"] = [o["_ref"] for o in late]
+        for k, status in (("returns", "returned"), ("cod_refusals", "cod_refused")):
+            hit = [o["_ref"] for o in c.orders if o["status"] == status]
+            facts[k], prov[k] = len(hit), hit
+        days = sorted(o["date"] for o in c.orders)
+        gaps = sorted((b - a).days for a, b in zip(days, days[1:]))
+        facts["reorder_every_days"] = gaps[len(gaps) // 2] if len(days) >= 3 else None  # median gap
+        prov["reorder_every_days"] = refs if len(days) >= 3 else []
+        facts["festival_only"] = bool(c.orders) and all(_festival_order(o["date"]) for o in c.orders)
+        prov["festival_only"] = refs
+        carts = sorted((e for e in c.events if e["type"] == "whatsapp_cart_sent"), key=lambda e: e["ts"])
+        facts["days_since_enquiry"] = (today - _ts_date(carts[-1]["ts"])).days if carts else None
+        prov["days_since_enquiry"] = [carts[-1]["_ref"]] if carts else []
+        upcoming = sorted((d, k) for k, d in FESTIVALS.items() if d >= today)
+        if upcoming:
+            d, k = upcoming[0]
+            facts["next_festival"], facts["days_to_next_festival"] = k.split("_")[0], (d - today).days
+            prov["next_festival"] = prov["days_to_next_festival"] = [f"calendar:{k}"]
     return facts, prov
 
 
-def _all_gifts(items: str) -> bool:
-    return all("gift" in item.casefold() for item in items.split(";") if item.strip())
+OPEN_PROBLEMS = ("late", "wrong_colour", "return_requested", "damaged")  # an order's status the shop still owes a fix for
+
+
+def _festival_order(day: date) -> bool:
+    """Bought in the two weeks before a festival day."""
+    return any(0 <= (d - day).days <= FESTIVAL_WINDOW_DAYS for d in FESTIVALS.values())
 
 
 # Renewal and price worries, in the languages the tickets arrive in. A plain request for a
@@ -444,7 +491,7 @@ def verify(ins: Insights, sources: dict[str, Source]) -> tuple[dict, list[dict]]
             reason = f"quote not found in {item.source_id}"
         elif kind in ("sentiment", "language") and src.kind not in CUSTOMER_WRITTEN:
             reason = f"{src.id} was not written by the customer"
-        elif kind == "language" and src.lang and src.lang != item.code.strip().lower():
+        elif kind == "language" and src.lang and src.lang.lower() != item.code.strip().lower():  # ne-Latn, any case
             reason = f"{src.id} is tagged {src.lang!r}, not {item.code!r}"
         elif kind == "goals" and src.subject and quote_in_source(item.quote, src.subject) \
                 and not quote_in_source(item.quote, src.body):
@@ -519,7 +566,11 @@ def build_profiles(ds: Dataset, llm: LLM, keys: list[str] | None = None, limit: 
 # customer is hard-coded, so tests exercise the same prompt -> parse -> verify path as live mode.
 _SENTENCE = re.compile(r"[^.!?।\n]+[.!?।]?")
 _BLOCKER_WORDS = ("fail", "falla", "error", "permission denied", "can't", "cannot", "não funciona",
-                  "हुँदैन", "भएन", "confusing", "stale", "expensive", "comparing other tools")
+                  "हुँदैन", "भएन", "confusing", "stale", "expensive", "comparing other tools",
+                  # Birgunj: late, torn, the wrong colour or size, in the five ways customers write
+                  "late", "torn", "hasn't arrived", "nothing like", "wrong", "आइपुगेको छैन", "ढिलो", "च्यातिएको",
+                  "मिलेन", "जस्तो छैन", "नहीं आया", "देर", "फटी", "अलग है", "सही नहीं", "ना आइल", "फाटल", "नइखे",
+                  "अलग बा", "chhaina", "dhilo", "milena", "chyatieko")
 _GOAL_WORDS = ("goal", "aim is", "objective", "trying to")
 _NEED_WORDS = ("need", "want", "asked about", "how do", "can i", "is there", "options", "smaller plan",
                "छूट", "मद्दत", "podem")

@@ -14,7 +14,7 @@ SQL = (REPO_ROOT / "db" / "schema.sql").read_text(encoding="utf-8")
 TABLES = re.findall(r"^CREATE TABLE (\w+) \(", SQL, re.M)
 GLOBAL_TABLES = {"spend_ledger"}  # the spend cap covers every business at once
 TENANT_TABLES = [t for t in TABLES if t not in GLOBAL_TABLES]
-BD, KC = BUSINESS_IDS["brightdesk"], BUSINESS_IDS["kettle"]
+BD, KC = BUSINESS_IDS["brightdesk"], BUSINESS_IDS["birgunj"]
 
 
 def _columns(sql: str, table: str) -> list[str]:

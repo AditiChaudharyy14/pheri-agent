@@ -6,7 +6,7 @@ import { ResetDemo } from "@/components/reset-demo";
 import { api, isBusiness } from "@/lib/api";
 
 export function generateStaticParams() {
-  return [{ business: "brightdesk" }, { business: "kettle" }];
+  return [{ business: "birgunj" }, { business: "brightdesk" }];
 }
 
 async function ModePill() {

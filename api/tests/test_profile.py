@@ -32,8 +32,8 @@ def brightdesk():
 
 
 @pytest.fixture(scope="module")
-def kettle():
-    return load("kettle")
+def birgunj():
+    return load("birgunj")
 
 
 def _write_crm(folder, rows):
@@ -100,25 +100,36 @@ def test_brightdesk_resolves_every_record(brightdesk):
     assert "  Maya.Okafor@Pinecrest.Example " in brightdesk.customers[MAYA].aliases
 
 
-def test_kettle_resolves_every_record(kettle):
-    truth = json.loads((OUT / "kettle" / "_truth.json").read_text(encoding="utf-8"))["stages"]
+def test_birgunj_resolves_every_record(birgunj):
+    truth = json.loads((OUT / "birgunj" / "_truth.json").read_text(encoding="utf-8"))["stages"]
     assert len(truth) == 300
-    assert set(kettle.customers) == set(truth)
-    assert kettle.ambiguous == set()
-    assert kettle.unresolved == []
+    assert set(birgunj.customers) == set(truth)
+    assert birgunj.ambiguous == set()
+    assert birgunj.unresolved == []
 
 
-def test_shared_email_with_different_names_is_set_aside_not_merged(tmp_path):
+def test_shared_phone_with_different_names_is_set_aside_not_merged(tmp_path):
+    """One number written two ways, two different names: never merged, never guessed."""
     (tmp_path / "customers.csv").write_text(
-        "id,email,first_name,last_name,country,joined,subscription,marketing_opt_in\n"
-        "kc_0001,sam7@mail.example,Sam,Rai,NP,2026-01-01,,\n"
-        "kc_0002, SAM7@mail.example ,Sam,Lee,KE,2026-02-01,,\n", encoding="utf-8")
+        "id,name,phone,instagram,town,country,type,joined,pronouns\n"
+        "bsg_0001,Sita Rai,+9779812345678,,Birgunj,NP,retail,2026-01-01,\n"
+        "bsg_0002,Sita Lee, 981-234-5678 ,,Birgunj,NP,retail,2026-02-01,\n", encoding="utf-8")
     (tmp_path / "orders.csv").write_text(
-        "order_id,email,date,items,total_usd,country\n5001,sam7@mail.example,2026-03-01,Sencha,16,NP\n",
+        "order_no,phone,date,items,total_npr,payment,status,promised_by,delivered_on,town\n"
+        "BSG-1,9812345678,2026-03-01,Cotton saree,1500,COD,delivered,2026-03-04,2026-03-04,Birgunj\n",
         encoding="utf-8")
-    ds = load("kettle", tmp_path)
-    assert ds.customers == {} and ds.ambiguous == {"sam7@mail.example"}
+    ds = load("birgunj", tmp_path)
+    assert ds.customers == {} and ds.ambiguous == {"+9779812345678"}
     assert {u["ref"] for u in ds.unresolved} == {"customers.csv#L2", "customers.csv#L3", "orders.csv#L2"}
+
+
+def test_phone_numbers_are_one_spelling_per_number():
+    from pheri.profile import norm_phone
+
+    nepali = ("+9779812345678", "9812345678", "+977-9812345678", "00977 981 2345678")
+    assert {norm_phone(x) for x in nepali} == {"+9779812345678"}
+    assert {norm_phone(x) for x in ("+919876543210", "+91-9876543210", "0091 987 6543210")} == {"+919876543210"}
+    assert norm_phone("") == "" and norm_phone(None) == ""
 
 
 def test_sales_notes_match_names_or_stay_unresolved(tmp_path):
@@ -272,34 +283,49 @@ def test_staff_praise_does_not_hide_a_customer_complaint(brightdesk, llm):
     assert p.insights["sentiment"]["label"] == "negative" and p.insights["sentiment"]["source_id"] == "T1024"
 
 
-# ---- Kettle & Co --------------------------------------------------------------------
-def test_kettle_profile_counts_orders_across_spellings(kettle, llm):
-    email = "isha.ali35@mail.example"
-    with (OUT / "kettle" / "orders.csv").open(newline="", encoding="utf-8") as f:
-        raw = [r for r in csv.DictReader(f) if r["email"].strip().lower() == email]
-    p = build_profile(kettle, email, llm)
+# ---- Birgunj Saree Ghar --------------------------------------------------------------------
+def test_birgunj_profile_counts_orders_across_spellings(birgunj, llm):
+    """The order book writes the same number several ways; Instagram messages come from a handle, not a number."""
+    from pheri.profile import norm_phone
 
-    assert len(raw) >= 2
+    with (OUT / "birgunj" / "orders.csv").open(newline="", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    spellings: dict[str, set] = {}
+    for r in rows:
+        spellings.setdefault(norm_phone(r["phone"]), set()).add(r["phone"])
+    key = next(k for k, v in sorted(spellings.items()) if len(v) >= 2)
+    raw = [r for r in rows if norm_phone(r["phone"]) == key]
+    p = build_profile(birgunj, key, llm)
     assert p.facts["orders"] == len(raw)
-    assert p.facts["total_spend_usd"] == round(sum(float(r["total_usd"]) for r in raw), 2)
-    assert "  Isha.Ali35@Mail.Example " in p.provenance["identity"]["aliases"]
+    paid = [r for r in raw if r["status"] not in ("cod_refused", "returned")]
+    assert p.facts["total_spend_npr"] == round(sum(float(r["total_npr"]) for r in paid))
+    assert spellings[key] <= set(p.provenance["identity"]["aliases"])
     json.dumps(p.as_dict())  # profiles are plain JSON, ready for the profiles table
 
 
-def test_every_kettle_customer_gets_a_profile(kettle, llm):
-    profiles = build_profiles(kettle, llm, limit=len(kettle.customers))
+def test_instagram_messages_reach_the_customer_behind_the_handle(birgunj):
+    messages = json.loads((OUT / "birgunj" / "messages.json").read_text(encoding="utf-8"))
+    from_ig = [m for m in messages if m["from"].startswith("@")]
+    assert from_ig
+    for m in from_ig:
+        owner = next(c for c in birgunj.customers.values() if any(s.id == m["id"] for s in c.sources))
+        assert owner.attrs["instagram"] == m["from"].lower()
+
+
+def test_every_birgunj_customer_gets_a_profile(birgunj, llm):
+    profiles = build_profiles(birgunj, llm, limit=len(birgunj.customers))
     assert len(profiles) == 300
-    assert {p.customer_key for p in profiles} == set(kettle.customers)
+    assert {p.customer_key for p in profiles} == set(birgunj.customers)
     assert all(p.provenance["dropped"] == [] for p in profiles)  # the mock only quotes real text
 
 
-def test_small_sample_by_default(kettle, llm):
-    profiles = build_profiles(kettle, llm)
+def test_small_sample_by_default(birgunj, llm):
+    profiles = build_profiles(birgunj, llm)
     assert len(profiles) == 20
     assert llm.ledger.totals("meta").settled_usd == 0  # mock mode spends nothing
 
 
-def test_pronouns_only_when_the_customer_gave_them(brightdesk, kettle):
+def test_pronouns_only_when_the_customer_gave_them(brightdesk, birgunj):
     """The CRM column is blank unless the customer told us: then Pheri uses the name, never a guess."""
-    given = {k: c.pronouns for ds in (brightdesk, kettle) for k, c in ds.customers.items() if c.pronouns}
+    given = {k: c.pronouns for ds in (brightdesk, birgunj) for k, c in ds.customers.items() if c.pronouns}
     assert given == {"maya.okafor@pinecrest.example": "she/her"}

@@ -23,8 +23,8 @@
   --color-chart: #0b8f86;
   --color-grid: #ebe7df;
 
-  --font-serif: var(--font-newsreader), Georgia, serif;
-  --font-sans: var(--font-plex), "Segoe UI", system-ui, sans-serif;
+  --font-serif: var(--font-newsreader), var(--font-deva), Georgia, serif;
+  --font-sans: var(--font-plex), var(--font-deva), "Segoe UI", system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, monospace;
 }
 

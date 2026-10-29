@@ -3,7 +3,7 @@
 Read this before every task. These rules are not optional.
 
 ## Status (update in every commit)
-- Done: spend guard, synthetic data, profiles, journey (Brightdesk 92.1%, Kettle 100%), rules, decide (tool loop,
+- Done: spend guard, synthetic data, profiles, journey (Brightdesk 92.1%, Birgunj 98.7%), rules, decide (tool loop,
   evidence by id), autonomy + approvals, guard + private mode (Muse Spark Open), evals, twin + Thompson (5,000,
   12/12 learned right, close calls flagged), Wonder report (checked in code), FastAPI, all 7 web screens, card
   footer, pronouns (only Maya's given), replay mode (PHERI_LLM_MODE=replay; pill "Recorded from a live run").
@@ -27,9 +27,10 @@ Read this before every task. These rules are not optional.
   demo, no login)", rules by "demo setup (public demo, no login)".
 - Recorded (data/recorded/llm.jsonl, 96 replies): the 12 showcase cards through the loop (22 drafts: 2 caught by
   code, 9 by the judge, 10 retries, 11 verified; Aarav sent to the owner after 3 drafts, soft, kept on purpose) and the
-  Brightdesk Wonder report (attempt 1 headline rejected, attempt 2 passed). Kettle's report is still the stand-in.
+  Brightdesk Wonder report (attempt 1 headline rejected, attempt 2 passed). Birgunj's report is the stand-in until the night is recorded.
   evals/judge_recorded.jsonl: the real judge on 20 cases in evals/drafts.jsonl: 10/10 planted claims caught,
-  9/10 supported passed (S04 "still saved": strict, pinned in test_evals).
+  9/10 supported passed (S04 "sent a cart" vs the fact days_since_enquiry: strict, pinned in test_evals; the 7
+  Birgunj cases rewritten for the new world and re-recorded on 29 Oct, Baseten $0.0227).
   Re-record: python scripts/record_demo.py --live --budget <usd> --baseten-budget <usd>.
 - Pivot (approved 29 Oct; plan in ~/.claude/plans/pasted-content-id-3e3c-use-the-humming-bachman.md): hero
   becomes Birgunj Saree Ghar (Kettle reskinned), six moments: Morning brief, Night shift, Slop vs Pheri, Speak a
@@ -42,9 +43,21 @@ Read this before every task. These rules are not optional.
   no Bhojpuri/Roman-Nepali attack patterns yet. Web: nav = Next steps, Rules, Safety, Proof (Journey from a
   customer, Spend in the footer); Proof is one sentence + verification line + 3 findings + lift chart folded;
   discount widget and scaffold SVGs gone.
+- D1 done (Birgunj world): Kettle is now `birgunj`, Birgunj Saree Ghar (synth.birgunj, own random stream, so
+  Brightdesk's data is byte-identical). 300 customers keyed by phone (profile.norm_phone; Instagram handles mapped),
+  hidden world per customer in _truth.json "world" (segment, town, language ne/ne-Latn/hi/bho/en, payment, festival,
+  reorder cycle, returns, complaint). Festival dates in synth.FESTIVALS (Dashain 21 Oct, Tihar 8 Nov, Chhath 15 Nov
+  2026). Stages: new, loyal, wholesale, festival, asked_no_order, gone_quiet, complaint; journey 98.7% (misses:
+  festival buyers with one ordinary order). New action offer_reorder; Brightdesk keeps its recorded decision schema
+  (decide.RECORDED_ACTIONS). Voice notes: voice.fill (Muse Voice for hi/en; script stand-in until audio exists;
+  Nepali unreadable). Seed rule: quiet hours 21-08. Night set: 3 per stage + voice-note senders + attackers.
+  Twin 5,000: +15.7 pp [+13.4, +18.0], learned = truth in every stage. Not yet re-recorded: Birgunj's night
+  (test_replay_serves_birgunjs_recorded_night is a strict xfail until then), recorded once after Step 3's scheduling
+  change, because that changes what the decide tools return. Native review of all Birgunj strings: pending (Aditi).
 - Waiting on Aditi: Modal card check (no Modal deploy until then), Nepali + Hindi clips, OK to push for Render.
   Servers for screenshots: uvicorn :8000 (replay, no --reload: restart after API changes), next dev :3000.
-- Live spend: Meta $1.5019 of $130, Baseten $0.6317 of $90, Modal $0 of $25. Tests: 340 (15 skip without Postgres).
+- Live spend: Meta $1.5019 of $130, Baseten $0.6544 of $90, Modal $0 of $25. Tests: 344 (15 skip without
+  Postgres, 1 strict xfail: Birgunj's night not recorded yet).
 
 ## What we are building
 Pheri: an AI agent that understands each customer, decides their next best action ("why this, why now"),
@@ -108,7 +121,7 @@ Python 3.12+, FastAPI, Postgres (Neon) with row-level security per business, Nex
 api/pheri/   config.py llm.py ledger.py pricing.py synth.py  (+ profile, journey, decide, rules, guard, twin, learn)
 api/tests/   pytest; must stay green
 db/          schema.sql (RLS)
-data/synth/  generated demo data (Brightdesk, Kettle & Co)
+data/synth/  generated demo data (Brightdesk, Birgunj Saree Ghar)
 evals/       attacks + labelled replies, one command
 web/         Next.js
 ```

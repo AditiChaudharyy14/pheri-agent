@@ -89,7 +89,9 @@ def test_seed_is_idempotent(llm):
     assert len(seed(store, llm)) == 1
     assert seed(store, llm) == []
     assert [r.source_text for r in active_rules(store)] == [SEED]
-    assert seed(MemoryStore("kettle"), llm) == []  # no seed rules for Kettle
+    bg = MemoryStore("birgunj")  # Birgunj starts with quiet hours: the night shift works, the customers sleep
+    assert len(seed(bg, llm)) == 1 and seed(bg, llm) == []
+    assert [c for r in active_rules(bg) for c in r.checks] == [QuietHours(start_hour=21, end_hour=8)]
 
 
 def test_model_output_out_of_range_is_a_problem_not_a_rule(llm, monkeypatch):
@@ -115,12 +117,12 @@ def test_what_code_cannot_enforce_is_reported(llm):
 
 
 def test_mock_compiler_understands_common_phrasings(llm):
-    assert compile_rule("kettle", "No discounts above 15%", llm).checks == [MaxDiscountPct(pct=15)]
-    assert compile_rule("kettle", "Never offer discounts.", llm).checks == [MaxDiscountPct(pct=0)]
-    assert compile_rule("kettle", "No discounts in the first 2 weeks", llm).checks == [NoDiscountFirstDays(days=14)]
-    assert compile_rule("kettle", "Don't message anyone between 9pm and 8am", llm).checks == [
+    assert compile_rule("birgunj", "No discounts above 15%", llm).checks == [MaxDiscountPct(pct=15)]
+    assert compile_rule("birgunj", "Never offer discounts.", llm).checks == [MaxDiscountPct(pct=0)]
+    assert compile_rule("birgunj", "No discounts in the first 2 weeks", llm).checks == [NoDiscountFirstDays(days=14)]
+    assert compile_rule("birgunj", "Don't message anyone between 9pm and 8am", llm).checks == [
         QuietHours(start_hour=21, end_hour=8)]
-    assert compile_rule("kettle", "No more than two emails a week", llm).checks == [
+    assert compile_rule("birgunj", "No more than two emails a week", llm).checks == [
         ChannelLimit(channel="email", max_messages=2, per_days=7)]
 
 

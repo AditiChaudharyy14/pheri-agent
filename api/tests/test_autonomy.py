@@ -72,7 +72,7 @@ def test_set_mode_is_validated_and_audited(store):
     with pytest.raises(ValueError):
         set_mode(store, "send_help", "yolo", by="owner")
     with pytest.raises(ValueError):
-        set_mode(store, "send_reminder", "act_alone", by="owner")  # a Kettle action
+        set_mode(store, "send_reminder", "act_alone", by="owner")  # a Birgunj action
 
 
 @BOTH

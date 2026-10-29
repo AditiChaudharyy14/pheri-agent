@@ -1,5 +1,5 @@
 {
- "as_of": "2026-10-29T18:29:39",
+ "as_of": "2026-10-29T19:10:46",
  "providers": {
   "meta": {
    "settled_usd": 1.501919,
@@ -8,10 +8,10 @@
    "remaining_usd": 128.498081
   },
   "baseten": {
-   "settled_usd": 0.631742,
+   "settled_usd": 0.654445,
    "offset_usd": 0.0,
    "cap_usd": 90.0,
-   "remaining_usd": 89.368258
+   "remaining_usd": 89.345555
   }
  },
  "calls": [
@@ -19,41 +19,41 @@
    "provider": "meta",
    "model": "muse-spark-1.3",
    "purpose": "decide",
-   "calls": 390,
+   "calls": 402,
    "usd": 0.937889,
-   "input_tokens": 926345,
+   "input_tokens": 948551,
    "cached_tokens": 574370,
-   "output_tokens": 248238
+   "output_tokens": 249449
   },
   {
    "provider": "baseten",
    "model": "meta-models/muse-spark-open-1026",
    "purpose": "judge",
-   "calls": 148,
-   "usd": 0.44389,
-   "input_tokens": 82776,
-   "cached_tokens": 35456,
-   "output_tokens": 130830
+   "calls": 178,
+   "usd": 0.466593,
+   "input_tokens": 99185,
+   "cached_tokens": 43520,
+   "output_tokens": 151542
   },
   {
    "provider": "meta",
    "model": "muse-spark-1.3",
    "purpose": "profile_insights",
-   "calls": 104,
+   "calls": 257,
    "usd": 0.255271,
-   "input_tokens": 87671,
+   "input_tokens": 180326,
    "cached_tokens": 45858,
-   "output_tokens": 105249
+   "output_tokens": 117424
   },
   {
    "provider": "meta",
    "model": "muse-wonder-1.0",
    "purpose": "learn_report",
-   "calls": 6,
+   "calls": 8,
    "usd": 0.174232,
-   "input_tokens": 13790,
+   "input_tokens": 18754,
    "cached_tokens": 0,
-   "output_tokens": 14739
+   "output_tokens": 16348
   },
   {
    "provider": "meta",

@@ -56,6 +56,11 @@ MAX_OUTPUT_TOKENS = 4000
 
 # ---- what the model returns ----------------------------------------------------
 MODEL_ACTIONS = tuple(k for k in CATALOG if k != ESCALATE)
+# The action list Brightdesk's live run was recorded with. Its decision schema keeps exactly this list: an action
+# added to the catalog later (offer_reorder, for Birgunj) would change the schema, and with it the key of every
+# recorded reply (llm.recording_key). Every other business gets its own actions, and only those.
+RECORDED_ACTIONS = ("send_help", "book_call", "send_checkin", "offer_upgrade", "offer_discount", "send_reminder",
+                    "recommend_product", "offer_subscription", "task_for_owner", "no_action")
 MAX_EVIDENCE = 8  # per list: fact keys, quote ids
 
 
@@ -69,7 +74,7 @@ class Decision(BaseModel):
     customer's fact names and verified quote ids, picks from them, and code attaches the real values and
     quotes. With no free-text evidence there is nothing to invent and nothing to pad (live, a free-text
     evidence value came back as ")} {" followed by blank padding)."""
-    action: Literal[MODEL_ACTIONS]
+    action: Literal[RECORDED_ACTIONS]
     channel: Literal[ALL_CHANNELS] | None
     discount_pct: float | None
     _nulls = field_validator("channel", "discount_pct", mode="before")(_none_if_null)
@@ -85,10 +90,14 @@ class Decision(BaseModel):
         return list(dict.fromkeys(v))[:MAX_EVIDENCE]  # repeats removed, then cut in code
 
 
-def decision_schema(fact_names, quote_ids) -> type[Decision]:
+def decision_schema(fact_names, quote_ids, business: str = "brightdesk") -> type[Decision]:
     """This customer's Decision: fact_keys and quote_ids are enums of what their profile holds, so a
-    strict json_schema cannot even express a fact or quote that is not there."""
-    return create_model("Decision", __base__=Decision,
+    strict json_schema cannot even express a fact or quote that is not there. The action is an enum of the
+    business's own actions (Brightdesk: the list it was recorded with, see RECORDED_ACTIONS)."""
+    fields = {}
+    if business != "brightdesk":
+        fields["action"] = (Literal[tuple(a for a in BUSINESS_ACTIONS[business] if a in MODEL_ACTIONS)], ...)
+    return create_model("Decision", __base__=Decision, **fields,
                         fact_keys=(list[Literal[tuple(fact_names)]], ...),
                         quote_ids=(list[Literal[tuple(quote_ids) or (NO_QUOTES,)]], ...))
 
@@ -317,7 +326,7 @@ def decide(p: Profile, store, llm: LLM, now: datetime = NOW, data_class: str = "
     j = stage(p.business, p.facts, p.provenance.get("facts"))
     latest = next((g for g in reversed(guarded) if g.provider is not None), None)
     run = _Run(p, j, store, context_for(store, p, now), latest)
-    schema = decision_schema(fact_names(p), list(quote_index(p)))
+    schema = decision_schema(fact_names(p), list(quote_index(p)), p.business)
     vc = verify_context(p, j, run.ctx, store, llm, data_class, latest)
     vc.discarded_tools = run.discarded  # the same list: a call discarded in the loop fails the "tools" check
     private = private_mode(store)["decide"]
@@ -573,11 +582,12 @@ _PLAYBOOK = {
     "expanding": [("offer_upgrade", None)],
     "at_risk_renewal": [("offer_discount", 15.0), ("book_call", None)],
     "new": [("recommend_product", None)],
-    "loyal": [("recommend_product", None)],
-    "subscriber": [("send_checkin", None)],
-    "lapsing": [("offer_discount", 10.0), ("send_checkin", None)],
-    "cart_abandoner": [("send_reminder", None)],
-    "gift_buyer": [("recommend_product", None)],
+    "loyal": [("offer_reorder", None)],
+    "wholesale": [("offer_reorder", None)],
+    "festival": [("recommend_product", None)],
+    "asked_no_order": [("send_reminder", None)],
+    "gone_quiet": [("offer_discount", 10.0), ("send_checkin", None)],
+    "complaint": [("send_help", None)],
 }
 
 
@@ -621,13 +631,15 @@ _STAGE_WORDS = {
     "stuck": "is blocked by a problem {they} reported", "onboarding": "is new and still setting up",
     "quiet": "has gone quiet", "healthy": "is doing well", "expanding": "is growing past {their} plan",
     "at_risk_renewal": "is at risk before {their} renewal", "new": "is a new customer", "loyal": "is a loyal regular",
-    "subscriber": "is on a subscription", "lapsing": "has stopped ordering", "cart_abandoner": "left a cart behind",
-    "gift_buyer": "buys gifts",
+    "wholesale": "buys wholesale on a regular rhythm", "festival": "buys for festivals",
+    "asked_no_order": "asked about an item and has not ordered yet", "gone_quiet": "has stopped ordering",
+    "complaint": "is waiting on a fix for an order",
 }
 _ACTION_WORDS = {
     "send_help": "help with that problem", "book_call": "a short call", "send_checkin": "a friendly check-in",
     "offer_upgrade": "room to grow", "offer_discount": "a discount", "send_reminder": "a reminder",
-    "recommend_product": "a tea that fits past orders", "offer_subscription": "a subscription",
+    "recommend_product": "something that fits past orders", "offer_subscription": "a subscription",
+    "offer_reorder": "a nudge that it is time to reorder",
     "task_for_owner": "a person looking at it", "no_action": "holding off",
 }
 _FACT_WORDS = {
@@ -637,6 +649,9 @@ _FACT_WORDS = {
     "seats": "{v} seats", "active_days_30d": "active on {v} days this month", "subscription": "on a {v} subscription",
     "days_since_cart_abandoned": "left a cart {v} days ago", "orders": "{v} orders so far",
     "days_since_last_order": "last ordered {v} days ago", "gift_only": "only ever buys gifts",
+    "open_complaints": "{v} order with a problem still open", "days_since_enquiry": "asked {v} days ago",
+    "segment": "a {v} buyer", "reorder_every_days": "reorders about every {v} days",
+    "festival_only": "only buys for festivals", "next_festival": "{v} is coming",
 }
 
 
@@ -701,17 +716,21 @@ def _mock_answer(prof: dict, kind: str, channel: str | None, pct: float | None, 
     fix = (f"sorry the {named} keeps failing. We have steps that fix it"
            + (f", so your {goal} go out again" if goal and goal.endswith("s") else "") + "."
            if problem else "we saw the trouble you reported and have steps that fix it.")
-    message = {"send_help": f"Hi {first}, {fix} Reply and we will walk you through them. - The {team} team",
+    if prof["journey"]["stage"] == "complaint":
+        fix = "sorry about the trouble with your order. We are sorting it out and will update you today."
+    message = {"send_help": f"Hi {first}, {fix}" + ("" if prof["journey"]["stage"] == "complaint" else
+                                                    " Reply and we will walk you through them.") + f" - The {team} team",
                "offer_discount": f"Hi {first}, as a thank-you, here is {pct:g}% off your next month. "
                                  f"- The {team} team" if pct else "",
-               "task_for_owner": f"Look at {prof['customer']} by hand: no allowed action fits.",
+               "task_for_owner": f"Look at {prof['name']} by hand: no allowed action fits.",
                "book_call": f"Hi {first}, could we find a short call this week to get things working for you? "
                             f"- The {team} team",
                "offer_upgrade": f"Hi {first}, you have outgrown your plan. Want us to add room for your team? "
                                 f"- The {team} team",
-               "recommend_product": f"Hi {first}, based on what you enjoy, we think you would love our Ilam Green. "
-                                    f"- The {team} team",
-               "send_reminder": f"Hi {first}, you left something in your cart. It is still there when you are ready. "
+               "recommend_product": f"Hi {first}, the new season's sarees are in. Want photos? - The {team} team",
+               "send_reminder": f"Hi {first}, the item you asked about is still here for you. Reply when you are "
+                                f"ready. - The {team} team",
+               "offer_reorder": f"Hi {first}, it is about time for your next order. The same as last time? "
                                 f"- The {team} team",
                "offer_subscription": f"Hi {first}, want your favourite tea delivered every month, no reordering? "
                                      f"- The {team} team",

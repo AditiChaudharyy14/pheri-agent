@@ -35,7 +35,7 @@ def llm(tmp_path, monkeypatch):
 
 @pytest.fixture(scope="module")
 def data():
-    return {b: load(b) for b in ("brightdesk", "kettle")}
+    return {b: load(b) for b in ("brightdesk", "birgunj")}
 
 
 def _vc(data, llm, business, key, store=None):
@@ -211,7 +211,7 @@ def test_the_name_said_to_the_customers_face_is_caught(data, llm):
 
 # ---- the middle step --------------------------------------------------------------------------
 def test_the_middle_step_bar_is_per_business_and_per_kind_of_action():
-    assert THRESHOLDS["brightdesk"] == {"money": 1.0, "nudge": 0.8} and THRESHOLDS["kettle"]["money"] == 1.0
+    assert THRESHOLDS["brightdesk"] == {"money": 1.0, "nudge": 0.8} and THRESHOLDS["birgunj"]["money"] == 1.0
     checkin = middle_step("brightdesk", "quiet", "send_checkin")  # stage right for 82%: enough for a nudge
     assert checkin["passed"] and checkin["class"] == "nudge" and 0.8 <= checkin["stage_score"] < 0.85
     discount = middle_step("brightdesk", "quiet", "offer_discount")  # fits 97% of them: not enough for money
@@ -225,7 +225,7 @@ def test_the_middle_step_bar_is_per_business_and_per_kind_of_action():
 def test_the_plans_in_the_truth_set_come_from_the_twins_hidden_table():
     from pheri.twin import fitting_plans
 
-    for b in ("brightdesk", "kettle"):
+    for b in ("brightdesk", "birgunj"):
         truth = json.loads((REPO_ROOT / "data" / "synth" / b / "_truth.json").read_text(encoding="utf-8"))
         assert truth["plans"] == fitting_plans(b)
     assert fitting_plans("brightdesk")["stuck"] == ["send_help", "book_call"]

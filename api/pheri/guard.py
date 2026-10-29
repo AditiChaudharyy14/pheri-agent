@@ -293,7 +293,7 @@ def handle_reply(store, llm: LLM, customer_key: str, text: str, *, source_id: st
 
 def screen_history(store, llm: LLM, customer_key: str, sources: list, data_class: str = "synthetic") -> list[GuardResult]:
     """Before deciding: the model reads the newest reply; code screens every older one for free."""
-    inbound = sorted(sources, key=lambda s: s.at or "")
+    inbound = sorted((s for s in sources if (s.text or "").strip()), key=lambda s: s.at or "")  # an unread voice note has no text
     if not inbound:
         return []
     out = []

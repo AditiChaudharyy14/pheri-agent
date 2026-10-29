@@ -54,7 +54,7 @@ def test_health_and_businesses(client):
 
     assert client.get("/health").json() == {"ok": True, "mode": "mock", "public_demo": False,
                                             "code_checks": len(CODE_CHECKS)}
-    assert [b["slug"] for b in client.get("/businesses").json()] == ["brightdesk", "kettle"]
+    assert [b["slug"] for b in client.get("/businesses").json()] == ["brightdesk", "birgunj"]
     assert client.get("/businesses/acme/customers").status_code == 404
 
 
@@ -170,7 +170,7 @@ def test_the_private_mode_switch(client, llm, monkeypatch):
     monkeypatch.setattr(llm, "complete", lambda m, **kw: calls.append(kw.get("provider", "meta")) or real(m, **kw))
     out = client.post(f"{c(MAYA)}/decision").json()
     assert out["private"] and set(calls) == {"baseten"}  # full private mode: nothing to the Meta API
-    assert client.get("/businesses/kettle/private-mode").json() == off  # per business
+    assert client.get("/businesses/birgunj/private-mode").json() == off  # per business
 
 
 # ---- what worked, and spend ----------------------------------------------------------------------
@@ -289,8 +289,7 @@ def test_replay_serves_mayas_recorded_live_run(monkeypatch, tmp_path):
     assert rep["source"] == "recorded" and rep["model"] == "muse-wonder-1.0" and len(rep["findings"]) == 6
     assert [(a["attempt"], a["passed"], a["rejected"]) for a in rep["attempts"]] == [(1, False, ["headline"]), (2, True, [])]
     assert rep["rejected"] == [] and not rep["headline"].startswith("Across 5000")  # Wonder's own, checked
-    assert api.get("/businesses/kettle/learned").json()["source"] == "stand-in"  # not recorded: one call only
-    cards = api.get(f"{BD}/next-steps").json() + api.get("/businesses/kettle/next-steps").json()
+    cards = api.get(f"{BD}/next-steps").json()
     for card in cards:
         assert card["decided_by"]["source"] == "recorded", card["customer"]["name"]
         assert card["verification"]["judge_recorded"], card["customer"]["name"]  # the judge's verdicts too
@@ -316,6 +315,26 @@ def test_replay_serves_mayas_recorded_live_run(monkeypatch, tmp_path):
     assert [e["event"] for e in log][-3:] == ["approved", "owner_override", "executed"]
     totals = api.get(f"{BD}/verification").json()
     assert totals["decisions"] == 6 and totals["sent_to_owner"] == 1 and totals["drafts"] > totals["decisions"]
+
+
+@pytest.mark.xfail(strict=True, reason="Birgunj's night is recorded once, after the scheduling change (plan, Step 3) "
+                                       "changes what the decide tools return; strict: remove this mark when it passes")
+def test_replay_serves_birgunjs_recorded_night(monkeypatch, tmp_path):
+    from pheri.app import create_app
+    from pheri.config import REPO_ROOT
+
+    monkeypatch.setenv("PHERI_LLM_MODE", "replay")
+    monkeypatch.setenv("PHERI_LLM_REPLAY", str(REPO_ROOT / "data" / "recorded" / "llm.jsonl"))
+    monkeypatch.setenv("PHERI_LEDGER_PATH", str(tmp_path / "ledger.sqlite"))
+    monkeypatch.delenv("PHERI_LLM_RECORD", raising=False)
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    api = TestClient(create_app(LLM(Settings())))
+    cards = api.get("/businesses/birgunj/next-steps").json()
+    assert len(cards) >= 20
+    for card in cards:
+        assert card["decided_by"]["source"] == "recorded", card["customer"]["name"]
+        assert card["verification"]["judge_recorded"], card["customer"]["name"]
+    assert api.get("/businesses/birgunj/learned").json()["source"] == "recorded"
 
 
 # ---- the public demo: a sandbox per visitor, and no pretend owner ------------------------------------

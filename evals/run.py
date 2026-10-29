@@ -249,7 +249,7 @@ def middle_steps() -> dict:
     from pheri.verify import THRESHOLDS, middle_step_scores
 
     out = {}
-    for b in ("brightdesk", "kettle"):
+    for b in ("brightdesk", "birgunj"):
         scores = middle_step_scores(b)
         out[b] = {"thresholds": THRESHOLDS[b],
                   "stages": {s: {"stage_score": r["stage_score"], "customers": r["customers"],
@@ -276,7 +276,7 @@ def loop_numbers() -> dict | None:
         settings = Settings(llm_mode="replay", replay_path=str(rec), record_path=None, database_url=None,
                             ledger_path=str(Path(tmp) / "ledger.sqlite"))
         with TestClient(create_app(LLM(settings))) as api:
-            return {b: api.get(f"/businesses/{b}/verification").json() for b in ("brightdesk", "kettle")}
+            return {b: api.get(f"/businesses/{b}/verification").json() for b in ("brightdesk", "birgunj")}
 
 
 def verification_report(drafts: dict, tools: dict, middle: dict, loop: dict | None) -> str:

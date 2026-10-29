@@ -3,7 +3,7 @@
 
 export const API_URL = process.env.PHERI_API_URL ?? "http://127.0.0.1:8000";
 
-export const BUSINESSES = { brightdesk: "Brightdesk", kettle: "Kettle & Co" } as const;
+export const BUSINESSES = { birgunj: "Birgunj Saree Ghar", brightdesk: "Brightdesk" } as const;
 export type Business = keyof typeof BUSINESSES;
 export const isBusiness = (b: string): b is Business => b in BUSINESSES;
 

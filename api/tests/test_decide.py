@@ -8,6 +8,7 @@ from pheri import llm as llm_module
 from pheri.autonomy import set_mode
 from pheri.config import Settings
 from pheri.decide import MAX_TURNS, NUDGE, PURPOSE, TOOLS, decide
+from pheri.journey import stages
 from pheri.llm import LLM
 from pheri.profile import build_profile, build_profiles, load
 from pheri.rules import seed
@@ -140,13 +141,21 @@ def test_without_the_rule_the_middle_step_still_refuses_a_discount_for_a_stuck_c
     assert out.decision["action"] == "send_help"
 
 
-def test_without_a_rule_a_discount_that_fits_goes_to_the_owner(llm):
-    """A lapsing Kettle customer: a discount fits every lapsing customer in the truth set, and Kettle has no rule."""
-    kettle = load("kettle")
-    key = next(k for k, c in kettle.customers.items() if k.startswith("pablo.weber"))
-    out = decide(build_profile(kettle, key, llm), MemoryStore("kettle"), llm)
-    assert out.decision["action"] == "offer_discount" and out.verification["passed"]
-    assert out.action["status"] == "awaiting_approval"
+def test_money_needs_a_stage_code_is_sure_of_so_an_unhappy_quiet_customer_gets_a_nudge(llm):
+    """Thresholds by stakes. A Birgunj customer gone quiet after a late delivery: the stand-in tries a goodwill
+    discount first. No owner rule limits discounts, but code's "gone quiet" is right for 97% of the customers it
+    puts there (a festival buyer who once bought out of season looks quiet too), and money needs 100%. So the
+    discount is refused in the loop, and the check-in (a nudge: 80%) is what Pheri proposes."""
+    birgunj = load("birgunj")
+    key = next(k for k, j in stages(birgunj).items()  # one who told the shop why they stopped
+               if j.stage == "gone_quiet" and any(s.lang == "en" for s in birgunj.customers[k].sources))
+    out = decide(build_profile(birgunj, key, llm), MemoryStore("birgunj"), llm)
+    tried = [t for t in out.turn_log for g in t["got"] if g.get("tool") == "check_rules"]
+    assert len(tried) == 2  # the discount, then the check-in
+    refused = next(x["output"] for t in out.turn_log for x in t["sent"]
+                   if x.get("kind") == "tool_result" and x["output"].get("action") == "offer_discount")
+    assert not refused["allowed"] and refused["middle_step"]["needs"] == 1.0 and refused["middle_step"]["stage_score"] < 1
+    assert out.decision["action"] == "send_checkin" and out.verification["passed"]
 
 
 # ---- the loop -------------------------------------------------------------------------
@@ -268,9 +277,9 @@ def test_a_number_nobody_can_back_caps_the_dial(maya, store, llm, monkeypatch):
 
 
 # ---- breadth --------------------------------------------------------------------------
-def test_twenty_kettle_customers_each_get_a_checked_decision(llm):
-    kettle, store = load("kettle"), MemoryStore("kettle")
-    outs = [decide(p, store, llm) for p in build_profiles(kettle, llm)]
+def test_twenty_birgunj_customers_each_get_a_checked_decision(llm):
+    birgunj, store = load("birgunj"), MemoryStore("birgunj")
+    outs = [decide(p, store, llm) for p in build_profiles(birgunj, llm)]
     assert len(outs) == 20
     for o in outs:
         assert o.fallback is None and o.evidence

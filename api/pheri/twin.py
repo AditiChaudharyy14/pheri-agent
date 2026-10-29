@@ -43,18 +43,22 @@ RESPONSE: dict[str, dict[str, dict[str, float]]] = {
         "expanding":       {"send_help": .08, "book_call": .20, "send_checkin": .07, "offer_upgrade": .40, "offer_discount": .10},
         "at_risk_renewal": {"send_help": .12, "book_call": .32, "send_checkin": .10, "offer_upgrade": .03, "offer_discount": .28},
     },
-    "kettle": {
-        "new":            {"send_reminder": .05, "recommend_product": .25, "offer_subscription": .08, "offer_discount": .18, "send_checkin": .10},
-        "loyal":          {"send_reminder": .04, "recommend_product": .30, "offer_subscription": .22, "offer_discount": .20, "send_checkin": .08},
-        "subscriber":     {"send_reminder": .02, "recommend_product": .14, "offer_subscription": .01, "offer_discount": .10, "send_checkin": .12},
-        "lapsing":        {"send_reminder": .08, "recommend_product": .12, "offer_subscription": .05, "offer_discount": .26, "send_checkin": .14},
-        "cart_abandoner": {"send_reminder": .35, "recommend_product": .10, "offer_subscription": .03, "offer_discount": .30, "send_checkin": .06},
-        "gift_buyer":     {"send_reminder": .04, "recommend_product": .22, "offer_subscription": .03, "offer_discount": .12, "send_checkin": .06},
+    # Birgunj: the chance of an order within the window. Fixing a complaint is what brings a complainer back;
+    # a reorder nudge works for people with a rhythm; festival buyers want to see the new collection.
+    "birgunj": {
+        "new":            {"send_reminder": .06, "recommend_product": .22, "offer_reorder": .04, "offer_discount": .16, "send_help": .05, "send_checkin": .10},
+        "loyal":          {"send_reminder": .04, "recommend_product": .26, "offer_reorder": .30, "offer_discount": .18, "send_help": .03, "send_checkin": .08},
+        "wholesale":      {"send_reminder": .03, "recommend_product": .12, "offer_reorder": .38, "offer_discount": .20, "send_help": .04, "send_checkin": .10},
+        "festival":       {"send_reminder": .05, "recommend_product": .34, "offer_reorder": .10, "offer_discount": .24, "send_help": .03, "send_checkin": .07},
+        "asked_no_order": {"send_reminder": .32, "recommend_product": .12, "offer_reorder": .03, "offer_discount": .26, "send_help": .08, "send_checkin": .06},
+        "gone_quiet":     {"send_reminder": .05, "recommend_product": .12, "offer_reorder": .08, "offer_discount": .22, "send_help": .04, "send_checkin": .14},
+        "complaint":      {"send_reminder": .02, "recommend_product": .03, "offer_reorder": .02, "offer_discount": .10, "send_help": .40, "send_checkin": .06},
     },
 }
 BASELINE = {
     "brightdesk": {"onboarding": .08, "stuck": .05, "quiet": .04, "healthy": .05, "expanding": .15, "at_risk_renewal": .10},
-    "kettle": {"new": .07, "loyal": .20, "subscriber": .10, "lapsing": .04, "cart_abandoner": .12, "gift_buyer": .06},
+    "birgunj": {"new": .06, "loyal": .18, "wholesale": .20, "festival": .08, "asked_no_order": .10, "gone_quiet": .03,
+                "complaint": .05},
 }
 PLAN_FIT = 0.5  # a plan fits a stage when its lift over the baseline is at least half the best action's lift
 
@@ -72,8 +76,8 @@ def fitting_plans(business: str) -> dict[str, list[str]]:
 
 # The rules the owner confirmed in the demo, as typed checks: the twin needs no model to compile them.
 TWIN_RULES = {"brightdesk": [Rule("seed", "Never offer discounts in a customer's first month.",
-                                  [NoDiscountFirstDays(days=30)])], "kettle": []}
-NEW_STAGES = {"onboarding": (1, 13), "new": (1, 20)}  # days since signup; everyone else 20-700
+                                  [NoDiscountFirstDays(days=30)])], "birgunj": []}
+NEW_STAGES = {"onboarding": (1, 13), "new": (1, 25)}  # days since signup; everyone else 20-700
 
 
 @dataclass

@@ -9,7 +9,7 @@ const BASE = process.env.WEB_URL ?? "http://localhost:3000";
 const MAYA = encodeURIComponent("maya.okafor@pinecrest.example");
 const PAGES = {
   home: "/brightdesk",
-  "home-kettle": "/kettle",
+  "home-birgunj": "/birgunj",
   journey: "/brightdesk/journey",
   customer: `/brightdesk/customers/${MAYA}`,
   trace: `/brightdesk/customers/${MAYA}/trace`,
@@ -17,7 +17,7 @@ const PAGES = {
   rules: "/brightdesk/rules",
   safety: "/brightdesk/safety",
   proof: "/brightdesk/proof",
-  "proof-kettle": "/kettle/proof",
+  "proof-birgunj": "/birgunj/proof",
   spend: "/brightdesk/spend",
 };
 

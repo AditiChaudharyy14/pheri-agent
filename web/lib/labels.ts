@@ -5,9 +5,10 @@ export const ACTION_LABEL: Record<string, string> = {
   send_checkin: "Check in",
   offer_upgrade: "Suggest an upgrade",
   offer_discount: "Offer a discount",
-  send_reminder: "Remind about the cart",
+  send_reminder: "Follow up on their question",
   recommend_product: "Recommend a product",
   offer_subscription: "Offer a subscription",
+  offer_reorder: "Time to reorder",
   task_for_owner: "A task for you",
   no_action: "Nothing for now",
   escalate_to_human: "Escalated to you",
@@ -18,6 +19,7 @@ export const CHANNEL_LABEL: Record<string, string> = {
   in_app: "in the app",
   instagram_dm: "by Instagram DM",
   chat: "in chat",
+  whatsapp: "on WhatsApp",
 };
 
 export const STATUS_LABEL: Record<string, string> = {
@@ -55,6 +57,21 @@ export const FACT_LABEL: Record<string, string> = {
   subscription: "subscription",
   gift_only: "only buys gifts",
   days_since_cart_abandoned: "days since cart left",
+  town: "town",
+  segment: "buys as",
+  total_spend_npr: "total spent, Rs",
+  last_order_items: "last order",
+  usual_payment: "usually pays by",
+  open_complaints: "orders with a problem",
+  complaint_kind: "the problem",
+  days_late: "days late",
+  returns: "returns",
+  cod_refusals: "cash on delivery refused",
+  reorder_every_days: "reorders every (days)",
+  festival_only: "only buys for festivals",
+  days_since_enquiry: "days since they asked",
+  next_festival: "next festival",
+  days_to_next_festival: "days to the festival",
 };
 
 export const STAGE_LABEL: Record<string, string> = {
@@ -66,10 +83,11 @@ export const STAGE_LABEL: Record<string, string> = {
   at_risk_renewal: "At risk (renewal)",
   new: "New",
   loyal: "Loyal",
-  subscriber: "Subscriber",
-  lapsing: "Lapsing",
-  cart_abandoner: "Left a cart",
-  gift_buyer: "Gift buyer",
+  wholesale: "Wholesale",
+  festival: "Festival buyer",
+  asked_no_order: "Asked, no order",
+  gone_quiet: "Gone quiet",
+  complaint: "Waiting on a fix",
 };
 
 export const factLabel = (f: string) => FACT_LABEL[f] ?? f.replaceAll("_", " ");
@@ -83,18 +101,19 @@ export const STAGE_RULE: Record<string, string> = {
   expanding: "Hit their seat limit this month.",
   quiet: "No activity at all this month.",
   healthy: "Everyone else: active, no warning signs.",
-  subscriber: "On a monthly subscription.",
-  cart_abandoner: "Left a cart in the last 7 days and has not ordered since.",
+  complaint: "An order from the last 30 days is late, damaged, the wrong colour or waiting to be exchanged.",
+  asked_no_order: "Sent a WhatsApp cart in the last 7 days and has not ordered since.",
   new: "Joined in the last 30 days.",
-  lapsing: "No order in the last 60 days.",
-  gift_buyer: "Only ever buys gift boxes.",
+  festival: "Has only ever bought in the two weeks before a festival.",
+  gone_quiet: "No order in the last 60 days.",
+  wholesale: "A wholesale buyer who still orders.",
   loyal: "Everyone else: orders regularly.",
 };
 
 // Journey order, as a customer moves through it.
 export const STAGE_ORDER: Record<string, string[]> = {
   brightdesk: ["onboarding", "healthy", "expanding", "stuck", "quiet", "at_risk_renewal"],
-  kettle: ["new", "loyal", "subscriber", "gift_buyer", "cart_abandoner", "lapsing"],
+  birgunj: ["new", "asked_no_order", "loyal", "festival", "wholesale", "complaint", "gone_quiet"],
 };
 
 // The demo's hero customer (data/synth/brightdesk/_truth.json "hero"): shown first in her stage.

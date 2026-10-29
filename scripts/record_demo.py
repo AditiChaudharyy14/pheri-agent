@@ -28,7 +28,7 @@ REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "api"))
 sys.stdout.reconfigure(encoding="utf-8")
 
-BUSINESSES = ("brightdesk", "kettle")
+BUSINESSES = ("brightdesk", "birgunj")
 RECORDING = REPO / "data" / "recorded" / "llm.jsonl"
 KEPT_PURPOSES_NOT_ASKED_HERE = {"learn_report"}  # recorded by scripts/live_learn.py
 

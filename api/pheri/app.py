@@ -2,7 +2,7 @@
 
     cd api && uvicorn pheri.app:app --reload        # mock mode: no network, no spend
 
-Routes, per business (brightdesk, kettle):
+Routes, per business (brightdesk, birgunj):
   GET  /businesses/{b}/customers                     customers with their journey stage (code only)
   GET  /businesses/{b}/customers/{key}               one customer's facts and stage (code only)
   GET  /businesses/{b}/customers/{key}/profile       the profile (the model reads their messages)
@@ -66,12 +66,14 @@ from .profile import Profile, build_profile, compute_facts, load, norm_email
 from .rules import CheckContext, active_rules, check, confirm, describe, propose, seed
 from .store import MemoryStore, NotFound, PgStore
 from .synth import BUSINESS_NAMES, NOW
+from . import voice
 from .verify import CODE_CHECKS, THRESHOLDS, middle_step_scores, override_line, override_summary
 
 BUSINESSES = tuple(BUSINESS_NAMES)
 TWIN_DIR = REPO_ROOT / "data" / "twin"
 SPEND_SNAPSHOT = REPO_ROOT / "data" / "spend" / "live.json"  # written by scripts/spend_snapshot.py
 PROVIDERS = ("meta", "baseten")
+PER_STAGE = {"brightdesk": 1, "birgunj": 3}  # showcase customers per journey stage (Birgunj: the night shift)
 
 
 # ---- request bodies ---------------------------------------------------------------
@@ -129,6 +131,7 @@ class State:
         self.llm = llm
         self.settings = llm.settings
         self.data = {b: load(b) for b in BUSINESSES}
+        self.voice = {b: voice.fill(ds, llm) for b, ds in self.data.items()}  # before anything reads the messages
         self.stages = {b: stages(ds) for b, ds in self.data.items()}  # code only, no model
         self.learned: dict[tuple[str, int, int], dict] = {}  # the same for everyone: written from the twin's results
         self.lock = threading.RLock()  # the memory store is not thread-safe: one request at a time touches it
@@ -459,17 +462,19 @@ def create_app(llm: LLM | None = None) -> FastAPI:
 
     # ---- for the web app: next steps, replies, which model runs ----
     def showcase(b: str) -> list[str]:
-        """The customers the home page shows, the same every run: Maya first, then the first customer (in file
-        order) in each journey stage, then whoever sent the known attack messages (they go to Safety)."""
+        """The customers the home page shows, the same every run: Maya first (Brightdesk), then the first
+        PER_STAGE[b] customers (in file order) in each journey stage, then whoever sent a voice note, then whoever
+        sent the known attack messages (they go to Safety). Birgunj's is the night shift: about 25 customers."""
         ds, picked = state.data[b], []
         if b == "brightdesk":
             picked.append("maya.okafor@pinecrest.example")
         for st in STAGES[b]:
-            if any(state.stages[b][k].stage == st for k in picked):
-                continue  # already shown (Maya is the stuck one)
-            k = next((k for k, j in state.stages[b].items() if j.stage == st), None)
-            if k:
+            have = sum(state.stages[b][k].stage == st for k in picked)  # Maya is already the stuck one
+            for k in [k for k, j in state.stages[b].items() if j.stage == st][:max(0, PER_STAGE[b] - have)]:
                 picked.append(k)
+        for note in state.voice[b].values():
+            if note["customer"] not in picked:
+                picked.append(note["customer"])
         attacks = json.loads((REPO_ROOT / "data" / "synth" / b / "_truth.json").read_text(encoding="utf-8"))["attacks"]
         for k, cu in ds.customers.items():
             if any(src.id in attacks for src in cu.sources) and k not in picked:

@@ -175,7 +175,7 @@ def test_mock_only_from_the_command_line(tmp_path, monkeypatch):
     from pheri.config import REPO_ROOT
 
     path = tmp_path / "r.json"
-    path.write_text(json.dumps(run("kettle", n=200)), encoding="utf-8")
+    path.write_text(json.dumps(run("birgunj", n=200)), encoding="utf-8")
     env = {**os.environ, "PHERI_LLM_MODE": "live", "PHERI_LEDGER_PATH": str(tmp_path / "l.sqlite")}
     done = subprocess.run([sys.executable, "-m", "pheri.learn", str(path)], capture_output=True, text=True,
                           encoding="utf-8", cwd=REPO_ROOT / "api", env=env)

@@ -29,6 +29,7 @@ CATALOG: dict[str, ActionType] = {a.kind: a for a in (
     ActionType("send_reminder", "Remind them about what they left in their cart."),
     ActionType("recommend_product", "Recommend a product that fits what they already buy."),
     ActionType("offer_subscription", "Invite them to a monthly subscription."),
+    ActionType("offer_reorder", "Remind them it is about time to reorder, with what they bought last time."),
     ActionType("task_for_owner", "Ask the owner or the team to handle something by hand.", customer_facing=False),
     ActionType("no_action", "Do nothing now; say why.", customer_facing=False),
     # Created by code only (never offered to the model): a reply that looks like an attack goes to a person.
@@ -40,12 +41,12 @@ ESCALATE = "escalate_to_human"
 BUSINESS_ACTIONS: dict[str, tuple[str, ...]] = {
     "brightdesk": ("send_help", "book_call", "send_checkin", "offer_upgrade", "offer_discount", "task_for_owner",
                    "no_action"),
-    "kettle": ("send_reminder", "recommend_product", "offer_subscription", "offer_discount", "send_checkin",
-               "task_for_owner", "no_action"),
+    "birgunj": ("send_reminder", "recommend_product", "offer_reorder", "offer_discount", "send_help", "send_checkin",
+                "task_for_owner", "no_action"),
 }
 CHANNELS: dict[str, tuple[str, ...]] = {
     "brightdesk": ("email", "in_app"),
-    "kettle": ("email", "instagram_dm", "chat"),
+    "birgunj": ("whatsapp", "instagram_dm"),
 }
 ALL_CHANNELS = ("email", "in_app", "instagram_dm", "chat", "sms", "whatsapp")
 

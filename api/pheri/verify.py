@@ -61,12 +61,12 @@ from .rules import CheckContext, active_rules, check
 # ---- settings ---------------------------------------------------------------------
 MAX_MESSAGE_CHARS = 420  # two or three short sentences and a sign-off
 MAX_WHY_CHARS = 400  # why_this and why_now, each: the owner reads them at a glance
-LINK_ALLOWLIST = {"brightdesk": ("brightdesk.example",), "kettle": ("kettle.example",)}
-PLAN_NAMES = {"brightdesk": ("Starter", "Team", "Business"), "kettle": ()}
+LINK_ALLOWLIST = {"brightdesk": ("brightdesk.example",), "birgunj": ("birgunjsareeghar.example",)}
+PLAN_NAMES = {"brightdesk": ("Starter", "Team", "Business"), "birgunj": ()}
 MONEY_ACTIONS = ("offer_discount", "offer_upgrade", "offer_subscription")  # they change what the customer pays
 # The middle step's bar, per business: share of customers in a stage for whom code's stage and the plan are
 # right, against the labelled truth set (data/synth/<business>/_truth.json).
-THRESHOLDS = {"brightdesk": {"money": 1.0, "nudge": 0.8}, "kettle": {"money": 1.0, "nudge": 0.8}}
+THRESHOLDS = {"brightdesk": {"money": 1.0, "nudge": 0.8}, "birgunj": {"money": 1.0, "nudge": 0.8}}
 
 JUDGE_PURPOSE = "judge"
 JUDGE_PROVIDER = "baseten"

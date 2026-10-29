@@ -46,7 +46,7 @@ CREATE TABLE businesses (
 -- Seeded before RLS is switched on below.
 INSERT INTO businesses (id, slug, name) VALUES
     ('b5d1e5c0-0000-4000-8000-000000000001', 'brightdesk', 'Brightdesk'),
-    ('ce771e00-0000-4000-8000-000000000002', 'kettle', 'Kettle & Co');
+    ('ce771e00-0000-4000-8000-000000000002', 'birgunj', 'Birgunj Saree Ghar');
 
 -- ---- customers and what we know about them ---------------------------------------
 CREATE TABLE customers (

@@ -123,3 +123,22 @@ def test_verification_numbers_offline(runner, monkeypatch, tmp_path):
     assert len(planted) == len(supported) == 10 and all(r["ok"] for r in planted)
     assert sorted(r["id"] for r in supported if not r["ok"]) == ["S04"]
     assert all(r["ok"] for r in judged if r["expect"] and r["expect"] != ["judge"])  # code rows
+
+
+def test_evals_at_scale_are_what_the_saved_results_say():
+    """evals/scale: 691 messages read by both models, live once (results.json). The table is rebuilt from the
+    per-row results, so the README's numbers cannot drift from them. Pinned as measured on 30 Oct."""
+    spec = importlib.util.spec_from_file_location("scale", REPO_ROOT / "evals" / "scale.py")
+    scale = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(scale)
+    results = json.loads((REPO_ROOT / "evals" / "scale" / "results.json").read_text(encoding="utf-8"))
+    for p in ("meta", "baseten"):
+        rows = scale.saved(p)
+        assert len(rows) == results["messages"] == 691
+        assert scale.summarize(rows) == results["guard"][p]
+    meta, open_ = results["guard"]["meta"], results["guard"]["baseten"]
+    assert (meta["all"]["attacks_stopped"]["k"], open_["all"]["attacks_stopped"]["k"]) == (87, 96)
+    assert (meta["bho"]["attacks_stopped"]["k"], open_["bho"]["attacks_stopped"]["k"]) == (11, 18)
+    assert (meta["all"]["false_alarms"]["k"], open_["all"]["false_alarms"]["k"]) == (0, 2)
+    j = results["judge"]
+    assert (j["planted_caught"]["k"], j["supported_passed"]["k"]) == (24, 25) and j["missed"] == ["JP10"]

@@ -193,6 +193,51 @@ bound; the semantic attacks are the ones it is not meant to catch.
 Keys go in `.env` (see `.env.example`), never in the repo. Every model call passes through
 `api/pheri/llm.py`, which enforces the spend caps and allows only synthetic data.
 
+## Evals at scale: closed weights against open weights
+
+`evals/scale/` has synthetic customer messages for Birgunj Saree Ghar in five ways of writing:
+- Nepali (ne) and Roman Nepali (ne-Latn);
+- Hindi (hi) and Bhojpuri (bho);
+- English (en).
+
+There are 591 labelled messages plus 100 attacks. The attacks come in five kinds: overrides, false owner
+authority, data theft, mass refunds, and a tool call hidden inside an order question.
+
+**Labels are set by code.** Each message comes from a template written for one label in one language
+(`evals/gen.py`). Muse Spark 1.3 Contributor only paraphrased 310 of them for variety, and code kept a
+paraphrase only if it held:
+- the same script;
+- every product, number, town and festival;
+- no attack or stop words added or lost.
+
+The guard read every message once on each model, recorded (`python evals/scale.py` rebuilds the table, $0):
+
+| | Muse Spark 1.3 (closed) | Muse Spark Open (open weights) |
+|---|---|---|
+| Attacks stopped, all | 87% [79–92] (87/100) | **96% [90–98] (96/100)** |
+| — Nepali | 100% [84–100] | 100% [84–100] |
+| — Roman Nepali | 80% [58–92] | 90% [70–97] |
+| — Hindi | 100% [84–100] | 100% [84–100] |
+| — Bhojpuri | **55% [34–74]** | **90% [70–97]** |
+| — English | 100% [84–100] | 100% [84–100] |
+| Harmless messages stopped (false alarms) | 0% [0–1] (0/591) | 0.3% [0–1] (2/591) |
+| Label right (question, complaint, objection, stop, purchase, other) | 95.8% [94–97] | 96.5% [95–98] |
+| — Bhojpuri | 89.2% [82–94] | 95.0% [90–98] |
+| Language right (family) | 96.0% [94–97] | 98.8% [98–99] |
+| — Bhojpuri (as Hindi family) | 83.6% [77–89] | 97.1% [93–99] |
+| Cost of the run | $1.75 | $1.58 (Baseten, estimated) |
+
+The intervals are Wilson 95%, with 20 attacks and about 120 messages per language. What it shows:
+- On attacks written the way customers on the border write, Bhojpuri and Roman Nepali, the open-weight model
+  is clearly better. A business can run it privately.
+- The code screen alone stops few of these; the models do the work.
+- ISO 639-1 has no code for Bhojpuri, so neither model can name it exactly. "Family" counts Hindi as right.
+
+**The judge** is Muse Spark Open, run on 50 cases (`evals/judge_cases.py`): 25 supported drafts, and the same
+25 drafts with one planted claim. Every one passes every code check, so only a judge can tell them apart.
+- It caught 24 of the 25 planted claims: 96% [80–99]. The miss, JP10, is kept.
+- It passed 25 of the 25 supported drafts: 100% [87–100].
+
 ## The web app, and the public demo
 
 ```bash

@@ -66,13 +66,15 @@ Read this before every task. These rules are not optional.
 - D4 done: docs/LESSONS.md maps each Agents 101/102 lesson to file/function and test (gaps marked: per-action
   autonomy defaults wait for Step 3; builder/reviewer split is a habit, not enforced). test_docs checks every
   test it names exists. New: test_the_system_prompt_is_behaviour_and_the_task_is_the_brief.
-- D3 in progress: evals/gen.py (labels by code from templates; Contributor paraphrases, checked by code),
-  evals/judge_cases.py (25 supported + 25 planted, all pass code), evals/scale.py (guard on both providers,
-  per-language Wilson 95% CIs; Bhojpuri scored as Hindi family since ISO 639-1 has no code). Templates: 449
-  messages, 100 attacks, 50 judge cases. Paraphrase run stopped by low memory at 112 calls (recorded, reused).
+- D3 done (evals at scale, evals/scale/): 591 labelled messages (labels by code; 310 paraphrased by Spark 1.3
+  Contributor, checked in code) + 100 attacks + 50 judge cases, read once live by both models, every row saved
+  (guard_<provider>.jsonl, resumable). Attacks stopped: Spark 1.3 87% [79-92], Spark Open 96% [90-98];
+  Bhojpuri 55% vs 90%, Roman Nepali 80% vs 90%; false alarms 0/591 vs 2/591. Judge: 24/25 planted caught (JP10
+  missed), 25/25 supported passed. Pinned in test_evals; table in README. Cost: Meta $1.91 + $0.05 paraphrase,
+  Baseten $1.75 (guard + judge).
 - Waiting on Aditi: Modal card check (no Modal deploy until then), Nepali + Hindi clips, OK to push for Render.
   Servers for screenshots: uvicorn :8000 (replay, no --reload: restart after API changes), next dev :3000.
-- Live spend: Meta $1.5019 of $130, Baseten $0.6544 of $90, Modal $0 of $25. Tests: 353 (15 skip without
+- Live spend: Meta $3.4748 of $130, Baseten $2.4014 of $90, Modal $0 of $25. Tests: 356 (15 skip without
   Postgres, 1 strict xfail: Birgunj's night not recorded yet).
 
 ## What we are building

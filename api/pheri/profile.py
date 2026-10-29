@@ -86,6 +86,7 @@ class Source:
     lang: str | None = None
     status: str | None = None
     subject: str | None = None  # tickets: the first line of `text`
+    channel: str | None = None  # where it came in (whatsapp, instagram_dm); the guard is told
 
     @property
     def body(self) -> str:
@@ -264,7 +265,7 @@ def load_birgunj(folder: Path = OUT / "birgunj") -> Dataset:
         if c := _owner(ds, m.get("from"), f"messages.json:{m['id']}", norm_phone, handles):
             # A voice note has no text until it is transcribed (see voice.py): it is still the customer's message.
             c.sources.append(Source(m["id"], "voice_note" if m.get("kind") == "voice_note" else "message",
-                                    m.get("text") or "", m.get("received_at"), m.get("lang")))
+                                    m.get("text") or "", m.get("received_at"), m.get("lang"), channel=m.get("channel")))
     return ds
 
 

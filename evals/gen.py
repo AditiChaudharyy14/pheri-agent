@@ -353,6 +353,52 @@ def paraphrase(rows: list[dict], one, rng: random.Random, share: float = 0.3, ma
     return stats
 
 
+GROW = {"bho": 40, "ne-Latn": 40}  # attacks per language: these two were the weak spot, so their intervals are widest
+
+
+def grow_attacks(rows: list[dict], one, target: dict[str, int] = GROW, max_tries: int = 4) -> dict:
+    """New attacks for the languages in `target`, each a checked paraphrase of one of that language's own attacks:
+    same kind (override, false authority, ...), labelled by code, never written by the model. Besides the usual
+    checks the rewrite must keep the attack's own tokens (a tool name, the percentage it demands)."""
+    stats = {"tried": 0, "added": 0, "dropped": {}}
+    seen = {r["text"] for r in rows}
+    for lang, want in target.items():
+        base = [r for r in rows if r["lang"] == lang]
+        added = 0
+        for i in range(max_tries * want):
+            if len(base) + added >= want:
+                break
+            parent = base[i % len(base)]
+            new = one(parent)
+            stats["tried"] += 1
+            problems = paraphrase_problems(parent, new) + (["repeats a text"] if new in seen else [])
+            problems += [f"lost {t}" for t in re.findall(r"[a-z]+_[a-z]+|\d+%", parent["text"]) if t not in new]
+            for p in problems:
+                k = p.split(" '")[0]
+                stats["dropped"][k] = stats["dropped"].get(k, 0) + 1
+            if problems:
+                continue
+            seen.add(new)
+            rows.append({**parent, "id": f"A{len(rows) + 1:03d}", "text": new, "source": "paraphrase",
+                         "parent": parent["id"]})
+            added += 1
+        stats["added"] += added
+    return stats
+
+
+def split(rows: list[dict], by: tuple[str, ...], seed: int = SEED) -> None:
+    """Half of each group (by language and kind, or language and label) to "dev", half to "test", fixed by seed.
+    The guard is tuned on dev only; test is read once, before and after, and never looked at in between."""
+    groups: dict[tuple, list[dict]] = {}
+    for r in rows:
+        groups.setdefault(tuple(r[k] for k in by), []).append(r)
+    for key, group in sorted(groups.items()):
+        order = sorted(group, key=lambda r: r["id"])
+        random.Random(f"{seed}:split:{key}").shuffle(order)
+        for i, r in enumerate(order):
+            r["split"] = "dev" if i < len(order) // 2 else "test"
+
+
 def _mock_paraphrase(messages: list[dict], schema) -> str:
     return json.loads(messages[-1]["content"])["message"]  # offline: the same text back (kept as-is by code)
 
@@ -368,7 +414,33 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--paraphrase", action="store_true", help="live: Muse Spark 1.3 Contributor rewrites half")
     ap.add_argument("--budget", type=float, default=None, help="USD on Meta, required with --paraphrase")
+    ap.add_argument("--grow-attacks", action="store_true", help="live: more Bhojpuri and Roman Nepali attacks")
+    ap.add_argument("--split", action="store_true", help="mark every message and attack dev or test (seeded)")
     args = ap.parse_args(argv)
+    if args.split:
+        for name, by in (("attacks.jsonl", ("lang", "kind")), ("messages.jsonl", ("lang", "label"))):
+            rows = [json.loads(x) for x in (OUT / name).read_text(encoding="utf-8").splitlines() if x.strip()]
+            split(rows, by)
+            print(f"{write(rows, name)}: dev {sum(r['split'] == 'dev' for r in rows)}, "
+                  f"test {sum(r['split'] == 'test' for r in rows)}")
+        return 0
+    if args.grow_attacks:
+        if args.budget is None:
+            print("--grow-attacks needs --budget (USD on Meta).")
+            return 2
+        os.environ["PHERI_LLM_MODE"] = "live"
+        from pheri.config import Settings
+        from pheri.ledger import Ledger
+        from pheri.llm import LLM
+
+        spent = Ledger(Settings()).totals("meta").committed_usd
+        one = Paraphraser(LLM(Settings(llm_mode="live", meta_cap_usd=spent + args.budget,
+                                       record_path=str(PARAPHRASE_RECORDING))))
+        rows = [json.loads(x) for x in (OUT / "attacks.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()]
+        stats = grow_attacks(rows, one)
+        print(f"grow attacks: {stats}; reused {one.reused}, paid for {one.paid}")
+        print(f"{write(rows, 'attacks.jsonl')}: {len(rows)}")
+        return 0
     sys.stdout.reconfigure(encoding="utf-8")
     rng = random.Random(SEED)
     msgs, atks = messages(rng), attacks(rng)

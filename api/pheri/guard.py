@@ -308,7 +308,8 @@ def screen_history(store, llm: LLM, customer_key: str, sources: list, data_class
                     escalate(store, customer_key, "possible attack: " + ", ".join(hits),
                              {"source_id": s.id, "label": "attack", "summary": g.summary, "language": g.language})
     newest = inbound[-1]
-    out.append(handle_reply(store, llm, customer_key, newest.text, source_id=newest.id, data_class=data_class))
+    out.append(handle_reply(store, llm, customer_key, newest.text, source_id=newest.id,
+                            channel=getattr(newest, "channel", None), data_class=data_class))
     return out
 
 

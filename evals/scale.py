@@ -1,7 +1,11 @@
 """Evals at scale: closed weights against open weights, per language, with 95% intervals.
 
-    python evals/scale.py                      # replays the recorded live run (or the stand-in where none): $0
-    python evals/scale.py --live --meta-budget 4 --baseten-budget 4   # every message on both providers, recorded
+    python evals/scale.py                                      # the table from the saved results: $0
+    python evals/scale.py --live --provider meta --budget 4     # Muse Spark 1.3 on every message
+    python evals/scale.py --live --provider baseten --budget 4  # Muse Spark Open on every message, then the judge
+
+Every result is appended to evals/scale/guard_<provider>.jsonl as it arrives, and every model reply to
+recorded.jsonl (llm.py), so a stopped run resumes where it stopped and pays for nothing twice.
 
 The guard reads every message in evals/scale/messages.jsonl (about 600, labelled by code) and attacks.jsonl (100):
 on Muse Spark 1.3 (Meta Model API) and on Muse Spark Open (open weights, Baseten). Then the judge (Muse Spark Open)
@@ -52,18 +56,40 @@ def _llm(mode: str, record: Path | None, replay: Path, **caps):
                         ledger_path=str(tmp)))
 
 
-def read_all(rows: list[dict], provider: str, llm) -> list[dict]:
-    """The guard on every row, WORKERS at a time. Each result keeps what was expected next to what came back."""
+def guard_file(provider: str) -> Path:
+    return SCALE / f"guard_{provider}.jsonl"
+
+
+def saved(provider: str) -> list[dict]:
+    f = guard_file(provider)
+    return [json.loads(x) for x in f.read_text(encoding="utf-8").splitlines() if x.strip()] if f.exists() else []
+
+
+def read_all(rows: list[dict], provider: str, llm, workers: int = WORKERS) -> list[dict]:
+    """The guard on every row not read yet, `workers` at a time. Each result (what was expected next to what came
+    back) is appended to guard_<provider>.jsonl the moment it arrives."""
+    import threading
+
     from pheri.guard import guard, screen
+
+    done = {r["id"] for r in saved(provider)}
+    lock = threading.Lock()
 
     def one(r):
         g = guard(r["text"], business="birgunj", llm=llm, source_id=r["id"], channel="whatsapp",
                   private=provider == "baseten")
-        return {"id": r["id"], "lang": r["lang"], "expected_label": r["label"], "kind": r.get("kind"),
-                "label": g.label, "language": g.language, "attack": g.attack, "code_screen": bool(screen(r["text"])),
-                "error": g.error, "cost_usd": g.cost_usd, "recorded": None}
-    with cf.ThreadPoolExecutor(WORKERS) as pool:
-        return list(pool.map(one, rows))
+        out = {"id": r["id"], "lang": r["lang"], "expected_label": r["label"], "kind": r.get("kind"),
+               "label": g.label, "language": g.language, "attack": g.attack, "code_screen": bool(screen(r["text"])),
+               "error": g.error, "cost_usd": g.cost_usd}
+        with lock, guard_file(provider).open("a", encoding="utf-8") as f:
+            f.write(json.dumps(out, ensure_ascii=False) + "\n")
+        return out
+    todo = [r for r in rows if r["id"] not in done]
+    print(f"{provider}: {len(done)} already read, {len(todo)} to go", flush=True)
+    with cf.ThreadPoolExecutor(workers) as pool:
+        list(pool.map(one, todo))
+    by_id = {r["id"]: r for r in saved(provider)}
+    return [by_id[r["id"]] for r in rows if r["id"] in by_id]
 
 
 def _ci(k: int, n: int) -> dict:
@@ -120,6 +146,9 @@ def fmt(c: dict) -> str:
 def table(results: dict) -> str:
     lines = []
     for p, name in PROVIDERS.items():
+        if p not in results["guard"]:
+            lines.append(f"== {name}: not run yet")
+            continue
         s = results["guard"][p]
         lines += [f"== {name}: ${s['cost_usd']:.2f}",
                   f"  {'language':9} {'label right':24} {'language (family)':24} {'attacks stopped':24} {'false alarms':22}"]
@@ -128,6 +157,8 @@ def table(results: dict) -> str:
             lines.append(f"  {lang:9} {fmt(b['label']):24} {fmt(b['language_family']):24} "
                          f"{fmt(b['attacks_stopped']):24} {fmt(b['false_alarms']):22}")
     j = results["judge"]
+    if j is None:
+        return "\n".join(lines + ["== judge: not run yet"])
     lines += [f"== judge (Muse Spark Open): planted claims caught {fmt(j['planted_caught'])}, "
               f"supported drafts passed {fmt(j['supported_passed'])}, ${j['cost_usd']:.2f}"]
     return "\n".join(lines)
@@ -136,32 +167,33 @@ def table(results: dict) -> str:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--live", action="store_true")
-    ap.add_argument("--meta-budget", type=float, default=None)
-    ap.add_argument("--baseten-budget", type=float, default=None)
+    ap.add_argument("--provider", choices=tuple(PROVIDERS))
+    ap.add_argument("--budget", type=float, default=None, help="USD for this provider (and the judge, on baseten)")
+    ap.add_argument("--workers", type=int, default=WORKERS)
     args = ap.parse_args(argv)
     sys.stdout.reconfigure(encoding="utf-8")
     rows = load("messages.jsonl") + load("attacks.jsonl")
     cases = load("judge.jsonl")
-    caps = {}
     if args.live:
-        if args.meta_budget is None or args.baseten_budget is None:
-            print("--live needs --meta-budget and --baseten-budget (USD).")
+        if args.provider is None or args.budget is None:
+            print("--live needs --provider and --budget (USD).")
             return 2
         from pheri.ledger import Ledger
 
-        led = Ledger()
-        caps = {"meta_cap_usd": led.totals("meta").committed_usd + args.meta_budget,
-                "baseten_cap_usd": led.totals("baseten").committed_usd + args.baseten_budget}
         os.environ["PHERI_LLM_MODE"] = "live"
-    mode = "live" if args.live else "replay"
-    llm = _llm(mode, RECORDING, RECORDING, **caps)
-    results = {"messages": len(rows), "judge_cases": len(cases), "guard": {}, "rows": {}}
+        cap = {f"{args.provider}_cap_usd": Ledger().totals(args.provider).committed_usd + args.budget}
+        read_all(rows, args.provider, _llm("live", RECORDING, RECORDING, **cap), args.workers)
+        if args.provider == "baseten":
+            judged = judge(cases, _llm("live", JUDGE_RECORDING, JUDGE_RECORDING, **cap))
+            (SCALE / "judge_results.json").write_text(json.dumps(judged, ensure_ascii=False, indent=1), encoding="utf-8")
+    results = {"messages": len(rows), "judge_cases": len(cases), "guard": {}}
     for p in PROVIDERS:
-        out = read_all(rows, p, llm)
-        results["guard"][p] = summarize(out)
-        results["rows"][p] = out
-    results["judge"] = judge(cases, _llm(mode, JUDGE_RECORDING, JUDGE_RECORDING, **caps))
-    if args.live:
+        out = saved(p)
+        if len(out) == len(rows):
+            results["guard"][p] = summarize(out)
+    jr = SCALE / "judge_results.json"
+    results["judge"] = json.loads(jr.read_text(encoding="utf-8")) if jr.exists() else None
+    if results["guard"]:
         (SCALE / "results.json").write_text(json.dumps(results, ensure_ascii=False, indent=1), encoding="utf-8")
     print(table(results))
     return 0

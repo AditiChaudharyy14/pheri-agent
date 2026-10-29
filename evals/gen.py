@@ -239,51 +239,116 @@ def paraphrase_problems(original: dict, new: str) -> list[str]:
     return out
 
 
-def _paraphrase_one(r: dict, llm) -> str:
-    res = llm.complete([{"role": "system", "content": PARAPHRASE_SYSTEM},
-                        {"role": "user", "content": json.dumps({"language": r["lang"], "message": r["text"]},
-                                                               ensure_ascii=False)}],
-                       purpose=PARAPHRASE_PURPOSE, model=PARAPHRASE_MODEL, effort="low", max_tokens=600)
-    return (res.text or "").strip().strip('"').strip()
+PARAPHRASE_RECORDING = OUT / "paraphrase_recorded.jsonl"
+WORKERS = 4
 
 
-def paraphrase(rows: list[dict], llm, rng: random.Random, share: float = 0.3, max_tries: int = 3) -> dict:
+class Paraphraser:
+    """Rewrites through llm.py, resuming from what is already paid for. Every reply is appended to
+    PARAPHRASE_RECORDING as it arrives (llm.py records it), so a stopped run loses nothing. The n-th rewrite of a
+    message is looked up first: the conversation's own recorded replies in the order they came (attempt 0, 1, ...
+    as the first runs asked them), then the n-th variant's. Only a rewrite never paid for goes out live, and from
+    the second attempt on it carries its attempt number, so it is a new conversation with a reply of its own."""
+
+    def __init__(self, llm):
+        from pheri.llm import recording_key
+
+        self.llm, self._key = llm, recording_key
+        self.recorded: dict[str, list[str]] = {}
+        if PARAPHRASE_RECORDING.exists():
+            for line in PARAPHRASE_RECORDING.read_text(encoding="utf-8").splitlines():
+                if line.strip():
+                    row = json.loads(line)
+                    self.recorded.setdefault(row["key"], []).append(row["text"])
+        self.attempts: dict[str, int] = {}
+        self.reused = self.paid = 0
+        import threading
+
+        self._lock = threading.Lock()
+
+    def _messages(self, r: dict, variant: int | None) -> list[dict]:
+        body = {"language": r["lang"], "message": r["text"]}
+        if variant:
+            body["variant"] = variant  # another rewrite of the same message: a new conversation
+        return [{"role": "system", "content": PARAPHRASE_SYSTEM},
+                {"role": "user", "content": json.dumps(body, ensure_ascii=False)}]
+
+    def __call__(self, r: dict) -> str:
+        with self._lock:
+            n = self.attempts.get(r["text"], 0)
+            self.attempts[r["text"]] = n + 1
+        key = lambda v: self._key(PARAPHRASE_PURPOSE, "meta", PARAPHRASE_MODEL, self._messages(r, v), None, None)  # noqa: E731
+        first = self.recorded.get(key(None), [])
+        if n < len(first):
+            text = first[n]
+        elif (mine := self.recorded.get(key(n))) and n:
+            text = mine[0]
+        else:
+            res = self.llm.complete(self._messages(r, n or None), purpose=PARAPHRASE_PURPOSE, model=PARAPHRASE_MODEL,
+                                    effort="low", max_tokens=1200)
+            with self._lock:
+                self.paid += 1
+            return (res.text or "").strip().strip('"').strip()
+        with self._lock:
+            self.reused += 1
+        return (text or "").strip().strip('"').strip()
+
+
+def paraphrase(rows: list[dict], one, rng: random.Random, share: float = 0.3, max_tries: int = 3) -> dict:
     """Two jobs, both only rewording. 1. Groups (language x label) short of PER_LABEL get new rows, each a checked
     paraphrase of one of the group's own rows (same label, same language: the template's). 2. `share` of the
-    other rows are reworded in place. Code drops any rewrite that fails a check or repeats a text."""
+    other rows are reworded in place. Code drops any rewrite that fails a check or repeats a text. Groups run
+    WORKERS at a time; within a group the order is fixed, so a resumed run asks the same things in the same order."""
+    import concurrent.futures as cf
+    import threading
+
     stats = {"tried": 0, "added": 0, "reworded": 0, "dropped": {}}
     seen = {r["text"] for r in rows}
+    lock = threading.Lock()
 
     def attempt(r: dict) -> str | None:
-        stats["tried"] += 1
-        new = _paraphrase_one(r, llm)
-        problems = paraphrase_problems(r, new) + (["repeats a text"] if new in seen else [])
-        for p in problems:
-            key = p.split(" '")[0]
-            stats["dropped"][key] = stats["dropped"].get(key, 0) + 1
-        return None if problems else new
+        new = one(r)
+        with lock:
+            stats["tried"] += 1
+            problems = paraphrase_problems(r, new) + (["repeats a text"] if new in seen else [])
+            for p in problems:
+                key = p.split(" '")[0]
+                stats["dropped"][key] = stats["dropped"].get(key, 0) + 1
+            if problems:
+                return None
+            seen.add(new)
+            return new
 
     groups: dict[tuple[str, str], list[dict]] = {}
     for r in rows:
         groups.setdefault((r["lang"], r["label"]), []).append(r)
-    for (lang, label), group in groups.items():
-        base = list(group)
+    added: list[dict] = []
+
+    def top_up(group: list[dict]) -> list[dict]:
+        base, new_rows = list(group), []
         for _ in range(max_tries * PER_LABEL):
-            if len(group) >= PER_LABEL:
+            if len(base) + len(new_rows) >= PER_LABEL:
                 break
-            parent = base[len(group) % len(base)]
+            parent = base[(len(base) + len(new_rows)) % len(base)]
             if (new := attempt(parent)) is not None:
-                seen.add(new)
-                row = {**parent, "id": f"{parent['id']}p{len(group)}", "text": new, "source": "paraphrase",
-                       "parent": parent["id"]}
-                group.append(row)
-                rows.append(row)
-                stats["added"] += 1
-    for r in rng.sample([r for r in rows if r["source"] == "template"], round(len(rows) * share)):
+                new_rows.append({**parent, "id": f"{parent['id']}p{len(base) + len(new_rows)}", "text": new,
+                                 "source": "paraphrase", "parent": parent["id"]})
+        return new_rows
+
+    with cf.ThreadPoolExecutor(WORKERS) as pool:
+        for new_rows in pool.map(top_up, groups.values()):
+            added += new_rows
+    rows += added
+    stats["added"] = len(added)
+    picked = rng.sample([r for r in rows if r["source"] == "template"], round(len(rows) * share))
+
+    def reword(r: dict) -> None:
         if (new := attempt(r)) is not None:
-            seen.add(new)
             r["original"], r["text"], r["source"] = r["text"], new, "paraphrase"
-            stats["reworded"] += 1
+            with lock:
+                stats["reworded"] += 1
+    with cf.ThreadPoolExecutor(WORKERS) as pool:
+        list(pool.map(reword, picked))
     rows.sort(key=lambda r: (LANGS.index(r["lang"]), LABELS.index(r["label"]), r["id"]))
     return stats
 
@@ -317,10 +382,11 @@ def main(argv=None) -> int:
         from pheri.llm import LLM
 
         spent = Ledger(Settings()).totals("meta").committed_usd
-        llm = LLM(Settings(llm_mode="live", meta_cap_usd=spent + args.budget,
-                           record_path=str(OUT / "paraphrase_recorded.jsonl")))
-        stats = paraphrase(msgs, llm, random.Random(f"{SEED}:paraphrase"))
-        print(f"paraphrase: {stats}")
+        # record_path makes llm.py append each reply as it arrives; Paraphraser does the resuming itself.
+        llm = LLM(Settings(llm_mode="live", meta_cap_usd=spent + args.budget, record_path=str(PARAPHRASE_RECORDING)))
+        one = Paraphraser(llm)
+        stats = paraphrase(msgs, one, random.Random(f"{SEED}:paraphrase"))
+        print(f"paraphrase: {stats}; recorded replies reused {one.reused}, paid for {one.paid}")
     from judge_cases import judge_cases  # noqa: E402  (evals/judge_cases.py)
 
     judge = judge_cases()

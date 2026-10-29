@@ -9,7 +9,7 @@ import pytest
 from pheri import llm as llm_module
 from pheri.config import Settings
 from pheri.llm import LLM
-from pheri.profile import (PURPOSE, SYSTEM, build_profile, build_profiles, load, load_brightdesk, norm_email,
+from pheri.profile import (PURPOSE, SYSTEM, build_profile, build_profiles, empty_insights, load, load_brightdesk, norm_email,
                            parse_date, quote_in_source)
 from pheri.synth import OUT
 
@@ -329,3 +329,18 @@ def test_pronouns_only_when_the_customer_gave_them(brightdesk, birgunj):
     """The CRM column is blank unless the customer told us: then Pheri uses the name, never a guess."""
     given = {k: c.pronouns for ds in (brightdesk, birgunj) for k, c in ds.customers.items() if c.pronouns}
     assert given == {"maya.okafor@pinecrest.example": "she/her"}
+
+
+def test_a_reading_cut_off_at_the_limit_keeps_the_facts_and_does_not_crash(brightdesk, llm):
+    """Found by the defence-in-depth eval: a profile reading cut off at its output limit raised, and the customer's
+    whole decision with it. Now the profile keeps what code counted, no insights, and says why."""
+    from pheri import llm as llm_module
+
+    real = llm_module._mock_responders["profile_insights"]
+    llm_module.register_mock("profile_insights", lambda m, s: {"incomplete": "max_output_tokens", "text": '{"goals": ['})
+    try:
+        p = build_profile(brightdesk, "maya.okafor@pinecrest.example", llm)
+    finally:
+        llm_module.register_mock("profile_insights", real)
+    assert p.facts["failed_exports_30d"] == 5 and p.insights == empty_insights()
+    assert "cut off" in p.provenance["unread"]

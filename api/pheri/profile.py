@@ -24,7 +24,7 @@ from typing import Callable, Literal
 
 from pydantic import BaseModel
 
-from .llm import LLM, register_mock
+from .llm import LLM, ModelOutputError, register_mock
 from .privacy import PRIVATE_EFFORT, PRIVATE_PROVIDER
 from .synth import FESTIVAL_WINDOW_DAYS, FESTIVALS, OUT, TODAY
 
@@ -541,17 +541,25 @@ def build_profile(ds: Dataset, key: str, llm: LLM, today: date = TODAY, private:
     sources = _recent(c.sources)
     insights = empty_insights()
     dropped: list[dict] = []
-    model = None
+    model, unread = None, None
     if sources:  # no text, nothing to read: skip the call and spend nothing
         messages = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": _prompt(c, sources)}]
-        r = llm.complete_json(messages, schema=Insights, provider=PRIVATE_PROVIDER if private else "meta",
-                              purpose=PURPOSE, effort=PRIVATE_EFFORT if private else "low",
-                              max_tokens=PRIVATE_MAX_OUTPUT_TOKENS if private else MAX_OUTPUT_TOKENS,
-                              data_class=ds.data_class)
-        insights, dropped = verify(r.parsed, {s.id: s for s in sources})
-        model = r.model
+        try:
+            r = llm.complete_json(messages, schema=Insights, provider=PRIVATE_PROVIDER if private else "meta",
+                                  purpose=PURPOSE, effort=PRIVATE_EFFORT if private else "low",
+                                  max_tokens=PRIVATE_MAX_OUTPUT_TOKENS if private else MAX_OUTPUT_TOKENS,
+                                  data_class=ds.data_class)
+            insights, dropped = verify(r.parsed, {s.id: s for s in sources})
+            model = r.model
+        except ModelOutputError as exc:
+            # A reading that cannot be used (cut off, not the schema) is not a crash: the profile keeps the facts
+            # code counted and no insights, says why, and the decision goes on from facts alone.
+            unread = str(exc)[:200]
+            model = getattr(getattr(exc, "result", None), "model", None)
     provenance = {"identity": {"key": c.key, "rows": c.refs, "aliases": sorted(c.aliases)},
                   "facts": fact_prov, "sources": [s.id for s in sources], "dropped": dropped}
+    if unread:
+        provenance["unread"] = unread
     return Profile(ds.business, c.key, c.name, c.company, facts, insights, provenance, model, c.pronouns)
 
 

@@ -136,6 +136,33 @@ def judge(cases: list[dict], judge_llm) -> dict:
             "false_alarms": [{"id": r["id"], "unsupported": r["unsupported"]} for r in supported if not r["ok"]]}
 
 
+def before_after(split: str = "test") -> dict:
+    """The guard's code screen as it was when the models read the messages (saved per row) against the screen as it
+    is now, on one half only. The models' verdicts are the saved ones: the screen changed, not what they saw. Since
+    the screen only gained patterns, "after" for a model is its saved verdict or the new screen."""
+    from pheri.guard import screen
+
+    ids = {r["id"]: r for r in load("messages.jsonl") + load("attacks.jsonl") if r.get("split") == split}
+    out = {}
+    for p in PROVIDERS:
+        rows = [{**r, "screen_now": bool(screen(ids[r["id"]]["text"]))} for r in saved(p) if r["id"] in ids]
+        res = {}
+        for lang in (*LANGS, "all"):
+            rs = [r for r in rows if lang == "all" or r["lang"] == lang]
+            atk = [r for r in rs if r["expected_label"] == "attack"]
+            ben = [r for r in rs if r["expected_label"] != "attack"]
+            res[lang] = {
+                "code_before": _ci(sum(r["code_screen"] for r in atk), len(atk)),
+                "code_after": _ci(sum(r["screen_now"] for r in atk), len(atk)),
+                "guard_before": _ci(sum(r["attack"] for r in atk), len(atk)),
+                "guard_after": _ci(sum(r["attack"] or r["screen_now"] for r in atk), len(atk)),
+                "false_alarms_before": _ci(sum(r["attack"] for r in ben), len(ben)),
+                "false_alarms_after": _ci(sum(r["attack"] or r["screen_now"] for r in ben), len(ben)),
+            }
+        out[p] = res
+    return out
+
+
 def fmt(c: dict) -> str:
     if not c["n"]:
         return "n/a"

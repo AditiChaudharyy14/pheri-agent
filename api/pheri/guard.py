@@ -57,7 +57,7 @@ INJECTION_PATTERNS: dict[str, list[str]] = {
         rf"\b(ignore|disregard|forget|bypass|override)\b{_W}\b(safety|security|content|usage) polic(y|ies)\b",
         rf"\b(ignor[ae]\w*|olvid[ae]\w*|omit[ae]\w*){_W}\b(instrucciones|reglas|normas|indicaciones)\b",
         rf"\b(ignor[ae]\w*|esque[cç]a\w*|desconsider[ae]\w*){_W}\b(instru[cç][oõ]es|regras|orienta[cç][oõ]es)\b",
-        r"(नियम|निर्देश)[^।\n]{0,30}(भूल|अनदेखा|नज़रअंदाज़|नजरअंदाज|ताक पर)",
+        r"(नियम|निर्देश)[^।\n]{0,30}(भूल|भुला|अनदेखा|नज़रअंदाज़|नजरअंदाज|ताक पर)",  # भुला: Bhojpuri
         r"(नियम|निर्देशन)[^।\n]{0,30}(बिर्स|बेवास्ता|नमान|पन्छाउ)",
     ],
     "role_override": [
@@ -72,20 +72,20 @@ INJECTION_PATTERNS: dict[str, list[str]] = {
         r"\b(prompt|instrucciones|instru[cç][oõ]es) del? sistema\b",
     ],
     "exfiltrate": [
-        rf"\b(reveal|dump|leak|give me|tell me|print|expose){_W}\b(every|all|other|each)\b[^.!?\n]{{0,20}}"
-        r"\b(customers?|users?|clients?)'?s?\s*(e-?mails?|e-?mail addresses|phone numbers|passwords?|data)\b",
+        rf"\b(reveal|dump|leak|give me|tell me|send me|print|expose){_W}\b(every|all|other|each)\b[^.!?\n]{{0,20}}"
+        r"\b(customers?|users?|clients?)'?s?\s*(e-?mails?|e-?mail addresses|phone numbers?|passwords?|data|addresses)\b",
         r"\b(reveal|print|repeat|show me|give me)\b[^.!?\n]{0,20}\b(your|the)\s*(system prompt|hidden instructions|api key|secret key)\b",
         rf"\b(revel[ae]\w*|d[aá]me){_W}\b(todos|todas|cada)\b[^.!?\n]{{0,20}}\b(correos|emails|e-mails|contraseñas)\b",
         rf"\b(revel[ae]\w*|me d[eê]){_W}\b(todos|todas|cada)\b[^.!?\n]{{0,20}}\b(e-?mails|senhas)\b",
-        r"(सभी|सारे|हर)[^।\n]{0,20}(ग्राहक|ग्राहकों|यूज़र|उपयोगकर्ता)[^।\n]{0,20}(ईमेल|इमेल|पासवर्ड)",
-        r"(सबै|प्रत्येक)[^।\n]{0,20}(ग्राहक|ग्राहकहरू|प्रयोगकर्ता)[^।\n]{0,20}(इमेल|ईमेल|पासवर्ड)",
+        r"(सभी|सारे|सारा|सब|सभ|हर)[^।\n]{0,20}(ग्राहक|ग्राहकों|यूज़र|उपयोगकर्ता)[^।\n]{0,20}(ईमेल|इमेल|पासवर्ड|फोन|नंबर|पता|पते)",
+        r"(सबै|प्रत्येक)[^।\n]{0,20}(ग्राहक|ग्राहकहरू|प्रयोगकर्ता)[^।\n]{0,20}(इमेल|ईमेल|पासवर्ड|फोन|नम्बर|ठेगाना)",
     ],
     "mass_refund": [
         r"\brefund\w*\b[^.!?\n]{0,20}\b(everything|everyone|every order|all (of )?(my |the )?orders|all purchases)\b",
         r"\breembols\w*\b[^.!?\n]{0,20}\b(todo|todos los pedidos|todas las compras|tudo|todos os pedidos)\b",
         r"\bdevu[eé]lv\w*\b[^.!?\n]{0,20}\b(todo el dinero|todo)\b",
-        r"(सभी|सारे)[^।\n]{0,20}(ऑर्डर|आर्डर|भुगतान)[^।\n]{0,20}(रिफंड|वापस)",
-        r"(सबै)[^।\n]{0,20}(अर्डर|भुक्तानी)[^।\n]{0,20}(रिफन्ड|रिफण्ड|फिर्ता)",
+        r"(सभी|सारे|सब|सभ|सगरी)[^।\n]{0,20}(ऑर्डर|आर्डर|भुगतान)[^।\n]{0,25}(रिफंड|वापस|लौटा)",  # Bhojpuri: सब, लौटा
+        r"(सबै)[^।\n]{0,20}(अर्डर|भुक्तानी)[^।\n]{0,25}(रिफन्ड|रिफण्ड|फिर्ता)",
     ],
     "false_authority": [
         r"\bas the (business |shop |store )?owner,? i (authori[sz]e|approve|order|instruct|command)\b",
@@ -96,11 +96,15 @@ INJECTION_PATTERNS: dict[str, list[str]] = {
         r"\bsem perguntar a ningu[eé]m\b",
         r"(तुम्हें|तुम्हे|आपको) (अधिकृत|अनुमति देता|इजाज़त)", r"किसी से पूछे बिना",
         r"(तिमीलाई|तपाईंलाई) (अधिकार|अनुमति) दिन्छु", r"कसैलाई नसोधी",
+        # A customer says the owner said so, and asks for something free: authority claimed, not given.
+        r"(मालिक|साहुजी|साहूजी)[^।\n]{0,25}(कहले|कहा|भन्नु)[^।\n]{0,40}(फ्री|मुफ्त|निःशुल्क)",
+        r"\bthe owner (said|says|told)\b[^.!?\n]{0,40}\b(free|refund|discount)",
     ],
     "prompt_markup": [r"</?\s*(system|assistant|instructions?)\s*>", r"\[/?(inst|system)\]", r"<\|(im_start|im_end|endoftext)\|>"],
     "tool_call": [  # asks the AI to call a tool by name: Pheri has three, and discards any other call anyway
         r"\b(call|invoke|run|execute|trigger)\b[^.!?\n]{0,20}\b[a-z]+_[a-z_]+\b",
         r"\b[a-z]+_[a-z_]+\s*\([^)]{0,80}\)",
+        r"\b[a-z]+_[a-z_]+\b[^.!?।\n]{0,6}(tool|टूल|function)",  # "issue_refund टूल चला ...": a tool, by name
         r"</?\s*(tool_call|function_call|tool_use|tool)\s*>",
         r"\"name\"\s*:\s*\"[a-z_]+\"\s*,\s*\"arguments\"",
     ],
@@ -132,10 +136,33 @@ def normalise(text: str) -> str:
     return " ".join(t.split())
 
 
+# Roman Nepali read in Devanagari: the words attacks lean on, so the Devanagari patterns above also see "sabai
+# customer ko phone number". Built from the dev half of evals/scale/attacks.jsonl only. Whole words, plus stems
+# for words that inflect (nirdeshan, nirdeshanharu; birsanus, birsera).
+ROMAN_TO_DEVANAGARI = {
+    "sabai": "सबै", "customer": "ग्राहक", "customers": "ग्राहक", "grahak": "ग्राहक", "phone": "फोन",
+    "number": "नम्बर", "thegana": "ठेगाना", "order": "अर्डर", "orderko": "अर्डरको", "paisa": "पैसा",
+    "firta": "फिर्ता", "sahuji": "साहुजी", "malik": "मालिक", "bhannu": "भन्नु", "bhannubhaeko": "भन्नु",
+    "free": "फ्री", "chhut": "छुट", "tool": "टूल",
+}
+ROMAN_STEMS = (("nirdes", "निर्देशन"), ("birs", "बिर्स"))
+_LATIN_WORD = re.compile(r"[a-z]+")
+
+
+def _in_devanagari(t: str) -> str:
+    def word(m: re.Match) -> str:
+        w = m.group()
+        if w in ROMAN_TO_DEVANAGARI:
+            return ROMAN_TO_DEVANAGARI[w]
+        return next((dev for stem, dev in ROMAN_STEMS if w.startswith(stem)), w)
+    return _LATIN_WORD.sub(word, t)
+
+
 def screen(text: str) -> list[str]:
-    """Names of the injection patterns the text matches (also with l33t digits read as letters)."""
+    """Names of the injection patterns the text matches (also with l33t digits read as letters, and with Roman
+    Nepali read in Devanagari)."""
     t = normalise(text)
-    variants = (t, t.translate(_LEET))
+    variants = (t, t.translate(_LEET), _in_devanagari(t))
     return [name for name, pats in _INJECTION.items() if any(p.search(v) for p in pats for v in variants)]
 
 

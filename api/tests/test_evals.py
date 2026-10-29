@@ -126,19 +126,41 @@ def test_verification_numbers_offline(runner, monkeypatch, tmp_path):
 
 
 def test_evals_at_scale_are_what_the_saved_results_say():
-    """evals/scale: 691 messages read by both models, live once (results.json). The table is rebuilt from the
-    per-row results, so the README's numbers cannot drift from them. Pinned as measured on 30 Oct."""
+    """evals/scale: 731 messages (591 labelled + 140 attacks) read once live by both models. The table is rebuilt
+    from the per-row results, so the README's numbers cannot drift from them. Pinned as measured on 30 Oct."""
     spec = importlib.util.spec_from_file_location("scale", REPO_ROOT / "evals" / "scale.py")
     scale = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(scale)
     results = json.loads((REPO_ROOT / "evals" / "scale" / "results.json").read_text(encoding="utf-8"))
     for p in ("meta", "baseten"):
         rows = scale.saved(p)
-        assert len(rows) == results["messages"] == 691
+        assert len(rows) == results["messages"] == 731
         assert scale.summarize(rows) == results["guard"][p]
     meta, open_ = results["guard"]["meta"], results["guard"]["baseten"]
-    assert (meta["all"]["attacks_stopped"]["k"], open_["all"]["attacks_stopped"]["k"]) == (87, 96)
-    assert (meta["bho"]["attacks_stopped"]["k"], open_["bho"]["attacks_stopped"]["k"]) == (11, 18)
+    assert (meta["all"]["attacks_stopped"]["k"], open_["all"]["attacks_stopped"]["k"]) == (117, 133)  # of 140
+    assert (meta["bho"]["attacks_stopped"]["k"], open_["bho"]["attacks_stopped"]["k"]) == (24, 37)  # of 40
+    assert (meta["ne-Latn"]["attacks_stopped"]["k"], open_["ne-Latn"]["attacks_stopped"]["k"]) == (33, 36)  # of 40
     assert (meta["all"]["false_alarms"]["k"], open_["all"]["false_alarms"]["k"]) == (0, 2)
     j = results["judge"]
     assert (j["planted_caught"]["k"], j["supported_passed"]["k"]) == (24, 25) and j["missed"] == ["JP10"]
+
+
+def test_the_split_is_fixed_and_the_guard_was_tuned_on_dev_only():
+    """Half of every language x kind is dev, half test, by seed. The code screen was improved by reading dev only;
+    test was scored once, before and after (evals/scale/before_after_test.json), and is pinned here."""
+    attacks = [json.loads(x) for x in (REPO_ROOT / "evals" / "scale" / "attacks.jsonl").read_text(encoding="utf-8").splitlines() if x]
+    assert len(attacks) == 140 and {a["split"] for a in attacks} == {"dev", "test"}
+    dev = [a for a in attacks if a["split"] == "dev"]
+    assert all(screen(a["text"]) for a in dev)  # what tuning on dev reached: every dev attack
+    ba = json.loads((REPO_ROOT / "evals" / "scale" / "before_after_test.json").read_text(encoding="utf-8"))
+    for p in ("meta", "baseten"):
+        assert (ba[p]["all"]["code_before"]["k"], ba[p]["all"]["code_after"]["k"], ba[p]["all"]["code_after"]["n"]) == (14, 68, 71)
+        assert ba[p]["all"]["guard_after"]["k"] == 70
+    assert ba["meta"]["all"]["guard_before"]["k"] == 62 and ba["baseten"]["all"]["guard_before"]["k"] == 69
+    test = [a for a in attacks if a["split"] == "test"]
+    assert sum(bool(screen(a["text"])) for a in test) == 68  # the screen today on test: the pinned number, unchanged
+
+
+def test_harmless_messages_still_pass_the_improved_screen():
+    rows = [json.loads(x) for x in (REPO_ROOT / "evals" / "scale" / "messages.jsonl").read_text(encoding="utf-8").splitlines() if x]
+    assert [r["id"] for r in rows if screen(r["text"])] == []

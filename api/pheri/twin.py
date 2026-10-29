@@ -18,6 +18,7 @@ outcome is one uniform number fixed up front, so two policies run on the same tw
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import random
 from collections import Counter
@@ -90,6 +91,9 @@ class TwinCustomer:
     holdout: bool
     luck: float  # the one uniform number that decides their outcome: responds if luck < chance
     round: int  # which round they arrive in
+    world: dict = field(default_factory=dict)  # milestone twins: their hidden profile from the shop's world
+    lucks: dict = field(default_factory=dict)  # milestone twins: one more luck per early or later milestone
+    day: int = 0  # milestone twins: the day they arrive
 
     def allowed(self, business: str, rules: list[Rule]) -> tuple[str, ...]:
         """The actions the owner's rules allow for this customer, checked in code like any other action."""
@@ -163,7 +167,11 @@ class Record:
     holdout: bool
     action: str | None  # None: holdout, or no action the rules allow
     chance: float  # the true chance that applied (for checking the twin, never shown to the policy)
-    responded: bool
+    responded: bool  # milestone twins: ordered (the objective)
+    replied: bool | None = None  # milestone twins only, from here on
+    reordered: bool | None = None
+    day: int | None = None
+    decision_id: str | None = None
 
 
 class RandomPolicy:
@@ -176,6 +184,9 @@ class RandomPolicy:
         return self.rng.choice(allowed)
 
     def update(self, seen_stage: str, action: str, responded: bool) -> None:
+        pass
+
+    def observe(self, event) -> None:
         pass
 
 
@@ -356,11 +367,259 @@ def report(twin: Twin, records: list[Record], policy: ThompsonPolicy,
 
 def run(business: str, n: int = 200, rounds: int = 10, seed: int = 7, min_tries: int | None = None) -> dict:
     """Thompson sampling on a fresh twin, plus the random policy on the same twin and luck for comparison.
-    min_tries: None scales it to the twin's size (min_tries_for); 0 is plain Thompson."""
+    min_tries: None scales it to the twin's size (min_tries_for); 0 is plain Thompson. A business with delayed
+    outcomes (MILESTONES) runs day by day, learning from replies and correcting with orders."""
+    tries = min_tries_for(business, n) if min_tries is None else min_tries
+    if business in MILESTONES:
+        return run_milestones(business, n, rounds, seed, tries)
     twin = population(business, n, rounds, seed)
-    policy = ThompsonPolicy(seed, min_tries_for(business, n) if min_tries is None else min_tries)
+    policy = ThompsonPolicy(seed, tries)
     records = simulate(twin, policy)
     return report(twin, records, policy, simulate(twin, RandomPolicy(seed)))
+
+
+# ---- delayed outcomes: milestones (Birgunj) ---------------------------------------------------
+# When the outcome that matters arrives late, learn from an early milestone and correct with the later ones.
+# In Birgunj a reply comes on day 1, an order on day 3, a reorder by day 30. The order is what the shop wants. A
+# reply is a cheap early guess at it, and sometimes a misleading one: a discount draws "how much?" replies that
+# never become orders. Brightdesk keeps its one outcome, decided at the end of a round, as it was recorded.
+MILESTONES: dict[str, tuple[tuple[str, int], ...]] = {"birgunj": (("reply", 1), ("order", 3), ("reorder", 30))}
+OBJECTIVE = "order"  # what Thompson sampling optimises, and what the lift against the holdout measures
+ARRIVAL_DAYS = 30  # customers arrive over a month; the twin runs on until the last reorder is in
+SILENT_ORDER_SHARE = 0.25  # of a customer's order chance, the part that comes with no reply (a cash-on-delivery link)
+# The twin's hidden truth for the early milestone: the chance of a reply within a day. Read with RESPONSE (orders):
+# in asked_no_order, festival and loyal the action with the most replies is not the one with the most orders.
+REPLY: dict[str, dict[str, dict[str, float]]] = {
+    "birgunj": {
+        "new":            {"send_reminder": .20, "recommend_product": .30, "offer_reorder": .10, "offer_discount": .35, "send_help": .25, "send_checkin": .25},
+        "loyal":          {"send_reminder": .15, "recommend_product": .35, "offer_reorder": .40, "offer_discount": .45, "send_help": .10, "send_checkin": .25},
+        "wholesale":      {"send_reminder": .10, "recommend_product": .25, "offer_reorder": .55, "offer_discount": .50, "send_help": .15, "send_checkin": .20},
+        "festival":       {"send_reminder": .15, "recommend_product": .30, "offer_reorder": .15, "offer_discount": .40, "send_help": .10, "send_checkin": .15},
+        "asked_no_order": {"send_reminder": .45, "recommend_product": .25, "offer_reorder": .10, "offer_discount": .55, "send_help": .20, "send_checkin": .15},
+        "gone_quiet":     {"send_reminder": .10, "recommend_product": .20, "offer_reorder": .15, "offer_discount": .35, "send_help": .10, "send_checkin": .25},
+        "complaint":      {"send_reminder": .10, "recommend_product": .05, "offer_reorder": .05, "offer_discount": .30, "send_help": .60, "send_checkin": .20},
+    },
+}
+REPLY_BASELINE = {"birgunj": {"new": .05, "loyal": .08, "wholesale": .10, "festival": .05, "asked_no_order": .08,
+                              "gone_quiet": .02, "complaint": .30}}  # complainers write anyway
+# Chance of a reorder within 30 days, given an order: by stage, nudged by the action that won the order (a
+# reorder nudge builds the habit; a discount buys one order from people who wait for the next discount).
+REORDER_BASE = {"birgunj": {"new": .25, "loyal": .45, "wholesale": .60, "festival": .15, "asked_no_order": .25,
+                            "gone_quiet": .20, "complaint": .30}}
+REORDER_ACTION = {"offer_reorder": .10, "offer_discount": -.10}
+
+
+@dataclass(frozen=True)
+class Chances:
+    reply: float
+    order: float  # the marginal chance of an order (what RESPONSE says, after the customer's own world)
+    order_if_reply: float
+    order_if_silent: float
+    reorder: float  # given an order
+
+
+def chances(business: str, c: TwinCustomer, action: str | None) -> Chances:
+    """This customer's chances, from the twin's tables and their hidden world: cash on delivery loses some orders
+    at the door, a price-sensitive customer answers a discount more, a returner reorders less, a wholesale buyer
+    more. The reply and the order are linked: most orders follow a reply, so a reply is evidence of an order."""
+    w = c.world
+    if action is None:
+        reply, order = REPLY_BASELINE[business][c.hidden_stage], BASELINE[business][c.hidden_stage]
+    else:
+        reply, order = REPLY[business][c.hidden_stage][action], RESPONSE[business][c.hidden_stage][action]
+    if w.get("payment") == "COD":
+        order *= 0.85
+    if w.get("price_sensitive") and action == "offer_discount":
+        reply, order = reply * 1.15, order * 1.25
+    reorder = REORDER_BASE[business][c.hidden_stage] + REORDER_ACTION.get(action or "", 0.0)
+    reorder *= (0.6 if w.get("return_prone") else 1.0) * (1.2 if w.get("segment") == "wholesale" else 1.0)
+    reply, order, reorder = (min(0.95, max(0.0, x)) for x in (reply, order, reorder))
+    # Split the order chance across replied / silent so the marginal stays exactly `order`.
+    if_reply = min(0.95, (order - (1 - reply) * SILENT_ORDER_SHARE * order) / reply) if reply else 0.0
+    if_silent = (order - reply * if_reply) / (1 - reply) if reply < 1 else 0.0
+    return Chances(reply, order, if_reply, max(0.0, if_silent), reorder)
+
+
+@lru_cache(maxsize=None)
+def hidden_world(business: str) -> tuple[dict, ...]:
+    """The shop's customers as they really are (data/synth/<business>/_truth.json "world"), in key order."""
+    world = json.loads((OUT / business / "_truth.json").read_text(encoding="utf-8"))["world"]
+    return tuple(world[k] for k in sorted(world))
+
+
+def world_population(business: str, n: int = 200, rounds: int = 10, seed: int = 7,
+                     holdout_share: float = HOLDOUT_SHARE) -> Twin:
+    """Twin customers drawn from the shop's hidden world: each is a real (synthetic) customer's whole profile,
+    picked with replacement. Each has three lucks fixed up front (reply, order, reorder), so two policies on the
+    same twin meet the same luck. They arrive over ARRIVAL_DAYS days; `round` is their arrival bucket for charts."""
+    pop, luck = random.Random(f"{seed}:population"), random.Random(f"{seed}:outcomes")
+    world, seen = hidden_world(business), seen_given_hidden(business)
+    customers = []
+    for i in range(n):
+        w = pop.choice(world)
+        hidden = w["stage"]
+        lo, hi = NEW_STAGES.get(hidden, (20, 700))
+        day = i * ARRIVAL_DAYS // n
+        customers.append(TwinCustomer(f"{business[:2]}-twin-{i:05d}", hidden, _pick(pop, seen[hidden]),
+                                      pop.randint(lo, hi), w["country"], False, luck.random(),
+                                      day * rounds // ARRIVAL_DAYS, world=w,
+                                      lucks={"reply": luck.random(), "reorder": luck.random()}, day=day))
+    for c in random.Random(f"{seed}:holdout").sample(customers, round(n * holdout_share)):
+        c.holdout = True
+    return Twin(business, customers, rounds, seed, TWIN_RULES[business])
+
+
+@dataclass
+class Event:
+    """A milestone arriving: which decision it belongs to, which milestone, what happened, and when."""
+    decision: Record
+    milestone: str
+    outcome: bool
+    day: int
+
+
+def simulate_milestones(twin: Twin, policy, observe_holdout: bool = False) -> list[Record]:
+    """Day by day: first the milestones due today reach the policy (each credited to the decision that caused
+    it, never to a later one), then today's customers get their action. Runs until the last reorder is in."""
+    b = twin.business
+    offsets = dict(MILESTONES[b])
+    arrivals: dict[int, list[TwinCustomer]] = {}
+    for c in twin.customers:
+        arrivals.setdefault(c.day, []).append(c)
+    due: dict[int, list[Event]] = {}
+    records: list[Record] = []
+    for day in range(ARRIVAL_DAYS + max(offsets.values()) + 1):
+        for ev in due.pop(day, []):
+            policy.observe(ev)
+        if hasattr(policy, "end_of_day"):
+            policy.end_of_day(day)
+        for c in arrivals.get(day, []):
+            allowed = () if c.holdout else c.allowed(b, twin.rules)
+            action = policy.choose(c.seen_stage, allowed) if allowed else None
+            p = chances(b, c, action)
+            replied = c.lucks["reply"] < p.reply
+            ordered = c.luck < (p.order_if_reply if replied else p.order_if_silent)
+            reordered = ordered and c.lucks["reorder"] < p.reorder
+            rec = Record(c.id, c.round, c.hidden_stage, c.seen_stage, c.holdout, action, p.order, ordered,
+                         replied=replied, reordered=reordered, day=day, decision_id=f"{c.id}:d{day}")
+            records.append(rec)
+            if action:
+                for name, outcome in (("reply", replied), ("order", ordered), ("reorder", reordered)):
+                    due.setdefault(day + offsets[name], []).append(Event(rec, name, outcome, day + offsets[name]))
+    return records
+
+
+class MilestoneThompson(ThompsonPolicy):
+    """Thompson sampling on the order, the outcome that matters, fed as the milestones arrive.
+
+    Day 1, the reply: provisional evidence. A reply counts as `w` of an order and `1 - w` of a miss, where `w` is
+    how often a reply has really led to an order so far (and `w0`, likewise, for no reply). Day 3, the order:
+    the provisional evidence for that decision is taken back and the real outcome put in. Day 30, the reorder:
+    counted per stage and action, for the report. learn_from="reply" is the learner that never corrects: it
+    takes a reply as success, the way a dashboard counting replies would."""
+
+    def __init__(self, seed: int = 0, min_tries: int = 0, learn_from: str = "milestones"):
+        super().__init__(seed, min_tries)
+        self.learn_from = learn_from
+        # replied? -> [orders, decisions]. The prior: a reply is worth half an order and silence a tenth, until the
+        # shop's own orders say otherwise (worth 2 and 10 decisions: the data takes over within days).
+        self.link = {True: [1.0, 2.0], False: [1.0, 10.0]}
+        self.provisional: dict[str, tuple[str, str, float, bool]] = {}  # decision id -> (stage, action, w, replied)
+        self.reorders: dict[tuple[str, str], list[int]] = {}  # (stage, action) -> [reorders, orders]
+        self.credited: list[tuple[str, str, str, str]] = []  # (decision id, milestone, stage, action): the audit
+        self.leaders: dict[int, dict[str, str]] = {}  # day -> stage -> the action Thompson would back
+
+    def observe(self, ev: Event) -> None:
+        d = ev.decision
+        key = (d.seen_stage, d.action)
+        self.credited.append((d.decision_id, ev.milestone, d.seen_stage, d.action))
+        ab = self._beta(*key)
+        if self.learn_from == "reply":
+            if ev.milestone == "reply":
+                ab[0 if ev.outcome else 1] += 1
+            return
+        if ev.milestone == "reply":
+            orders, total = self.link[ev.outcome]
+            w = orders / total
+            ab[0] += w
+            ab[1] += 1 - w
+            self.provisional[d.decision_id] = (d.seen_stage, d.action, w, ev.outcome)
+        elif ev.milestone == "order":
+            stage, action, w, replied = self.provisional.pop(d.decision_id)
+            ab[0] += (1 if ev.outcome else 0) - w
+            ab[1] += (0 if ev.outcome else 1) - (1 - w)
+            self.link[replied][0] += ev.outcome
+            self.link[replied][1] += 1
+        elif ev.milestone == "reorder" and d.responded:
+            k = self.reorders.setdefault(key, [0, 0])
+            k[0] += ev.outcome
+            k[1] += 1
+
+    def update(self, seen_stage: str, action: str, responded: bool) -> None:
+        pass  # outcomes arrive through observe(), on the day they happen
+
+    def end_of_day(self, day: int) -> None:
+        board = {}
+        for (stage, action), _ in self.ab.items():
+            best = board.get(stage)
+            if best is None or self.posterior_mean(stage, action) > self.posterior_mean(stage, best):
+                board[stage] = action
+        self.leaders[day] = board
+
+
+def run_milestones(business: str, n: int, rounds: int, seed: int, min_tries: int) -> dict:
+    twin = world_population(business, n, rounds, seed)
+    policy = MilestoneThompson(seed, min_tries)
+    records = simulate_milestones(twin, policy)
+    random_records = simulate_milestones(twin, RandomPolicy(seed))
+    reply_only = MilestoneThompson(seed, min_tries, learn_from="reply")
+    reply_records = simulate_milestones(twin, reply_only)
+    res = report(twin, records, policy, random_records)
+    b = twin.business
+    treated = [r for r in records if not r.holdout]
+    holdout = [r for r in records if r.holdout]
+
+    def as_outcome(rs: list[Record], what: str) -> list[Record]:
+        return [dataclasses.replace(r, responded=getattr(r, what)) for r in rs]
+
+    res["milestones"] = {
+        "days": dict(MILESTONES[b]), "objective": OBJECTIVE,
+        "reply": _lift(as_outcome(treated, "replied"), as_outcome(holdout, "replied")),
+        "order": res["overall"],
+        "reorder": _lift(as_outcome(treated, "reordered"), as_outcome(holdout, "reordered")),
+    }
+    res["overall"]["reply_only_policy"] = {**_group([r for r in reply_records if not r.holdout]),
+                                           "note": "the same Thompson sampling, learning from replies only"}
+    # Where replies alone would have backed a different action than the orders did: the corrections.
+    corrections = []
+    for st in res["stages"]:
+        tried = [a for a in st["actions"] if a["n"] >= 20]
+        if len(tried) < 2:
+            continue
+        by_reply = max(tried, key=lambda a: _rate([r.replied for r in treated
+                                                     if r.seen_stage == st["stage"] and r.action == a["action"]]))
+        by_order = max(tried, key=lambda a: a["rate"])
+        first_day = next((d for d, board in sorted(policy.leaders.items())
+                          if board.get(st["stage"]) == by_order["action"]
+                          and all(b2.get(st["stage"]) == by_order["action"] for d2, b2 in policy.leaders.items() if d2 >= d)),
+                         None)
+        if by_reply["action"] != by_order["action"]:
+            corrections.append({"stage": st["stage"], "replies_say": by_reply["action"], "orders_say": by_order["action"],
+                                "settled_on_day": first_day})
+    res["corrections"] = corrections
+    for st in res["stages"]:
+        for a in st["actions"]:
+            k = policy.reorders.get((st["stage"], a["action"]))
+            a["reply_rate"] = _rate([r.replied for r in treated if r.seen_stage == st["stage"] and r.action == a["action"]])
+            a["reorder_rate"] = round(k[0] / k[1], 4) if k and k[1] else None
+    res["days"] = ARRIVAL_DAYS + max(dict(MILESTONES[b]).values())
+    res["twin_truth"]["reply"] = REPLY[b]
+    res["twin_truth"]["reorder_base"] = REORDER_BASE[b]
+    return res
+
+
+def _rate(xs: list[bool]) -> float | None:
+    return round(sum(xs) / len(xs), 4) if xs else None
 
 
 def table(res: dict) -> str:

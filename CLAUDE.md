@@ -54,9 +54,18 @@ Read this before every task. These rules are not optional.
   Twin 5,000: +15.7 pp [+13.4, +18.0], learned = truth in every stage. Not yet re-recorded: Birgunj's night
   (test_replay_serves_birgunjs_recorded_night is a strict xfail until then), recorded once after Step 3's scheduling
   change, because that changes what the decide tools return. Native review of all Birgunj strings: pending (Aditi).
+- D2 done (delayed outcomes, twin.py): Birgunj's twin runs day by day on customers drawn from the hidden world
+  (world_population; COD, price sensitivity, returns, wholesale change the chances). Milestones: reply day 1,
+  order day 3 (the objective), reorder day 30, each credited to the decision that caused it (Event.decision).
+  MilestoneThompson: a reply is provisional evidence (weight = P(order | reply) learned so far), replaced by the
+  real order on day 3. 5,000, seed 7: orders 22.9% vs holdout 8.9% (+14.0 [+11.8, +16.2]); replies-only learner
+  21.0%; random 12.0%; reorders 6.7% vs 2.8%. Correcting beats replies-only on every seed at 5,000; at 2,000 it does
+  not (kept in the test docstring). Brightdesk keeps its one outcome; its results file is pinned byte-for-byte
+  (test_brightdesk_keeps_its_one_outcome_and_its_recorded_results). Proof: "Learns from replies today, corrects
+  with orders later" + corrections per stage. Wonder may cite milestone facts (learn.catalogue).
 - Waiting on Aditi: Modal card check (no Modal deploy until then), Nepali + Hindi clips, OK to push for Render.
   Servers for screenshots: uvicorn :8000 (replay, no --reload: restart after API changes), next dev :3000.
-- Live spend: Meta $1.5019 of $130, Baseten $0.6544 of $90, Modal $0 of $25. Tests: 344 (15 skip without
+- Live spend: Meta $1.5019 of $130, Baseten $0.6544 of $90, Modal $0 of $25. Tests: 353 (15 skip without
   Postgres, 1 strict xfail: Birgunj's night not recorded yet).
 
 ## What we are building

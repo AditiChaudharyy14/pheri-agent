@@ -166,10 +166,16 @@ export type StageResult = {
 export type TwinResults = {
   business: string; customers: number; rounds: number; seed: number; holdout_share: number; min_tries: number;
   overall: Omit<StageResult, "stage" | "best_action" | "runner_up" | "best_call" | "actions"> & {
-    random_policy?: Group };
+    random_policy?: Group; reply_only_policy?: Group };
   stages: StageResult[];
   learning_curve: { round: number; treated_rate: number; holdout_rate: number; best_pick_share: number | null }[];
+  // Delayed outcomes (Birgunj): a reply on day 1, an order on day 3, a reorder by day 30.
+  milestones?: { days: Record<string, number>; objective: string; reply: Lift; reorder: Lift };
+  days?: number;
+  corrections?: { stage: string; replies_say: string; orders_say: string; settled_on_day: number | null }[];
 };
+
+type Lift = { treated: Group; holdout: Group; lift_pp: number | null; ci_pp: [number, number] | null; verdict: string };
 
 export type Learned = {
   source: "live" | "recorded" | "stand-in";

@@ -69,6 +69,17 @@ def catalogue(results: dict) -> dict[str, str]:
     lift("overall", results["overall"])
     if rnd := results["overall"].get("random_policy"):
         facts["overall.random_policy_rate_pct"] = _pct(rnd["rate"])
+    # Delayed outcomes (Birgunj): what the early milestone said, what the orders said, and when Pheri settled.
+    if m := results.get("milestones"):
+        for name in ("reply", "reorder"):
+            lift(f"milestones.{name}", m[name])
+        for name, day in m["days"].items():
+            facts[f"milestones.{name}_day"] = str(day)
+        facts["overall.reply_only_policy_rate_pct"] = _pct(results["overall"]["reply_only_policy"]["rate"])
+        for c in results.get("corrections", []):
+            facts[f"{c['stage']}.replies_say"], facts[f"{c['stage']}.orders_say"] = c["replies_say"], c["orders_say"]
+            if c["settled_on_day"] is not None:
+                facts[f"{c['stage']}.settled_on_day"] = str(c["settled_on_day"])
     for s in results["stages"]:
         lift(s["stage"], s)
         if s["best_action"]:
@@ -331,7 +342,8 @@ def _said(action: str) -> str:
 
 def _mock_report(messages: list[dict], schema: dict | None) -> str:
     facts = json.loads(next(m for m in messages if m["role"] == "user")["content"])["facts"]
-    stages = sorted({k.split(".")[0] for k in facts if k.endswith(".verdict") and not k.startswith("overall")},
+    stages = sorted({k.split(".")[0] for k in facts if k.endswith(".verdict")
+                     and not k.startswith(("overall", "milestones."))},
                     key=lambda s: list(facts).index(f"{s}.verdict"))
     findings = []
     for s in stages:

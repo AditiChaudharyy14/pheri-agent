@@ -4,7 +4,7 @@ import { type DecidedBy, type Override, usd, type VerificationLine } from "@/lib
 const MODEL: Record<string, string> = { "muse-spark-1.3": "Muse Spark 1.3" };
 
 /** Who decided, for what, in how many turns, and how it was checked:
- * "Decided by Muse Spark 1.3 · $0.0166 · 3 turns · Verified: 13 code checks + judge · View trace". */
+ * "Decided by Muse Spark 1.3 · $0.0166 · 3 turns · Verified: N code checks + judge · View trace". */
 export function DecidedByLine({ business, customerKey, by, cost, turns, isPrivate, verification, override }: {
   business: string;
   customerKey: string;
@@ -37,7 +37,7 @@ export function DecidedByLine({ business, customerKey, by, cost, turns, isPrivat
           <span aria-hidden>·</span>
           {override ? (
             <span className="text-amber" title={`${override.by}, ${override.at}: ${override.reasons.join("; ")}`}>
-              Sent by owner override: {override.summary}
+              {override.line}
             </span>
           ) : (
             <VerifiedPart v={verification} />

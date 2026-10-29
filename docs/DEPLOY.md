@@ -85,7 +85,7 @@ Wait for **pheri-web** to show "Your service is live", then open its URL.
    - the footer reads "Decided by Muse Spark 1.3 · $… · 3 turns · ✓ Verified: 13 code checks + judge ·
      View trace".
 4. Click **View trace**. You should see Draft 1 with 3 turns, tokens and cost, marked "Recorded from a live
-   run", and under it the 12 code checks and the judge's verdict on each claim.
+   run", and under it the 13 code checks and the judge's verdict on each claim.
    - Aarav Silva's card (second) reads "Not verified after 3 drafts: caught by judge". That is real and
      on purpose: his trace shows each draft, what the judge rejected, and the reasons sent back. The judge
      is a soft check, so his card offers **Send anyway** ("Failed soft checks: judge flagged 2 claims").

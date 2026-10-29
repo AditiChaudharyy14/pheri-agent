@@ -18,7 +18,10 @@ Read this before every task. These rules are not optional.
   "owner_override" has who, when, checks, reasons, exact text; hard checks (rules incl. do-not-contact and quiet
   hours, schema, evidence, facts, pronouns, links, money, tools) never, for any drafted action (owner tasks too).
   The judge runs whenever hard checks pass (overrides always show its verdict); message claims first; >12 claims
-  or a why over 400 chars fails schema. A cited fact's window (_30d) backs "30". tidy_message lowercases "Your".
+  or a why over 400 chars fails schema. A cited fact's window (_30d) backs "30". tidy_message (only in
+  Draft.of) lowercases "Your". A judge that could not answer stays soft (owner may send), but the card and the
+  audit log say "Judge could not answer, sent by owner override". Hard/soft live only in Verification's
+  properties; the check count only in CODE_CHECKS (docs that state it are pinned by a test).
 - Public demo (PHERI_PUBLIC_DEMO=1, render.yaml): a sandbox per visitor (cookie pheri_sandbox via web/proxy.ts,
   in memory, max 100, 30 min idle, idlest dropped first); "Reset demo" button; audit actor "demo visitor (public
   demo, no login)", rules by "demo setup (public demo, no login)".
@@ -30,7 +33,7 @@ Read this before every task. These rules are not optional.
   Re-record: python scripts/record_demo.py --live --budget <usd> --baseten-budget <usd>.
 - Next: deploy on Render together (docs/DEPLOY.md; push only when agreed), README polish, demo video.
   Servers for screenshots: uvicorn :8000 (replay, no --reload: restart after API changes), next dev :3000.
-- Live spend: Meta $1.4575 of $130, Baseten $0.5886 of $90. Tests: 321 pass (mock + replay tests).
+- Live spend: Meta $1.4575 of $130, Baseten $0.5886 of $90. Tests: 326 pass (mock + replay tests).
 
 ## What we are building
 Pheri: an AI agent that understands each customer, decides their next best action ("why this, why now"),

@@ -66,7 +66,7 @@ from .profile import Profile, build_profile, compute_facts, load, norm_email
 from .rules import CheckContext, active_rules, check, confirm, describe, propose, seed
 from .store import MemoryStore, NotFound, PgStore
 from .synth import BUSINESS_NAMES, NOW
-from .verify import CODE_CHECKS, THRESHOLDS, middle_step_scores, override_summary
+from .verify import CODE_CHECKS, THRESHOLDS, middle_step_scores, override_line, override_summary
 
 BUSINESSES = tuple(BUSINESS_NAMES)
 TWIN_DIR = REPO_ROOT / "data" / "twin"
@@ -264,8 +264,9 @@ def create_app(llm: LLM | None = None) -> FastAPI:
     @app.get("/health")
     def health():
         """mode: live (real calls), replay (replies recorded in a live run, played back), or mock (the stand-in).
-        public_demo: every visitor has their own sandbox, and no one is logged in."""
-        return {"ok": True, "mode": state.settings.llm_mode, "public_demo": state.public_demo}
+        public_demo: every visitor has their own sandbox, and no one is logged in. code_checks: how many there are."""
+        return {"ok": True, "mode": state.settings.llm_mode, "public_demo": state.public_demo,
+                "code_checks": len(CODE_CHECKS)}
 
     @app.post("/demo/reset")
     def reset_demo():
@@ -502,12 +503,6 @@ def create_app(llm: LLM | None = None) -> FastAPI:
                 "decided_by": decided_by(out), "verification": verification_line(out),
                 "override": override_of(b, action)}
 
-    from .verify import SOFT_CHECKS as SOFT
-
-    def failed_of(v: dict) -> list[str]:
-        return [c["name"] for c in v["checks"] if c["applies"] and not c["passed"]] + (
-            ["judge"] if v["caught_by"] == "judge" else [])
-
     def override_of(b: str, action: dict | None) -> dict | None:
         """An owner's override of soft checks, from the audit log: who, when, what, and the text sent."""
         if not action:
@@ -515,17 +510,19 @@ def create_app(llm: LLM | None = None) -> FastAPI:
         e = next((x for x in reversed(state.stores[b].audit_log(action["id"])) if x["event"] == "owner_override"), None)
         if e is None:
             return None
-        return {**e["details"], "summary": override_summary(action["payload"].get("verification") or {}),
+        v = action["payload"].get("verification") or {}
+        return {**e["details"], "summary": override_summary(v), "line": e["details"].get("line") or override_line(v),
                 "logged_at": str(e["at"])}
 
     def verification_line(out: dict) -> dict | None:
-        """For the card's footer: "Verified: 12 code checks + judge", or why a person has it."""
+        """For the card's footer: "Verified: N code checks + judge" (N: the checks that applied, of CODE_CHECKS), or
+        why a person has it."""
         v = out.get("verification")
         if not v:
             return None
         return {"passed": v["passed"], "code_checks": v["code_checks"], "judge": v["judge_ran"],
                 "caught_by": v["caught_by"], "reasons": v["reasons"], "attempts": len(out.get("attempts") or []),
-                "hard_failed": [c for c in failed_of(v) if c not in SOFT], "soft_failed": [c for c in failed_of(v) if c in SOFT],
+                "hard_failed": v["hard_failed"], "soft_failed": v["soft_failed"],  # Verification's own
                 "judge_cost_usd": out.get("verify_cost_usd", 0.0),
                 "judge_recorded": all(a["verification"]["judge_recorded"] for a in out.get("attempts") or []
                                       if a["verification"]["judge_ran"])}

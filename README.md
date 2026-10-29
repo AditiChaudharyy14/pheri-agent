@@ -87,6 +87,9 @@ verification, and never let the agent mark its own homework.
      records who, when, which checks were overridden, the reasons, and the exact text sent, and the trace
      shows "Sent by owner override: judge flagged 2 claims". The summary always says what the judge
      found ("address; judge supported all 4 claims"), and there is no override without a verdict.
+   - **A judge that could not answer** (an unusable reply, a refused request) stays a soft failure: the
+     owner may still send the draft. But it is said in so many words, on the card and in the audit log:
+     "Judge could not answer, sent by owner override". The owner sent claims nobody checked.
    - **Hard checks** can never be overridden, by anyone: the owner's rules (which hold do-not-contact
      and quiet hours, and are checked again at approval), the schema, evidence, invented numbers, dates
      and plans, guessed pronouns, links, money offers, unknown tools. The queue says which one failed

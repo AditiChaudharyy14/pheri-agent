@@ -403,6 +403,76 @@ def test_only_the_send_step_marks_a_message_executed():
             assert not re.search(r'"executed"\s*,\s*executed_at', path.read_text(encoding="utf-8")), path.name
 
 
+def test_every_doc_that_states_the_number_of_code_checks_states_len_code_checks():
+    """One constant, CODE_CHECKS: the code reads it; the prose that states the number is pinned to it here."""
+    stated = []
+    for doc in ("README.md", "CLAUDE.md", "docs/DEPLOY.md", "api/pheri/app.py", "web/lib/api.ts",
+                "web/components/decided-by.tsx"):
+        text = (REPO_ROOT / doc).read_text(encoding="utf-8")
+        stated += [(doc, int(n)) for n in re.findall(r"\b(\d+) (?:code )?checks\b", text)]
+    assert stated and all(n == len(CODE_CHECKS) for _, n in stated), stated
+
+
+def test_tidy_runs_once_and_the_card_shows_the_text_that_was_verified(data, llm, monkeypatch):
+    from pheri import verify
+
+    calls = []
+    real = verify.tidy_message
+    monkeypatch.setattr(verify, "tidy_message", lambda m: calls.append(m) or real(m))
+    said = "Hi Maya, Here are the steps that fix the CSV export. - The Brightdesk team"
+    monkeypatch.setitem(llm_module._mock_responders, PURPOSE, lambda m, s: json.dumps(
+        {**next(r for r in DRAFTS if r["id"] == "G01")["draft"], "message": said}))
+    store = MemoryStore("brightdesk")
+    seed(store, llm)
+    out = decide(build_profile(data["brightdesk"], MAYA, llm), store, llm)
+    assert calls == [said] * len(out.attempts)  # once per draft, on what the model wrote; never on tidied text
+    shown = "Hi Maya, here are the steps that fix the CSV export. - The Brightdesk team"
+    assert out.decision["message"] == shown == out.action["payload"]["message"]
+    assert out.attempts[0]["decision"]["message"] == shown
+
+
+def test_the_api_reads_hard_and_soft_from_verification_not_a_copy_of_the_rule():
+    src = (REPO_ROOT / "api" / "pheri" / "app.py").read_text(encoding="utf-8")
+    assert "SOFT_CHECKS" not in src and "HARD_CHECKS" not in src and "failed_of" not in src
+    assert 'v["hard_failed"], "soft_failed": v["soft_failed"]' in src
+
+
+def test_hard_and_soft_count_the_judge_even_when_code_caught_the_draft(data, llm, monkeypatch):
+    """The bug the copy had: it counted the judge only when caught_by was "judge"."""
+    real = llm_module._mock_responders[JUDGE_PURPOSE]
+
+    def rejects_all(messages, schema):
+        out = json.loads(real(messages, schema))
+        return json.dumps({"verdicts": [{**x, "supported": False, "reason": "no fact"} for x in out["verdicts"]]})
+
+    monkeypatch.setitem(llm_module._mock_responders, JUDGE_PURPOSE, rejects_all)
+    v = verify_draft(_maya_draft(message="Hi Maya, sorry the CSV export Maya runs keeps failing. - The Brightdesk team"),
+                     _vc(data, llm, "brightdesk", MAYA))
+    assert v.caught_by == "code" and v.soft_failed == ["address", "judge"] and v.hard_failed == []
+    d = v.as_dict()
+    assert d["soft_failed"] == ["address", "judge"] and d["hard_failed"] == []
+
+
+def test_a_judge_that_could_not_answer_is_soft_but_said_plainly_on_the_card_and_in_the_log(data, llm, monkeypatch):
+    from pheri.verify import JUDGE_COULD_NOT_ANSWER, override_line
+
+    monkeypatch.setitem(llm_module._mock_responders, JUDGE_PURPOSE, lambda m, s: "not json")
+    store = MemoryStore("brightdesk")
+    seed(store, llm)
+    vc = _vc(data, llm, "brightdesk", MAYA, store)
+    from pheri.autonomy import submit
+
+    a = submit(store, MAYA, _maya_draft(), verify=vc)
+    v = a["payload"]["verification"]
+    assert v["soft_failed"] == ["judge"] and v["overridable"] and v["judge_error"]
+    assert override_line(v) == JUDGE_COULD_NOT_ANSWER == "Judge could not answer, sent by owner override"
+    done = approve(store, queue(store)[0]["id"], by="owner", override=True,
+                   context_for=lambda k: CheckContext("brightdesk", vc.profile.facts, NOW))
+    assert done["status"] == "executed"
+    logged = next(e["details"] for e in store.audit_log(a["id"]) if e["event"] == "owner_override")
+    assert logged["line"] == JUDGE_COULD_NOT_ANSWER and logged["judge"] == "the judge could not answer"
+
+
 def test_a_cited_facts_window_is_backed_but_no_other_number(data, llm):
     """Recorded on 29 Oct: "2 active days in the last 30 days", citing active_days_30d, was refused as an invented 30."""
     vc = _vc(data, llm, "brightdesk", MAYA)

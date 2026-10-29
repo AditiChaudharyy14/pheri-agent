@@ -197,25 +197,38 @@ class Verification:
         return [c["name"] for c in self.checks if c["applies"] and not c["passed"]] + (
             ["judge"] if self.judge_failed else [])
 
+    @property
+    def hard_failed(self) -> list[str]:
+        """What no one may override. The one place hard and soft are told apart; everything else reads these."""
+        return [c for c in self.failed if c in HARD_CHECKS]
+
+    @property
+    def soft_failed(self) -> list[str]:
+        return [c for c in self.failed if c in SOFT_CHECKS]
+
+    @property
+    def overridable(self) -> bool:
+        # Only with the judge's verdict (or its failure to give one) in hand, and only if something named
+        # failed: fail closed.
+        return (not self.passed and not self.hard_failed and bool(self.soft_failed)
+                and (self.judge_ran or bool(self.judge_error)))
+
     def record(self) -> dict:
         """What the action stores: enough for the send step's gate, the owner's override, and a person to read."""
-        failed = self.failed
-        hard = [c for c in failed if c in HARD_CHECKS]
-        soft = [c for c in failed if c in SOFT_CHECKS]
+        hard, soft = self.hard_failed, self.soft_failed
         return {"passed": self.passed, "sha": self.sha, "caught_by": self.caught_by, "reasons": self.reasons,
-                "code_checks": self.code_checks, "judge_ran": self.judge_ran, "failed": failed,
-                "hard_failed": hard, "soft_failed": soft,
-                # Only with the judge's verdict in hand, and only if something named failed: fail closed.
-                "overridable": not self.passed and not hard and bool(soft) and (self.judge_ran or bool(self.judge_error)),
+                "code_checks": self.code_checks, "judge_ran": self.judge_ran, "failed": self.failed,
+                "hard_failed": hard, "soft_failed": soft, "overridable": self.overridable,
                 "judge_flagged": sum(1 for r in self.judge if not r["supported"]),
-                "judge_summary": self.judge_summary,
+                "judge_error": self.judge_error, "judge_summary": self.judge_summary,
                 "summary": override_summary({"soft_failed": soft, "judge_summary": self.judge_summary}),
                 "hard_reasons": [r for r in self.reasons if r.split(":", 1)[0] in hard]}
 
     def as_dict(self) -> dict:
         from dataclasses import asdict
 
-        return {**asdict(self), "code_checks": self.code_checks}
+        return {**asdict(self), "code_checks": self.code_checks, "failed": self.failed,
+                "hard_failed": self.hard_failed, "soft_failed": self.soft_failed}
 
 
 # ---- evidence: the real values behind the ids the model picked --------------------------
@@ -678,6 +691,18 @@ def judge_worst_case_usd(n_claims: int = MAX_CLAIMS) -> float:
     return cost_usd(price_for(JUDGE_PROVIDER, ""), 1500 + 60 * n_claims, JUDGE_MAX_OUTPUT_TOKENS)
 
 
+JUDGE_COULD_NOT_ANSWER = "Judge could not answer, sent by owner override"
+
+
+def override_line(v: dict) -> str:
+    """The one line the card and the audit log give an override. A judge that could not answer is still a soft
+    failure, but it is said in so many words: the owner sent claims nobody checked."""
+    if v.get("judge_error"):
+        rest = [c.replace("_", " ") for c in v.get("soft_failed") or [] if c != "judge"]
+        return JUDGE_COULD_NOT_ANSWER + (f" (also: {', '.join(rest)})" if rest else "")
+    return f"Sent by owner override: {override_summary(v)}"
+
+
 def override_summary(v: dict) -> str:
     """What an owner's override sends past, always with the judge's verdict: 'judge flagged 1 claim',
     'one problem, length; judge supported all 4 claims', or '...; judge did not run'."""
@@ -687,4 +712,5 @@ def override_summary(v: dict) -> str:
 
 
 __all__ = ["Draft", "VerifyContext", "Verification", "verify_draft", "feedback", "middle_step", "middle_step_scores",
-           "THRESHOLDS", "CODE_CHECKS", "SOFT_CHECKS", "HARD_CHECKS", "context", "payload_sha", "override_summary"]
+           "THRESHOLDS", "CODE_CHECKS", "SOFT_CHECKS", "HARD_CHECKS", "context", "payload_sha", "override_summary",
+           "override_line", "JUDGE_COULD_NOT_ANSWER"]

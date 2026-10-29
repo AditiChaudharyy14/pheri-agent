@@ -65,7 +65,7 @@ export type StoredVerification = { passed: boolean; sha: string; caught_by: "cod
 
 /** An owner sent a draft that failed only soft checks, on the record. */
 export type Override = { by: string; at: string; overridden: string[]; reasons: string[]; text: string;
-  channel: string | null; sha: string; summary: string; logged_at: string };
+  channel: string | null; sha: string; summary: string; line: string; judge: string; logged_at: string };
 
 /** "judge flagged 1 claim, one problem": what an override would send past (the API's override_summary). */
 export const softSummary = (v: StoredVerification) =>
@@ -87,7 +87,7 @@ export type Verification = { passed: boolean; checks: CheckRow[]; judge: JudgeRo
   caught_by: "code" | "judge" | null; reasons: string[]; code_checks: number; judge_model: string | null;
   judge_cost_usd: number; judge_recorded: boolean; judge_error: string | null };
 export type Attempt = { attempt: number; decision: Decision; verification: Verification; turns: number[] };
-/** The card's footer: "Verified: 12 code checks + judge". */
+/** The card's footer: "Verified: N code checks + judge", N counted by the API (verify.CODE_CHECKS). */
 export type VerificationLine = { passed: boolean; code_checks: number; judge: boolean; caught_by: "code" | "judge" | null;
   reasons: string[]; attempts: number; judge_cost_usd: number; judge_recorded: boolean; hard_failed: string[];
   soft_failed: string[] };

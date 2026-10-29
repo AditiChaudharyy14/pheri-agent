@@ -120,7 +120,7 @@ async function TraceView({ params }: { params: Params }) {
           <ul className="mt-4 space-y-2">
             {t.override && (
               <li className="rounded-lg bg-amber-soft px-3 py-2 text-[0.93rem] text-amber">
-                Sent by owner override: {t.override.summary}. {t.override.by} read it and sent it anyway at{" "}
+                {t.override.line}. {t.override.by} read it and sent it anyway at{" "}
                 {t.override.at.replace("T", " ").slice(0, 16)}; the audit log holds the exact text and every reason.
               </li>
             )}

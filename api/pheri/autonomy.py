@@ -26,7 +26,7 @@ from typing import Callable
 
 from .actions import BUSINESS_ACTIONS, CATALOG, ESCALATE, ProposedAction
 from .rules import CheckContext, active_rules, check
-from .verify import Draft, VerifyContext, payload_sha, verify_draft
+from .verify import Draft, VerifyContext, override_line, payload_sha, verify_draft
 
 MODES = ("suggest", "ask_owner", "act_alone")  # from least to most autonomous
 DEFAULT_MODE = "ask_owner"
@@ -185,6 +185,7 @@ def approve(store, approval_id: str, by: str, context_for: Callable[[str], Check
             sent_anyway = None
             if unverified:
                 sent_anyway = {"by": by, "at": ctx.now.isoformat(), "overridden": list(v["soft_failed"]),
+                               "line": override_line(v), "judge": v.get("judge_summary") or "judge did not run",
                                "reasons": v.get("reasons", []), "text": p.get("message", ""),
                                "channel": p.get("channel"), "sha": v.get("sha")}
                 store.audit(by, "owner_override", "action", action["id"], sent_anyway)

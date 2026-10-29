@@ -50,7 +50,10 @@ def attacker():
 
 # ---- the basics ---------------------------------------------------------------------
 def test_health_and_businesses(client):
-    assert client.get("/health").json() == {"ok": True, "mode": "mock", "public_demo": False}
+    from pheri.verify import CODE_CHECKS
+
+    assert client.get("/health").json() == {"ok": True, "mode": "mock", "public_demo": False,
+                                            "code_checks": len(CODE_CHECKS)}
     assert [b["slug"] for b in client.get("/businesses").json()] == ["brightdesk", "kettle"]
     assert client.get("/businesses/acme/customers").status_code == 404
 
@@ -307,6 +310,7 @@ def test_replay_serves_mayas_recorded_live_run(monkeypatch, tmp_path):
     assert sent["status"] == "executed"
     card = next(c for c in api.get(f"{BD}/next-steps").json() if c["customer"]["name"] == "Aarav Silva")
     assert card["override"]["summary"] == "judge flagged 2 claims" and card["override"]["by"] == "owner:aditi"
+    assert card["override"]["line"] == "Sent by owner override: judge flagged 2 claims"
     assert card["override"]["text"] == aarav["decision"]["message"] and card["override"]["overridden"] == ["judge"]
     log = api.get(f"{BD}/audit", params={"subject_id": sent["id"]}).json()
     assert [e["event"] for e in log][-3:] == ["approved", "owner_override", "executed"]

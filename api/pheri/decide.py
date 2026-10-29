@@ -39,7 +39,6 @@ from .autonomy import escalate, modes, open_escalation, sent_messages, submit
 from .verify import (FEEDBACK_HEAD, NO_QUOTES, Draft, attach_evidence, fact_names, feedback,  # noqa: F401
                      message_problems, middle_step, quote_index, unsupported_numbers, verify_draft)
 from .verify import context as verify_context
-from .verify import tidy_message
 from .guard import GuardResult, screen_history
 from .privacy import PRIVATE_EFFORT as _PRIVACY_EFFORT
 from .privacy import private_fence, private_mode
@@ -325,15 +324,15 @@ def decide(p: Profile, store, llm: LLM, now: datetime = NOW, data_class: str = "
     loop = (_PrivateLoop if private else _ToolLoop)(run, llm, now, data_class, schema)
 
     # Draft, verify, and on a failure send the reasons back: at most verify_max_attempts drafts in all.
-    decision, fallback, fb = None, None, None
+    decision, draft, fallback, fb = None, None, None, None
     for attempt in range(1, max(1, llm.settings.verify_max_attempts) + 1):
         run.attempt = attempt
         answer, fallback = loop.answer(fb)
         if answer is None:
             break  # no usable draft this time: keep the last one (it goes to the owner) or fall back
-        decision = answer.model_copy(update={"message": tidy_message(answer.message)})  # "Hi Maya, your ..."
-        v = verify_draft(Draft.of(decision, now), vc)
-        run.attempts.append({"attempt": attempt, "decision": decision.model_dump(), "verification": v.as_dict(),
+        decision, draft = answer, Draft.of(answer, now)  # Draft.of tidies the message: "Hi Maya, your ..."
+        v = verify_draft(draft, vc)
+        run.attempts.append({"attempt": attempt, "decision": _as_sent(decision, draft), "verification": v.as_dict(),
                              "turns": [t["turn"] for t in run.turn_log if t.get("attempt") == attempt]})
         store.audit("pheri", "draft_checked", "customer", p.customer_key,
                     {"attempt": attempt, "passed": v.passed, "caught_by": v.caught_by, "reasons": v.reasons})
@@ -342,24 +341,30 @@ def decide(p: Profile, store, llm: LLM, now: datetime = NOW, data_class: str = "
         fb = feedback(v)
     if decision is None:
         decision = _fallback(fallback)
+        draft = Draft.of(decision, now)
     elif fallback is not None:
         fallback = f"draft {run.attempt}: {fallback}; the last draft that was written is used"
     turns, cost = loop.turns, loop.cost
 
-    draft = Draft.of(decision, now)
     v = verify_draft(draft, vc)  # the judge's answer is cached: this costs nothing more
     store.audit("pheri", "decided", "customer", p.customer_key,
-                {"decision": decision.model_dump(), "journey": j.stage, "turns": turns, "fallback": fallback,
+                {"decision": _as_sent(decision, draft), "journey": j.stage, "turns": turns, "fallback": fallback,
                  "dropped_evidence": v.dropped, "verified": v.passed, "caught_by": v.caught_by, "reasons": v.reasons,
                  "attempts": len(run.attempts), "cost_usd": cost, "private": private})
     action = None
     if decision.action != "no_action":
         action = submit(store, p.customer_key, draft, verify=vc)  # verifies again, itself, before anything happens
     judge_cost = sum(a["verification"]["judge_cost_usd"] for a in run.attempts)
-    return Outcome(p.customer_key, decision.model_dump(), action, v.evidence, v.dropped, turns, fallback, run.prechecks,
+    return Outcome(p.customer_key, _as_sent(decision, draft), action, v.evidence, v.dropped, turns, fallback,
+                   run.prechecks,
                    cost, run.trace, private=private, unsupported_numbers=unsupported_numbers(decision, v.evidence),
                    message_problems=v.reasons, turn_log=run.turn_log, attempts=run.attempts, verification=v.as_dict(),
                    verify_cost_usd=judge_cost, discarded_tools=run.discarded)
+
+
+def _as_sent(decision: Decision, draft: Draft) -> dict:
+    """The decision as shown and stored: the message exactly as the draft that was verified (and would be sent)."""
+    return {**decision.model_dump(), "message": draft.action.message}
 
 
 def _sent(items: list[dict], names: dict[str, str]) -> list[dict]:

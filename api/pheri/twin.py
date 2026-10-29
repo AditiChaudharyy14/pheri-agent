@@ -56,6 +56,20 @@ BASELINE = {
     "brightdesk": {"onboarding": .08, "stuck": .05, "quiet": .04, "healthy": .05, "expanding": .15, "at_risk_renewal": .10},
     "kettle": {"new": .07, "loyal": .20, "subscriber": .10, "lapsing": .04, "cart_abandoner": .12, "gift_buyer": .06},
 }
+PLAN_FIT = 0.5  # a plan fits a stage when its lift over the baseline is at least half the best action's lift
+
+
+def fitting_plans(business: str) -> dict[str, list[str]]:
+    """Per true stage, the actions that fit it: the labelled plans the middle-step check scores against
+    (written into _truth.json by synth.py)."""
+    out = {}
+    for s, row in RESPONSE[business].items():
+        lift = {a: r - BASELINE[business][s] for a, r in row.items()}
+        best = max(lift.values())
+        out[s] = [a for a, x in lift.items() if x > 0 and x >= PLAN_FIT * best]
+    return out
+
+
 # The rules the owner confirmed in the demo, as typed checks: the twin needs no model to compile them.
 TWIN_RULES = {"brightdesk": [Rule("seed", "Never offer discounts in a customer's first month.",
                                   [NoDiscountFirstDays(days=30)])], "kettle": []}

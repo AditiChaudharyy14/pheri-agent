@@ -15,6 +15,9 @@ from pheri.store import MemoryStore
 
 MAYA = "maya.okafor@pinecrest.example"
 FIRST_MONTH = "the customer is 22 days in; no discounts in the first 30 days"
+# The middle-step check (verify.py): a discount fits no stuck customer in the labelled truth set.
+STUCK_DISCOUNT = "offer_discount fits 0% of 'stuck' customers in the truth set; a money action needs 100%"
+STUCK_DISCOUNT_SCORES = {"stage": "stuck", "stage_score": 1.0, "plan_score": 0.0, "needs": 1.0}
 
 
 @pytest.fixture
@@ -94,8 +97,10 @@ def test_no_pronoun_is_guessed_when_the_customer_gave_none(brightdesk, store, ll
 def test_maya_discount_is_blocked_in_the_loop_and_she_gets_help(maya, store, llm):
     out = decide(maya, store, llm)
 
-    # The model tried a goodwill discount first; check_rules refused it, so it moved on.
-    assert out.prechecks[0] == {"action": "offer_discount", "allowed": False, "violations": [FIRST_MONTH]}
+    # The model tried a goodwill discount first; check_rules refused it (the owner's rule, then the middle step:
+    # the plan is checked before the message is written), so it moved on.
+    assert out.prechecks[0] == {"action": "offer_discount", "allowed": False, "violations": [FIRST_MONTH, STUCK_DISCOUNT],
+                                "middle_step": STUCK_DISCOUNT_SCORES}
     assert out.prechecks[-1]["action"] == "send_help" and out.prechecks[-1]["allowed"]
     assert out.decision["action"] == "send_help" and out.fallback is None
     assert out.action["status"] == "awaiting_approval"  # the default dial: ask the owner
@@ -107,14 +112,20 @@ def test_maya_discount_is_blocked_in_the_loop_and_she_gets_help(maya, store, llm
     assert "Why this:" in out.action["why"] and "Why now:" in out.action["why"]
     log = [a["event"] for a in store.audit_log()]
     assert log[:2] == ["rule_proposed", "rule_confirmed"]
-    assert log[2:] == ["rule_precheck", "rule_precheck", "decided", "rule_passed", "approval_requested"]
+    assert log[2:] == ["rule_precheck", "rule_precheck", "draft_checked", "decided", "verified", "rule_passed",
+                       "approval_requested"]
+    assert out.verification["passed"] and len(out.attempts) == 1  # verified on the first draft
 
 
 def test_maya_discount_is_blocked_in_code_even_if_the_model_ignores_check_rules(maya, store, llm, monkeypatch):
     _model(monkeypatch, lambda m, s: _answer(action="offer_discount", discount_pct=20.0,
                                              message="Hi Maya, here is 20% off next month."))
     out = decide(maya, store, llm)
-    assert out.turns == 1 and out.prechecks == []  # never asked check_rules
+    assert out.prechecks == []  # never asked check_rules
+    # Code refused each draft and sent the reasons back; the model wrote the same draft three times.
+    assert out.turns == 3 and [a["verification"]["caught_by"] for a in out.attempts] == ["code"] * 3
+    fed_back = [x for t in out.turn_log for x in t["sent"] if x["kind"] == "feedback"]
+    assert len(fed_back) == 2 and all(FIRST_MONTH in x["text"] for x in fed_back)
     assert out.action["status"] == "blocked"
     assert FIRST_MONTH in [r["reason"] for r in out.action["rule_check"]["results"]]
     blocked = [a for a in store.audit_log() if a["event"] == "rule_blocked"]
@@ -122,9 +133,19 @@ def test_maya_discount_is_blocked_in_code_even_if_the_model_ignores_check_rules(
     assert store.approvals() == []
 
 
-def test_without_the_rule_the_same_discount_would_go_to_the_owner(maya, llm):
+def test_without_the_rule_the_middle_step_still_refuses_a_discount_for_a_stuck_customer(maya, llm):
     out = decide(maya, MemoryStore("brightdesk"), llm)  # no rules confirmed
-    assert out.decision["action"] == "offer_discount" and out.decision["discount_pct"] == 20
+    assert out.prechecks[0] == {"action": "offer_discount", "allowed": False, "violations": [STUCK_DISCOUNT],
+                                "middle_step": STUCK_DISCOUNT_SCORES}
+    assert out.decision["action"] == "send_help"
+
+
+def test_without_a_rule_a_discount_that_fits_goes_to_the_owner(llm):
+    """A lapsing Kettle customer: a discount fits every lapsing customer in the truth set, and Kettle has no rule."""
+    kettle = load("kettle")
+    key = next(k for k, c in kettle.customers.items() if k.startswith("pablo.weber"))
+    out = decide(build_profile(kettle, key, llm), MemoryStore("kettle"), llm)
+    assert out.decision["action"] == "offer_discount" and out.verification["passed"]
     assert out.action["status"] == "awaiting_approval"
 
 
@@ -134,6 +155,7 @@ def test_tool_loop_replays_the_whole_conversation_statelessly(maya, store, llm, 
     real = llm.complete
     monkeypatch.setattr(llm, "complete", lambda items, **kw: calls.append((list(items), kw)) or real(items, **kw))
     decide(maya, store, llm)
+    calls = [c for c in calls if c[1]["purpose"] == PURPOSE]  # not the judge
     first_items, _ = calls[0]
     assert [i["role"] for i in first_items] == ["system", "user"]
     for items, kw in calls:
@@ -164,7 +186,9 @@ def test_plain_text_twice_falls_back_to_the_owner(maya, store, llm, monkeypatch)
     _model(monkeypatch, lambda m, s: "Let me think about Maya some more.")
     out = decide(maya, store, llm)
     assert out.turns == 2 and "not valid decision JSON" in out.fallback
-    assert out.decision["action"] == "task_for_owner" and out.action["status"] == "executed"  # a task, nothing sent
+    assert out.decision["action"] == "task_for_owner"
+    # Code wrote that task, citing nothing: it fails verification, so a person reads it. Nothing is sent either way.
+    assert out.action["status"] == "awaiting_approval" and out.verification["caught_by"] == "code"
 
 
 def test_endless_tool_calls_stop_at_the_turn_limit(maya, store, llm, monkeypatch):
@@ -187,7 +211,11 @@ def test_bad_tool_arguments_and_unknown_tools_return_errors_to_the_model(maya, s
 
     _model(monkeypatch, model)
     decide(maya, store, llm)
-    assert seen[0]["error"].startswith("bad arguments") and seen[1] == {"error": "unknown tool 'delete_everything'"}
+    assert seen[0]["error"].startswith("bad arguments")
+    assert seen[1] == {"error": "'delete_everything' is not one of your tools (get_profile, list_allowed_actions, "
+                                "check_rules); the call was discarded and logged"}
+    discarded = [a["details"]["tool"] for a in store.audit_log() if a["event"] == "tool_call_discarded"]
+    assert discarded == ["delete_everything"]
 
 
 # ---- evidence -------------------------------------------------------------------------
@@ -320,7 +348,8 @@ def test_the_string_null_means_no_value(maya, store, llm, monkeypatch):
 
     _model(monkeypatch, model)
     out = decide(maya, store, llm)
-    assert out.prechecks == [{"action": "send_help", "allowed": True, "violations": []}]
+    assert out.prechecks == [{"action": "send_help", "allowed": True, "violations": [],
+                              "middle_step": {"stage": "stuck", "stage_score": 1.0, "plan_score": 1.0, "needs": 0.8}}]
     assert out.decision["discount_pct"] is None and out.fallback is None
 
 
@@ -391,11 +420,12 @@ def test_signed_as_the_customers_company_is_caught_in_code(maya, store, llm, mon
     set_mode(store, "book_call", "act_alone", by="owner")
     monkeypatch.setitem(llm_module._mock_responders, "decide_private", lambda m, s: json.dumps(LIVE_PRIVATE))
     out = decide(maya, store, llm)
-    assert out.message_problems == ["signed as the customer's company (Pinecrest), not the business"]
+    assert "address: signed as the customer's company (Pinecrest), not the business" in out.message_problems
     assert out.unsupported_numbers == ["12", "2", "5", "8"]  # in the why-text, not in any kept evidence
-    assert out.action["status"] == "awaiting_approval"  # act_alone, capped: a person reads it first
+    assert out.action["status"] == "awaiting_approval"  # act_alone, but unverified: a person reads it first
     logged = [a for a in store.audit_log() if a["event"] == "decided"][-1]["details"]
-    assert logged["message_problems"] and logged["unsupported_numbers"] == ["12", "2", "5", "8"]
+    assert not logged["verified"] and logged["caught_by"] == "code"
+    assert "facts: writes 12, which no fact or quote it cites holds" in logged["reasons"]
 
 
 def test_numbers_cited_as_facts_pass_and_the_business_signature_is_fine(maya, store, llm, monkeypatch):
@@ -470,7 +500,7 @@ def test_the_turn_log_shows_the_agents_loop(maya, store, llm):
         (["tool_result"], ["answer"]),
     ]
     refused = out.turn_log[2]["sent"][0]["output"]
-    assert refused["action"] == "offer_discount" and refused["violations"] == [FIRST_MONTH]
+    assert refused["action"] == "offer_discount" and refused["violations"] == [FIRST_MONTH, STUCK_DISCOUNT]
     assert out.turn_log[-1]["got"][0]["decision"]["action"] == "send_help"
     assert all(t["usage"]["model"] == "muse-spark-1.3" for t in out.turn_log)
     assert [t["turn"] for t in out.turn_log] == list(range(1, out.turns + 1))

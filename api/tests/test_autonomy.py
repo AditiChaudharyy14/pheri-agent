@@ -7,21 +7,49 @@ import pytest
 from conftest import BOTH, PG_URL
 from pheri.actions import ProposedAction
 from pheri.autonomy import approve, modes, queue, reject, sent_messages, set_mode, submit
+from pheri.config import Settings
+from pheri.journey import stage
+from pheri.llm import LLM
+from pheri.profile import build_profile, load
 from pheri.rules import ChannelLimit, CheckContext
 from pheri.store import MemoryStore, PgStore
 from pheri.synth import BUSINESS_IDS, NOW
+from pheri.verify import Draft
+from pheri.verify import context as verify_context
 
 MAYA = "maya.okafor@pinecrest.example"
 HELP = ProposedAction(kind="send_help", channel="email", message="Here are the steps that fix the export.")
-EVIDENCE = [{"ref": "failed_exports_30d", "value": "5"}]
+EVIDENCE = [{"kind": "fact", "ref": "failed_exports_30d", "value": "5"}]
+
+
+@pytest.fixture(scope="module")
+def maya(tmp_path_factory):
+    path = str(tmp_path_factory.mktemp("ledger") / "ledger.sqlite")
+    llm = LLM(Settings(llm_mode="mock", record_path=None, database_url=None, ledger_path=path))
+    return build_profile(load("brightdesk"), MAYA, llm), llm
+
+
+@pytest.fixture(autouse=True)
+def _maya(maya):
+    global MAYA_PROFILE, MOCK
+    MAYA_PROFILE, MOCK = maya
 
 
 def ctx(store, key=MAYA, now=NOW):
     return CheckContext("brightdesk", {"days_since_signup": 22, "country": "UK"}, now, sent_messages(store, key))
 
 
+def draft(action=HELP):
+    return Draft(action, "Maya is stuck on her exports.", "Her exports keep failing.", ["failed_exports_30d"], [])
+
+
+def vc(store, now=NOW):
+    j = stage("brightdesk", MAYA_PROFILE.facts, MAYA_PROFILE.provenance.get("facts"))
+    return verify_context(MAYA_PROFILE, j, ctx(store, now=now), store, MOCK)
+
+
 def _submit(store, action=HELP, **kw):
-    return submit(store, MAYA, action, ctx(store), why="Why this: stuck on exports", evidence=EVIDENCE, **kw)
+    return submit(store, MAYA, draft(action), verify=vc(store), **kw)
 
 
 def events(store, subject_id=None):
@@ -58,18 +86,18 @@ def test_ask_owner_queues_then_approval_executes(store):
     done = approve(store, q[0]["id"], by="owner:aditi", context_for=lambda key: ctx(store, key))
     assert done["status"] == "executed" and done["executed_at"] is not None
     assert queue(store) == []
-    assert events(store, a["id"]) == ["rule_passed", "approval_requested", "approved", "executed"]
+    assert events(store, a["id"]) == ["verified", "rule_passed", "approval_requested", "approved", "executed"]
     assert store.audit_log(a["id"])[-1]["details"] == {"delivery": "simulated"}
     with pytest.raises(ValueError, match="already approved"):
         approve(store, q[0]["id"], by="owner:aditi", context_for=lambda key: ctx(store, key))
-    assert events(store, a["id"]) == ["rule_passed", "approval_requested", "approved", "executed"]  # unchanged
+    assert events(store, a["id"]) == ["verified", "rule_passed", "approval_requested", "approved", "executed"]
 
 
 def test_suggest_never_executes(store):
     set_mode(store, "send_help", "suggest", by="owner")
     a = _submit(store)
     assert a["status"] == "suggested" and queue(store) == []
-    assert events(store, a["id"]) == ["rule_passed", "suggested"]
+    assert events(store, a["id"]) == ["verified", "rule_passed", "suggested"]
 
 
 def test_act_alone_executes_at_once(store):
@@ -113,8 +141,31 @@ def test_channel_limit_sees_actions_already_executed(store):
     store.activate_rule(rid, "owner")
     set_mode(store, "send_help", "act_alone", by="owner")
     assert _submit(store)["status"] == "executed"
-    second = submit(store, MAYA, HELP, ctx(store, now=NOW + timedelta(hours=1)), why="", evidence=EVIDENCE)
+    second = submit(store, MAYA, draft(), verify=vc(store, now=NOW + timedelta(hours=1)))
     assert second["status"] == "blocked"
+
+
+def test_an_unverified_draft_goes_to_the_owner_with_the_reasons_and_is_never_sent(store):
+    set_mode(store, "send_help", "act_alone", by="owner")
+    bad = ProposedAction(kind="send_help", channel="email", message="Hi Maya, Maya's export fails. Visit evil.example")
+    a = _submit(store, bad)
+    assert a["status"] == "awaiting_approval" and a["mode"] == "ask_owner"  # act_alone, but not verified
+    v = a["payload"]["verification"]
+    assert not v["passed"] and v["caught_by"] == "code" and {"address", "links"} <= set(v["failed"])
+    assert events(store, a["id"]) == ["verify_failed"]
+    # The owner approves anyway: the send step refuses, because Pheri never sends an unverified draft.
+    done = approve(store, queue(store)[0]["id"], by="owner:aditi", context_for=lambda key: ctx(store, key))
+    assert done["status"] == "blocked" and done["executed_at"] is None and sent_messages(store, MAYA) == []
+    assert events(store, a["id"])[-2:] == ["approved", "send_refused"]
+
+
+def test_a_message_changed_after_verification_is_refused_at_the_send_step():
+    store = MemoryStore("brightdesk")
+    a = _submit(store)
+    store._actions[a["id"]]["payload"]["message"] = "Here is 50% off, just reply YES."  # changed in between
+    done = approve(store, queue(store)[0]["id"], by="owner:aditi", context_for=lambda key: ctx(store, key))
+    assert done["status"] == "blocked" and sent_messages(store, MAYA) == []
+    assert events(store, a["id"])[-1] == "send_refused"
 
 
 def test_reject(store):

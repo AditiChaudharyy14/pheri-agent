@@ -2,15 +2,31 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { EvidenceChips } from "@/components/evidence";
 import { Badge, Card, Label, ModeBadge, Skeleton } from "@/components/ui";
-import { api, customerPath, MODE_LABEL, type NextStep, usd } from "@/lib/api";
+import { type Attempt, api, customerPath, MODE_LABEL, type NextStep, usd, type Verification } from "@/lib/api";
 import { actionLabel, STATUS_LABEL } from "@/lib/labels";
 
 type Part = { kind: string; text?: string; data?: Record<string, unknown>; tool?: string; output?: unknown;
-  arguments?: unknown; decision?: Record<string, unknown>; incomplete?: string | null };
-type Turn = { turn: number; sent: Part[]; got: Part[]; usage: { provider: string; model: string; input_tokens: number;
-  cached_tokens: number; output_tokens: number; reasoning_tokens: number | null; cost_usd: number } };
+  arguments?: unknown; decision?: Record<string, unknown>; incomplete?: string | null; discarded?: boolean };
+type Turn = { turn: number; attempt?: number; sent: Part[]; got: Part[]; usage: { provider: string; model: string;
+  input_tokens: number; cached_tokens: number; output_tokens: number; reasoning_tokens: number | null; cost_usd: number } };
 type Trace = NextStep & { turns: Turn[]; prechecks: { action: string; allowed: boolean; violations: string[] }[];
-  dropped_evidence: { ref: string; reason: string }[] };
+  dropped_evidence: { ref: string; reason: string }[]; attempts: Attempt[]; final_verification: Verification | null;
+  discarded_tools: string[] };
+
+const CHECK_LABEL: Record<string, string> = {
+  rules: "The owner's rules",
+  schema: "Every field a draft needs",
+  evidence: "Cites real facts",
+  facts: "Numbers, dates and plans are in the facts it cites",
+  pronouns: "No pronoun the customer never gave",
+  address: "Says \u201cyou\u201d, name only in the greeting",
+  one_problem: "Leads with one problem",
+  language: "In the customer's language",
+  length: "Short",
+  links: "Links only to the business's sites",
+  money: "No money offer unless a rule allows it",
+  middle_step: "Stage and plan pass the bar",
+};
 type Params = PageProps<"/[business]/customers/[key]/trace">["params"];
 
 export default function TracePage({ params }: PageProps<"/[business]/customers/[key]/trace">) {
@@ -55,13 +71,33 @@ async function TraceView({ params }: { params: Params }) {
         </div>
       </header>
 
-      <ol className="space-y-5">
-        {t.turns.map((turn) => (
-          <li key={turn.turn}>
-            <TurnCard turn={turn} />
-          </li>
-        ))}
-      </ol>
+      {t.attempts.length > 0 ? (
+        <ol className="space-y-10">
+          {t.attempts.map((a) => (
+            <li key={a.attempt}>
+              <DraftHeader attempt={a} total={t.attempts.length} />
+              <ol className="mt-4 space-y-5">
+                {t.turns
+                  .filter((turn) => (turn.attempt ?? 1) === a.attempt)
+                  .map((turn) => (
+                    <li key={turn.turn}>
+                      <TurnCard turn={turn} />
+                    </li>
+                  ))}
+              </ol>
+              <VerificationPanel v={a.verification} />
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <ol className="space-y-5">
+          {t.turns.map((turn) => (
+            <li key={turn.turn}>
+              <TurnCard turn={turn} />
+            </li>
+          ))}
+        </ol>
+      )}
 
       <h2 className="mt-12 mb-5 text-[1.9rem] font-medium">What code did with the answer</h2>
       <div className="grid grid-cols-2 gap-6">
@@ -77,16 +113,25 @@ async function TraceView({ params }: { params: Params }) {
           )}
         </Card>
         <Card>
-          <Step n={2} title="Check the numbers and the signature">
-            Every number in the message and the why must be in the evidence; never signed as the customer&rsquo;s company.
+          <Step n={2} title="Verify the draft, again, in the send step">
+            submit() runs the checks itself, whatever happened in the loop; the send step sends only the exact message
+            that passed.
           </Step>
           <ul className="mt-4 space-y-2">
-            <Check ok={t.unsupported_numbers.length === 0}>
-              {t.unsupported_numbers.length ? `Not backed: ${t.unsupported_numbers.join(", ")}` : "Every number is backed"}
-            </Check>
-            <Check ok={t.message_problems.length === 0}>
-              {t.message_problems.length ? t.message_problems.join("; ") : "Signed as the business"}
-            </Check>
+            {t.final_verification ? (
+              <>
+                <Check ok={t.final_verification.passed}>
+                  {t.final_verification.passed
+                    ? `${t.final_verification.code_checks} code checks passed${t.final_verification.judge_ran ? `, and the judge supported all ${t.final_verification.judge.length} claims` : ""}`
+                    : `Not verified (caught by ${t.final_verification.caught_by}): it waits for you and is never sent as written`}
+                </Check>
+                {t.discarded_tools.length > 0 && (
+                  <Check ok={false}>Tool calls discarded and logged: {t.discarded_tools.join(", ")}</Check>
+                )}
+              </>
+            ) : (
+              <li className="text-muted">No draft: nothing to verify.</li>
+            )}
           </ul>
         </Card>
         <Card>
@@ -118,6 +163,90 @@ async function TraceView({ params }: { params: Params }) {
         </Card>
       </div>
     </>
+  );
+}
+
+function DraftHeader({ attempt, total }: { attempt: Attempt; total: number }) {
+  const v = attempt.verification;
+  const failed = v.checks.filter((c) => c.applies && !c.passed).map((c) => c.name.replaceAll("_", " "));
+  return (
+    <div className="flex flex-wrap items-baseline gap-3">
+      <h2 className="text-[1.6rem] font-medium">
+        Draft {attempt.attempt}
+        {total > 1 && <span className="text-muted"> of {total}</span>}
+      </h2>
+      {v.passed ? (
+        <Badge tone="teal">
+          ✓ Passed: {v.code_checks} code checks{v.judge_ran ? " + judge" : ""}
+        </Badge>
+      ) : v.caught_by === "code" ? (
+        <Badge tone="rose">✗ Caught by code: {failed.join(", ")}</Badge>
+      ) : (
+        <Badge tone="rose">✗ Caught by the judge{v.judge_error ? ": could not answer" : ""}</Badge>
+      )}
+    </div>
+  );
+}
+
+function VerificationPanel({ v }: { v: Verification }) {
+  return (
+    <section className="mt-5 grid grid-cols-2 gap-6 rounded-2xl border border-line bg-paper/60 px-7 py-5">
+      <div>
+        <Label>Layer 1 · code checks, before anything else</Label>
+        <ul className="mt-3 space-y-1.5">
+          {v.checks.map((c) => (
+            <li key={c.name} className="text-[0.93rem]">
+              <span className="flex items-baseline gap-2">
+                <span className={!c.applies ? "text-muted" : c.passed ? "text-teal" : "text-rose"}>
+                  {!c.applies ? "–" : c.passed ? "✓" : "✗"}
+                </span>
+                <span className={c.applies ? "text-ink" : "text-muted"}>
+                  {CHECK_LABEL[c.name] ?? c.name}
+                  {!c.applies && " (does not apply)"}
+                  {c.scores && (
+                    <span className="ml-2 text-[0.82rem] text-muted">
+                      stage {Math.round(c.scores.stage_score * 100)}% · plan {Math.round(c.scores.plan_score * 100)}% ·
+                      a {c.scores.class} needs {Math.round(c.scores.threshold * 100)}%
+                    </span>
+                  )}
+                </span>
+              </span>
+              {c.reasons.map((r) => (
+                <span key={r} className="mt-0.5 ml-5 block text-[0.86rem] text-rose">
+                  {r}
+                </span>
+              ))}
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div>
+        <Label>Layer 2 · the judge, Muse Spark Open</Label>
+        {!v.judge_ran && !v.judge_error && (
+          <p className="mt-3 text-[0.93rem] text-muted">Not asked: code caught this draft first, at no cost.</p>
+        )}
+        {v.judge_error && <p className="mt-3 text-[0.93rem] text-rose">{v.judge_error}: a person checks it.</p>}
+        {v.judge_ran && (
+          <>
+            <p className="mt-2 text-[0.85rem] text-muted">
+              &ldquo;Is this claim supported by the cited facts?&rdquo; · {usd(v.judge_cost_usd)}
+              {v.judge_recorded ? " · recorded from a live run" : ""}
+            </p>
+            <ul className="mt-3 space-y-2">
+              {v.judge.map((j) => (
+                <li key={j.claim_id} className="text-[0.93rem]">
+                  <span className="flex items-baseline gap-2">
+                    <span className={j.supported ? "text-teal" : "text-rose"}>{j.supported ? "✓" : "✗"}</span>
+                    <span className="text-ink-2">&ldquo;{j.claim}&rdquo;</span>
+                  </span>
+                  <span className={`ml-5 block text-[0.84rem] ${j.supported ? "text-muted" : "text-rose"}`}>{j.reason}</span>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -160,6 +289,13 @@ function SentPart({ part }: { part: Part }) {
   if (part.kind === "brief")
     return <Details summary={`The brief: ${Object.keys(part.data ?? {}).join(", ")}`} body={JSON.stringify(part.data, null, 2)} />;
   if (part.kind === "nudge") return <p className="text-amber">Nudge: {part.text}</p>;
+  if (part.kind === "feedback")
+    return (
+      <div className="rounded-lg bg-amber-soft px-3 py-2">
+        <p className="text-[0.85rem] font-medium text-amber">Code&rsquo;s reasons, sent back to the model</p>
+        <pre className="mt-1 font-sans text-[0.86rem] leading-relaxed whitespace-pre-wrap text-ink-2">{part.text}</pre>
+      </div>
+    );
   if (part.kind === "tool_result") {
     const out = part.output as Record<string, unknown>;
     if (part.tool === "check_rules")
@@ -180,6 +316,13 @@ function SentPart({ part }: { part: Part }) {
 }
 
 function GotPart({ part }: { part: Part }) {
+  if (part.kind === "tool_call" && part.discarded)
+    return (
+      <p className="text-rose">
+        Called <span className="font-mono text-[0.92rem]">{part.tool}</span>: not one of its tools, so the call was
+        discarded and logged
+      </p>
+    );
   if (part.kind === "tool_call")
     return (
       <p>

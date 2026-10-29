@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { LearningCurve, LiftChart } from "@/components/proof-charts";
 import { Badge, Card, Label, PageHead, Skeleton } from "@/components/ui";
-import { api, type Learned, pct, pp, type TwinResults } from "@/lib/api";
+import { api, type Learned, pct, pp, type TwinResults, type VerificationTotals } from "@/lib/api";
 import { stageLabel } from "@/lib/labels";
 
 export default function ProofPage({ params }: PageProps<"/[business]/proof">) {
@@ -25,9 +25,10 @@ export default function ProofPage({ params }: PageProps<"/[business]/proof">) {
 
 async function Proof({ params }: { params: PageProps<"/[business]/proof">["params"] }) {
   const { business } = await params;
-  const [twin, learned] = await Promise.all([
+  const [twin, learned, checked] = await Promise.all([
     api<TwinResults>(`/businesses/${business}/twin`),
     api<Learned>(`/businesses/${business}/learned`),
+    api<VerificationTotals>(`/businesses/${business}/verification`),
   ]);
   const o = twin.overall;
   return (
@@ -82,7 +83,33 @@ async function Proof({ params }: { params: PageProps<"/[business]/proof">["param
         </Card>
         <Report learned={learned} />
       </div>
+
+      <VerificationBlock v={checked} />
     </div>
+  );
+}
+
+function VerificationBlock({ v }: { v: VerificationTotals }) {
+  const checks = Object.entries(v.by_check);
+  return (
+    <Card>
+      <div className="flex flex-wrap items-baseline justify-between gap-4">
+        <h2 className="text-[1.35rem] font-medium">Verification: Pheri checks its own drafts</h2>
+        <p className="text-[0.88rem] text-muted">The {v.decisions} next steps on the first page, every draft counted</p>
+      </div>
+      <div className="mt-4 grid grid-cols-5 gap-6">
+        <Tile value={String(v.drafts)} label="Drafts written" sub={`for ${v.decisions} decisions`} />
+        <Tile value={String(v.caught_by_code)} label="Caught by code" sub="12 checks, free, always first" />
+        <Tile value={String(v.caught_by_judge)} label="Caught by the judge" sub="Muse Spark Open, claim by claim" />
+        <Tile value={String(v.retries)} label="Retries" sub="reasons sent back to the model" />
+        <Tile value={String(v.sent_to_owner)} label="Sent to the owner" sub="never out unverified" />
+      </div>
+      {checks.length > 0 && (
+        <p className="mt-4 text-[0.9rem] text-ink-2">
+          What code caught: {checks.map(([k, n]) => `${k.replaceAll("_", " ")} ×${n}`).join(", ")}.
+        </p>
+      )}
+    </Card>
   );
 }
 
@@ -111,6 +138,13 @@ function Report({ learned }: { learned: Learned }) {
           : `Written by Muse Wonder${learned.source === "recorded" ? ", recorded from a live run" : ""}.`}{" "}
         Code checks every number against the results and every verdict against its interval.
       </p>
+      {learned.attempts.length > 1 && (
+        <p className="mt-3 text-[0.9rem] text-ink-2">
+          {learned.attempts
+            .map((a) => (a.passed ? `Attempt ${a.attempt} passed` : `Attempt ${a.attempt} rejected by code: ${a.rejected.join(", ")}`))
+            .join(" → ")}
+        </p>
+      )}
       <p className="mt-4 font-serif text-[1.15rem] leading-snug text-ink">{learned.headline}</p>
       <ul className="mt-4 space-y-2.5">
         {learned.findings.map((f) => (

@@ -118,6 +118,36 @@ def test_a_headline_that_states_no_result_is_replaced_by_codes(results, llm, mon
     assert rep.headline.startswith("Across 200 customers")
 
 
+def test_a_rejected_headline_goes_back_to_wonder_and_the_next_attempt_can_pass(results, llm, monkeypatch):
+    """The same loop as a decision's draft: code's reasons go back, at most two more Wonder calls."""
+    facts = learn.catalogue(results)
+    good = f"Across 200 customers, contact changed the response rate by {facts['overall.lift_pp']} points, not clear yet."
+    sent = []
+
+    def wonder(messages, schema):
+        sent.append(messages)
+        fixed = any(m["role"] == "user" and m["content"].startswith(learn.FEEDBACK_HEAD) for m in messages)
+        return json.dumps({"headline": good if fixed else "Students edge - non tipping pendant",
+                           "headline_fact_ids": ["overall.lift_pp", "customers"], "findings": [], "caveats": []})
+
+    monkeypatch.setitem(llm_module._mock_responders, learn.PURPOSE, wonder)
+    rep = learn.write_report(results, llm)
+    assert [(a["attempt"], a["passed"], a["rejected"]) for a in rep.attempts] == [(1, False, ["headline"]), (2, True, [])]
+    assert rep.headline == good and rep.rejected == [] and len(sent) == 2
+    feedback = sent[1][-1]["content"]
+    assert "headline" in feedback and "states no result" in feedback  # the reason went back, in words
+    assert sent[1][-2]["role"] == "assistant"  # with Wonder's own first answer before it
+
+
+def test_wonder_gets_at_most_two_retries(results, llm, monkeypatch):
+    calls = []
+    monkeypatch.setitem(llm_module._mock_responders, learn.PURPOSE, lambda m, s: calls.append(1) or json.dumps(
+        {"headline": "No numbers here.", "headline_fact_ids": [], "findings": [], "caveats": []}))
+    rep = learn.write_report(results, llm)
+    assert len(calls) == 3 == len(rep.attempts) and not any(a["passed"] for a in rep.attempts)
+    assert rep.headline.startswith("Across 200 customers")  # still failing: code's own headline
+
+
 def test_an_unusable_answer_leaves_only_what_code_can_say(results, llm, monkeypatch):
     monkeypatch.setitem(llm_module._mock_responders, learn.PURPOSE, lambda m, s: "not json")
     rep = learn.write_report(results, llm)

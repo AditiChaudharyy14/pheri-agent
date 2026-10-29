@@ -1,7 +1,7 @@
 // Screenshots of every page at 1920x1080 (the screen-recording size), for checking by eye.
 //   node scripts/screens.mjs                 # all pages
 //   node scripts/screens.mjs home journey    # some
-// Needs the API (uvicorn pheri.app:app, mock mode) on :8000 and `npm run dev` on :3000.
+// Needs the API (uvicorn pheri.app:app, mock or replay mode) on :8000 and `npm run dev` on :3000.
 import { chromium } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 
@@ -13,6 +13,7 @@ const PAGES = {
   journey: "/brightdesk/journey",
   customer: `/brightdesk/customers/${MAYA}`,
   trace: `/brightdesk/customers/${MAYA}/trace`,
+  "trace-aarav": `/brightdesk/customers/${encodeURIComponent("aarav.silva@granite.example")}/trace`,
   rules: "/brightdesk/rules",
   safety: "/brightdesk/safety",
   proof: "/brightdesk/proof",

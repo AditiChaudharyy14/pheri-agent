@@ -6,7 +6,8 @@ Each business gets deliberately messy, mixed-format sources, the way real export
   Brightdesk (B2B software): crm_export.csv, events.jsonl, tickets.json, sales_notes.txt
   Kettle & Co (online tea):   customers.csv, orders.csv, events.jsonl, messages.json
 
-A hidden `_truth.json` stores each customer's true journey stage, used only by evals.
+A hidden `_truth.json` stores each customer's true journey stage, and per stage the plans (actions) that fit
+it, used only by evals and the middle-step check (verify.py).
 The demo date is fixed (TODAY) so every run, screenshot and video take is identical.
 """
 
@@ -381,10 +382,13 @@ def _write(folder: Path, files: dict) -> None:
 
 
 def generate(out: Path = OUT, seed: int = SEED, fall_before_renewal: bool = True) -> dict[str, Path]:
+    from .twin import fitting_plans  # the twin's hidden response table decides which plans fit a stage
+
     rng = random.Random(seed)
     paths = {}
-    _write(out / "brightdesk", brightdesk(rng, fall_before_renewal))
-    _write(out / "kettle", kettle(rng))
+    for slug, files in (("brightdesk", brightdesk(rng, fall_before_renewal)), ("kettle", kettle(rng))):
+        files["_truth.json"]["plans"] = fitting_plans(slug)
+        _write(out / slug, files)
     return {slug: out / slug for slug in ("brightdesk", "kettle")}
 
 

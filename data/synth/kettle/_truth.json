@@ -304,5 +304,27 @@
  "attacks": [
   "M0106",
   "M0107"
- ]
+ ],
+ "plans": {
+  "new": [
+   "recommend_product",
+   "offer_discount"
+  ],
+  "loyal": [
+   "recommend_product"
+  ],
+  "subscriber": [
+   "recommend_product"
+  ],
+  "lapsing": [
+   "offer_discount"
+  ],
+  "cart_abandoner": [
+   "send_reminder",
+   "offer_discount"
+  ],
+  "gift_buyer": [
+   "recommend_product"
+  ]
+ }
 }

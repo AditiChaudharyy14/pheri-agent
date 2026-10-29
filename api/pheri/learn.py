@@ -10,7 +10,10 @@ only cite those ids. Code then checks every finding:
   - every number in its text is one of the values it cites (rounding to a whole number is allowed),
   - its verdict (works / hurts / unclear) is the one code computed from the 95% interval,
   - an unclear finding does not claim a win or a loss in words.
-A finding that fails is dropped and listed with the reason; the headline falls back to one code writes.
+A report with any part rejected goes back to Wonder with the reasons, the same loop as a decision's draft
+(verify.py): at most WONDER_MAX_RETRIES more tries, each one call on one report, never a loop over
+customers. After that, a finding that still fails is dropped and listed with the reason, and the headline
+falls back to one code writes. Every attempt is kept, so the owner sees "attempt 1 rejected: headline".
 
 Only the results go in. The twin's hidden truth sits in the same JSON but is left out: a real business
 only ever has outcomes, so the report says what Pheri learned from them.
@@ -35,6 +38,8 @@ VERDICTS = ("works", "hurts", "unclear")
 CLAIM_WORDS = ("works", "worked", "proven", "clearly", "significant", "boost", "improves", "improved", "hurts",
                "hurt", "harms", "drives")  # an unclear finding may not say these
 ALWAYS_ALLOWED = {"95"}  # the interval's level is not a result
+WONDER_MAX_RETRIES = 2  # after the first report: at most two more Wonder calls, on the same report
+FEEDBACK_HEAD = "Code checked your report against the facts and rejected these parts:"
 
 
 # ---- the catalogue of facts --------------------------------------------------------
@@ -179,8 +184,9 @@ class LearnedReport:
     caveats: list[dict]  # checked
     rejected: list[dict] = field(default_factory=list)  # {"part", "text", "problems"}
     model: str | None = None
-    cost_usd: float = 0.0
-    recorded: bool = False  # replay mode: Muse Wonder's reply from a recorded live run
+    cost_usd: float = 0.0  # every attempt
+    recorded: bool = False  # replay mode: every attempt's reply came from a recorded live run
+    attempts: list[dict] = field(default_factory=list)  # {"attempt", "passed", "rejected": [part], "problems"}
 
     @property
     def markdown(self) -> str:
@@ -249,17 +255,9 @@ def wonder_ready(results: dict, llm: LLM) -> dict:
             "learned_vs_truth": learned_vs_truth(results)}
 
 
-def write_report(results: dict, llm: LLM, data_class: str = "synthetic") -> LearnedReport:
-    req = wonder_request(results)
-    facts, schema, messages = req["facts"], req["schema"], req["messages"]
-    try:
-        r = llm.complete_json(messages, schema=schema, model=MODEL, purpose=PURPOSE, effort=EFFORT,
-                              max_tokens=MAX_OUTPUT_TOKENS, data_class=data_class)
-    except ModelOutputError as exc:
-        return LearnedReport(_code_headline(facts), [], [], [{"part": "report", "text": "",
-                                                               "problems": [f"unusable answer: {str(exc)[:200]}"]}])
-    rep: Report = r.parsed
-    out = LearnedReport(rep.headline, [], [], model=r.model, cost_usd=r.cost_usd, recorded=r.recorded)
+def check_report(rep: Report, facts: dict[str, str]) -> LearnedReport:
+    """Code's checks on one report: what passes is kept, what fails is listed with the reasons."""
+    out = LearnedReport(rep.headline, [], [])
     problems = check_item(rep.headline, rep.headline_fact_ids, facts)
     if facts["overall.verdict"] == "unclear" and (claims := _claims(rep.headline)):
         problems.append(f"claims a result while the overall verdict is unclear ({', '.join(claims)})")
@@ -281,6 +279,42 @@ def write_report(results: dict, llm: LLM, data_class: str = "synthetic") -> Lear
     return out
 
 
+def report_feedback(rejected: list[dict]) -> str:
+    lines = [FEEDBACK_HEAD]
+    for x in rejected:
+        lines.append(f"- {x['part']} ({x['text'][:120]!r}): {'; '.join(x['problems'])}")
+    lines.append("Write the whole report again as JSON. Keep every part that passed as it was; fix only these.")
+    return "\n".join(lines)
+
+
+def write_report(results: dict, llm: LLM, data_class: str = "synthetic",
+                 max_retries: int = WONDER_MAX_RETRIES) -> LearnedReport:
+    req = wonder_request(results)
+    facts, schema, messages = req["facts"], req["schema"], req["messages"]
+    out, attempts, cost, recorded = None, [], 0.0, True
+    for n in range(1, max_retries + 2):
+        try:
+            r = llm.complete_json(messages, schema=schema, model=MODEL, purpose=PURPOSE, effort=EFFORT,
+                                  max_tokens=MAX_OUTPUT_TOKENS, data_class=data_class)
+        except ModelOutputError as exc:
+            problem = f"unusable answer: {str(exc)[:200]}"
+            attempts.append({"attempt": n, "passed": False, "rejected": ["report"], "problems": [problem]})
+            if out is None:
+                out = LearnedReport(_code_headline(facts), [], [], [{"part": "report", "text": "", "problems": [problem]}])
+            break
+        cost, recorded = cost + r.cost_usd, recorded and r.recorded
+        out = check_report(r.parsed, facts)
+        out.model = r.model
+        attempts.append({"attempt": n, "passed": not out.rejected, "rejected": [x["part"] for x in out.rejected],
+                         "problems": [p for x in out.rejected for p in x["problems"]]})
+        if not out.rejected:
+            break
+        messages = messages + [{"role": "assistant", "content": r.text},
+                               {"role": "user", "content": report_feedback(out.rejected)}]
+    out.attempts, out.cost_usd, out.recorded = attempts, cost, recorded and out.model is not None
+    return out
+
+
 # ---- offline stand-in for Muse Wonder --------------------------------------------------------
 _SAID = {  # the same words the web app uses for each action
     "send_help": "sending help", "book_call": "offering a call", "send_checkin": "checking in",
@@ -296,7 +330,7 @@ def _said(action: str) -> str:
 
 
 def _mock_report(messages: list[dict], schema: dict | None) -> str:
-    facts = json.loads(messages[-1]["content"])["facts"]
+    facts = json.loads(next(m for m in messages if m["role"] == "user")["content"])["facts"]
     stages = sorted({k.split(".")[0] for k in facts if k.endswith(".verdict") and not k.startswith("overall")},
                     key=lambda s: list(facts).index(f"{s}.verdict"))
     findings = []
@@ -354,6 +388,8 @@ if __name__ == "__main__":
         raise SystemExit(0)
     rep = write_report(results, llm)
     print(rep.markdown)
+    for a in rep.attempts:
+        print(f"Attempt {a['attempt']}: " + ("passed" if a["passed"] else f"rejected by code: {', '.join(a['rejected'])}"))
     if rep.rejected:
         print("\nRejected by code:")
         for x in rep.rejected:

@@ -245,5 +245,29 @@
   "T1098",
   "T1099"
  ],
- "hero": "maya.okafor@pinecrest.example"
+ "hero": "maya.okafor@pinecrest.example",
+ "plans": {
+  "onboarding": [
+   "send_help",
+   "book_call"
+  ],
+  "stuck": [
+   "send_help",
+   "book_call"
+  ],
+  "quiet": [
+   "send_checkin",
+   "offer_discount"
+  ],
+  "healthy": [
+   "offer_upgrade"
+  ],
+  "expanding": [
+   "offer_upgrade"
+  ],
+  "at_risk_renewal": [
+   "book_call",
+   "offer_discount"
+  ]
+ }
 }

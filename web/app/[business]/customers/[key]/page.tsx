@@ -144,7 +144,11 @@ async function Customer({ params }: { params: Params }) {
               </div>
               {step.approval?.decision === "pending" && (
                 <div className="w-40">
-                  <ApproveReject business={business} approvalId={step.approval.id} />
+                  <ApproveReject
+                    business={business}
+                    approvalId={step.approval.id}
+                    verified={step.action?.payload.verification?.passed !== false}
+                  />
                 </div>
               )}
             </div>
@@ -156,6 +160,7 @@ async function Customer({ params }: { params: Params }) {
                 cost={step.cost_usd}
                 turns={step.turns}
                 isPrivate={step.private}
+                verification={step.verification}
               />
             </div>
           </Card>

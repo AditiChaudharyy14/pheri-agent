@@ -28,7 +28,8 @@ async function Head({ params }: { params: PageProps<"/[business]">["params"] }) 
       lead={
         <>
           What Pheri would do next for each {BUSINESSES[business as Business]} customer, and why. Every step has passed the
-          owner&rsquo;s rules in code; nothing reaches a customer until you approve it.
+          owner&rsquo;s rules in code, and Pheri checked its own draft before showing it to you; nothing reaches a
+          customer until you approve it.
         </>
       }
     />
@@ -49,7 +50,8 @@ async function Steps({ params }: { params: PageProps<"/[business]">["params"] })
 
 function StepCard({ business, step }: { business: string; step: NextStep }) {
   const { customer, decision: d, action } = step;
-  const held = [...step.message_problems, ...step.unsupported_numbers.map((n) => `${n} is not backed by the evidence`)];
+  const v = step.verification;
+  const held = v && !v.passed ? v.reasons : [];
   return (
     <Card>
       <div className="grid grid-cols-[1fr_auto] gap-8">
@@ -95,7 +97,8 @@ function StepCard({ business, step }: { business: string; step: NextStep }) {
           </div>
           {held.length > 0 && (
             <p className="mt-4 rounded-lg bg-amber-soft px-3 py-2 text-[0.92rem] text-amber">
-              Held for you to read first: {held.join("; ")}.
+              Not sent: after {v?.attempts} {v?.attempts === 1 ? "draft" : "drafts"} it still failed Pheri&rsquo;s checks,
+              so it waits for you. {held.join("; ")}.
             </p>
           )}
         </div>
@@ -112,7 +115,9 @@ function StepCard({ business, step }: { business: string; step: NextStep }) {
               </span>
             </div>
           )}
-          {step.approval?.decision === "pending" && <ApproveReject business={business} approvalId={step.approval.id} />}
+          {step.approval?.decision === "pending" && (
+            <ApproveReject business={business} approvalId={step.approval.id} verified={v?.passed !== false} />
+          )}
         </aside>
       </div>
       <div className="mt-6 border-t border-line pt-4">
@@ -123,6 +128,7 @@ function StepCard({ business, step }: { business: string; step: NextStep }) {
           cost={step.cost_usd}
           turns={step.turns}
           isPrivate={step.private}
+          verification={step.verification}
         />
       </div>
     </Card>

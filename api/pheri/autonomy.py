@@ -5,8 +5,12 @@ Per action type the owner picks one mode:
   ask_owner  Pheri queues it for approval and carries it out only once approved.
   act_alone  Pheri carries it out straight away.
 
-Before any of that, the action must pass the rule check in code; a blocked action goes nowhere.
-Approving re-runs the check, because rules, limits and the clock may have moved since Pheri asked.
+Before any of that, submit() verifies the draft (verify.verify_draft: code checks, then the judge) and
+runs the rule check; a blocked action goes nowhere, and a draft that failed verification goes to the
+owner's queue with the reasons, never out. The send step, _execute(), refuses any customer-facing action
+whose stored verification did not pass for exactly the payload being sent, so no path (acting alone,
+an owner's approval) can send an unverified message.
+Approving re-runs the rule check, because rules, limits and the clock may have moved since Pheri asked.
 Every step is written to the audit log. Delivery is simulated for now: "executed" means recorded
 as done, and nothing is sent to anyone yet.
 """
@@ -18,6 +22,7 @@ from typing import Callable
 
 from .actions import BUSINESS_ACTIONS, CATALOG, ESCALATE, ProposedAction
 from .rules import CheckContext, active_rules, check
+from .verify import Draft, VerifyContext, payload_sha, verify_draft
 
 MODES = ("suggest", "ask_owner", "act_alone")  # from least to most autonomous
 DEFAULT_MODE = "ask_owner"
@@ -54,22 +59,36 @@ def _payload(a: ProposedAction) -> dict:
             "send_at": a.send_at.isoformat() if a.send_at else None}
 
 
-def submit(store, customer_key: str, action: ProposedAction, ctx: CheckContext, *, why: str,
-           evidence: list[dict], cap: str | None = None, actor: str = "pheri") -> dict:
-    """Rule check in code, then the dial. Returns the stored action. `cap` limits the mode (weak evidence)."""
+def submit(store, customer_key: str, draft: Draft, *, verify: VerifyContext, cap: str | None = None,
+           actor: str = "pheri") -> dict:
+    """Verify the draft, check the rules in code, then the dial. Returns the stored action. `cap` limits the mode.
+    verify_draft runs here, whoever calls: the model has no way to skip it or to call it."""
+    action, ctx = draft.action, verify.ctx
     t = CATALOG.get(action.kind)
+    v = verify_draft(draft, verify)  # before the transaction: the judge is a model call
+    payload = {**_payload(action), "verification": v.record()}
     with store.tx():  # rules, dial and writes from one consistent view
         result = check(active_rules(store), action, ctx)
         mode = at_most(mode_for(store, action.kind), cap if t and t.customer_facing else None)
         if not result.allowed:
-            aid = store.add_action(customer_key, action.kind, _payload(action), why, evidence, None,
+            aid = store.add_action(customer_key, action.kind, payload, draft.why, v.evidence, None,
                                    result.as_dict(), "blocked")
             store.audit(actor, "rule_blocked", "action", aid,
                         {"customer": customer_key, "kind": action.kind, "violations": result.violations})
             return store.get_action(aid)
+        if not v.passed:  # never sent: a person reads it, with the reasons
+            aid = store.add_action(customer_key, action.kind, payload, draft.why, v.evidence, "ask_owner",
+                                   result.as_dict(), "awaiting_approval")
+            pid = store.add_approval(aid)
+            store.audit(actor, "verify_failed", "action", aid,
+                        {"customer": customer_key, "kind": action.kind, "caught_by": v.caught_by,
+                         "reasons": v.reasons, "approval_id": pid})
+            return store.get_action(aid)
         status = {"suggest": "suggested", "ask_owner": "awaiting_approval", "act_alone": "approved"}[mode]
-        aid = store.add_action(customer_key, action.kind, _payload(action), why, evidence, mode, result.as_dict(),
+        aid = store.add_action(customer_key, action.kind, payload, draft.why, v.evidence, mode, result.as_dict(),
                                status)
+        store.audit(actor, "verified", "action", aid, {"customer": customer_key, "sha": v.sha,
+                                                       "code_checks": v.code_checks, "judge": v.judge_ran})
         store.audit(actor, "rule_passed", "action", aid, {"customer": customer_key, "kind": action.kind})
         if mode == "suggest":
             store.audit(actor, "suggested", "action", aid, {"customer": customer_key})
@@ -97,9 +116,29 @@ def open_escalation(store, customer_key: str) -> dict | None:
                  if a["kind"] == ESCALATE and a["status"] == "awaiting_approval"), None)
 
 
-def _execute(store, action_id: str, now: datetime, actor: str) -> None:
+def verified_to_send(action: dict) -> bool:
+    """The send step's gate: a customer-facing action goes out only if its stored verification passed for
+    exactly this payload (kind, channel, discount, message)."""
+    t = CATALOG.get(action["kind"])
+    if not (t and t.customer_facing):
+        return True  # sends nothing to the customer
+    p = action["payload"]
+    v = p.get("verification") or {}
+    return v.get("passed") is True and v.get("sha") == payload_sha(action["kind"], p.get("channel"),
+                                                                    p.get("discount_pct"), p.get("message"))
+
+
+def _execute(store, action_id: str, now: datetime, actor: str) -> bool:
+    action = store.get_action(action_id)
+    if not verified_to_send(action):
+        store.set_action(action_id, "blocked")
+        store.audit("pheri", "send_refused", "action", action_id,
+                    {"customer": action["customer_key"], "reason": "not verified: Pheri never sends an unverified draft",
+                     "verification": (action["payload"].get("verification") or {}).get("reasons", [])})
+        return False
     store.set_action(action_id, "executed", executed_at=now)
     store.audit(actor, "executed", "action", action_id, {"delivery": "simulated"})
+    return True
 
 
 def approve(store, approval_id: str, by: str, context_for: Callable[[str], CheckContext]) -> dict:

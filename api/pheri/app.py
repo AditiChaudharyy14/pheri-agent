@@ -14,6 +14,9 @@ Routes, per business (brightdesk, kettle):
   GET|PUT /businesses/{b}/private-mode               which steps run on Muse Spark Open
   GET  /businesses/{b}/twin                          the customer twin's results (chart-ready)
   GET  /businesses/{b}/learned                       "What Pheri learned" from those results
+  GET  /businesses/{b}/verification                  how the showcase drafts fared: caught by code, by the judge,
+                                                     retried, sent to the owner
+  GET  /businesses/{b}/middle-step                   the stage and plan scores against the truth set, and the bar
   GET  /businesses/{b}/audit                         the append-only audit log
   GET  /spend                                        model spend against the caps, per provider; plus the
                                                      live runs' snapshot (data/spend/live.json)
@@ -47,6 +50,7 @@ from .profile import Profile, build_profile, compute_facts, load, norm_email
 from .rules import CheckContext, active_rules, check, confirm, describe, propose, seed
 from .store import MemoryStore, NotFound, PgStore
 from .synth import BUSINESS_NAMES, NOW
+from .verify import CODE_CHECKS, THRESHOLDS, middle_step_scores
 
 BUSINESSES = tuple(BUSINESS_NAMES)
 TWIN_DIR = REPO_ROOT / "data" / "twin"
@@ -207,7 +211,8 @@ def create_app(llm: LLM | None = None) -> FastAPI:
             k = customer(b, key).key
             out = decided(b, k)
             return {**card(b, k, out), "turns": out["turn_log"], "prechecks": out["prechecks"],
-                    "dropped_evidence": out["dropped_evidence"]}
+                    "dropped_evidence": out["dropped_evidence"], "attempts": out["attempts"],
+                    "final_verification": out["verification"], "discarded_tools": out["discarded_tools"]}
 
     @app.post("/businesses/{b}/customers/{key}/discount-check")
     def discount_check(body: DiscountIn, key: str, b: str = Depends(business)):
@@ -367,7 +372,18 @@ def create_app(llm: LLM | None = None) -> FastAPI:
                 "approval": approval, "skipped": out["skipped"], "fallback": out["fallback"],
                 "unsupported_numbers": out["unsupported_numbers"], "message_problems": out["message_problems"],
                 "private": out["private"], "cost_usd": out["cost_usd"], "turns": out["turns"],
-                "decided_by": decided_by(out)}
+                "decided_by": decided_by(out), "verification": verification_line(out)}
+
+    def verification_line(out: dict) -> dict | None:
+        """For the card's footer: "Verified: 12 code checks + judge", or why a person has it."""
+        v = out.get("verification")
+        if not v:
+            return None
+        return {"passed": v["passed"], "code_checks": v["code_checks"], "judge": v["judge_ran"],
+                "caught_by": v["caught_by"], "reasons": v["reasons"], "attempts": len(out.get("attempts") or []),
+                "judge_cost_usd": out.get("verify_cost_usd", 0.0),
+                "judge_recorded": all(a["verification"]["judge_recorded"] for a in out.get("attempts") or []
+                                      if a["verification"]["judge_ran"])}
 
     def decided_by(out: dict) -> dict | None:
         """Which model made the decision, and how this server got its replies: live, recorded from a live run,
@@ -388,6 +404,46 @@ def create_app(llm: LLM | None = None) -> FastAPI:
             warm(b)
             cards = [card(b, k, state.decided[b][k]) for k in showcase(b)]
         return [x for x in cards if x["skipped"] not in ("escalated", "open_escalation")]
+
+    @app.get("/businesses/{b}/verification")
+    def verification(b: str = Depends(business)):
+        """Every showcase draft and what checking it found: one row per draft, in totals and per check."""
+        with state.lock:
+            warm(b)
+            outs = [state.decided[b][k] for k in showcase(b) if state.decided[b][k].get("verification")]
+        drafts = [a for o in outs for a in o["attempts"]]
+        by_check = {name: sum(1 for a in drafts if name in [c["name"] for c in a["verification"]["checks"]
+                                                            if c["applies"] and not c["passed"]])
+                    for name in CODE_CHECKS}
+        return {"decisions": len(outs), "drafts": len(drafts),
+                "caught_by_code": sum(a["verification"]["caught_by"] == "code" for a in drafts),
+                "caught_by_judge": sum(a["verification"]["caught_by"] == "judge" for a in drafts),
+                "retries": sum(max(0, len(o["attempts"]) - 1) for o in outs),
+                "verified": sum(1 for o in outs if o["verification"]["passed"]),
+                "sent_to_owner": sum(1 for o in outs if not o["verification"]["passed"]),
+                "judge_calls": sum(a["verification"]["judge_ran"] for a in drafts),
+                "by_check": {k: v for k, v in by_check.items() if v},
+                "first_try": sum(1 for o in outs if len(o["attempts"]) == 1 and o["verification"]["passed"])}
+
+    @app.get("/businesses/{b}/middle-step")
+    def middle_step_view(b: str = Depends(business)):
+        """Before Pheri writes a message, code checks the customer's stage and the plan against the labelled truth
+        set (data/synth/<b>/_truth.json). Money actions need the money bar, nudges the nudge bar."""
+        from .actions import BUSINESS_ACTIONS, CATALOG
+        from .verify import MONEY_ACTIONS
+
+        rows = []
+        for st, row in middle_step_scores(b).items():
+            plans = []
+            for a, score in row["plan_scores"].items():
+                cls = "money" if a in MONEY_ACTIONS else "nudge"
+                need = THRESHOLDS[b][cls]
+                plans.append({"action": a, "class": cls, "plan_score": score, "threshold": need,
+                              "passed": score + 1e-9 >= need and row["stage_score"] + 1e-9 >= need})
+            rows.append({"stage": st, "customers": row["customers"], "stage_score": row["stage_score"],
+                         "fits": row["fits"], "plans": plans})
+        return {"thresholds": THRESHOLDS[b], "stages": rows,
+                "actions": [a for a in BUSINESS_ACTIONS[b] if CATALOG[a].customer_facing]}
 
     @app.get("/businesses/{b}/replies")
     def replies(b: str = Depends(business)):

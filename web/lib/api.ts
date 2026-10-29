@@ -34,7 +34,8 @@ export type Action = {
   id: string;
   customer_key: string;
   kind: string;
-  payload: { channel?: string | null; discount_pct?: number | null; message?: string; reason?: string };
+  payload: { channel?: string | null; discount_pct?: number | null; message?: string; reason?: string;
+    verification?: StoredVerification };
   why: string;
   evidence: Evidence[];
   mode: "suggest" | "ask_owner" | "act_alone" | null;
@@ -49,6 +50,28 @@ export type Approval = { id: string; action_id: string; decision: "pending" | "a
 
 export type Decision = { action: string; channel: string | null; discount_pct: number | null; message: string;
   why_this: string; why_now: string; fact_keys: string[]; quote_ids: string[] };
+
+/** What the action stores: the send step sends it only if this passed for exactly this payload. */
+export type StoredVerification = { passed: boolean; sha: string; caught_by: "code" | "judge" | null; reasons: string[];
+  code_checks: number; judge_ran: boolean; failed: string[] };
+
+/** One check in code, or the judge's verdict on one claim. */
+export type CheckRow = { name: string; applies: boolean; passed: boolean; reasons: string[];
+  scores?: { stage: string; class: string; stage_score: number; plan_score: number; threshold: number } };
+export type JudgeRow = { claim_id: string; claim: string; supported: boolean; reason: string };
+export type Verification = { passed: boolean; checks: CheckRow[]; judge: JudgeRow[]; judge_ran: boolean;
+  caught_by: "code" | "judge" | null; reasons: string[]; code_checks: number; judge_model: string | null;
+  judge_cost_usd: number; judge_recorded: boolean; judge_error: string | null };
+export type Attempt = { attempt: number; decision: Decision; verification: Verification; turns: number[] };
+/** The card's footer: "Verified: 12 code checks + judge". */
+export type VerificationLine = { passed: boolean; code_checks: number; judge: boolean; caught_by: "code" | "judge" | null;
+  reasons: string[]; attempts: number; judge_cost_usd: number; judge_recorded: boolean };
+export type VerificationTotals = { decisions: number; drafts: number; caught_by_code: number; caught_by_judge: number;
+  retries: number; verified: number; sent_to_owner: number; judge_calls: number; by_check: Record<string, number>;
+  first_try: number };
+export type MiddleStep = { thresholds: { money: number; nudge: number }; actions: string[];
+  stages: { stage: string; customers: number; stage_score: number; fits: string[];
+    plans: { action: string; class: "money" | "nudge"; plan_score: number; threshold: number; passed: boolean }[] }[] };
 
 /** The model behind a decision, and how this server got its replies (stand-in: offline, never a model). */
 export type DecidedBy = { provider: string; model: string; source: "live" | "recorded" | "stand-in" };
@@ -67,6 +90,7 @@ export type NextStep = {
   cost_usd: number;
   turns: number;
   decided_by: DecidedBy | null;
+  verification: VerificationLine | null;
 };
 
 export type CustomerRow = { key: string; name: string; company: string | null; stage: string;
@@ -128,6 +152,7 @@ export type Learned = {
   caveats: { text: string; fact_ids: string[] }[];
   rejected: { part: string; text: string; problems: string[] }[];
   model: string | null; cost_usd: number; markdown: string;
+  attempts: { attempt: number; passed: boolean; rejected: string[]; problems: string[] }[];
 };
 
 export type SpendRow = { provider: string; model: string; purpose: string; calls: number; usd: number;

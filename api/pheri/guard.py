@@ -7,7 +7,7 @@
 Three layers, and the strictest one wins:
   1. code screen before the model: known injection patterns (rule overrides, "system override",
      "reveal all customer emails", "refund everything", false owner authority, prompt markup,
-     encoded payloads) in English, Spanish, Portuguese, Hindi and Nepali. Free, and cannot be talked out of.
+     encoded payloads, a tool called by name) in English, Spanish, Portuguese, Hindi and Nepali. Free, and cannot be talked out of.
   2. the model labels the reply. The customer's text is sent as escaped JSON inside a delimited
      block (< and > escaped too), so nothing they write can close the block or pose as an instruction.
   3. code screen after the model: an attack seen by either side is an attack; a summary that repeats
@@ -98,6 +98,12 @@ INJECTION_PATTERNS: dict[str, list[str]] = {
         r"(तिमीलाई|तपाईंलाई) (अधिकार|अनुमति) दिन्छु", r"कसैलाई नसोधी",
     ],
     "prompt_markup": [r"</?\s*(system|assistant|instructions?)\s*>", r"\[/?(inst|system)\]", r"<\|(im_start|im_end|endoftext)\|>"],
+    "tool_call": [  # asks the AI to call a tool by name: Pheri has three, and discards any other call anyway
+        r"\b(call|invoke|run|execute|trigger)\b[^.!?\n]{0,20}\b[a-z]+_[a-z_]+\b",
+        r"\b[a-z]+_[a-z_]+\s*\([^)]{0,80}\)",
+        r"</?\s*(tool_call|function_call|tool_use|tool)\s*>",
+        r"\"name\"\s*:\s*\"[a-z_]+\"\s*,\s*\"arguments\"",
+    ],
     "encoded_payload": [r"[A-Za-z0-9+/]{80,}={0,2}"],
 }
 _INJECTION = {name: [re.compile(p) for p in pats] for name, pats in INJECTION_PATTERNS.items()}

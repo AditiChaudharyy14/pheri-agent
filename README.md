@@ -61,12 +61,60 @@ python -m pheri.journey            # stage accuracy against the hidden truth in 
 python -m pheri.decide brightdesk  # five mock decisions, no network
 ```
 
+## How Pheri checks its own work
+
+A model's draft is a claim, not an action. `pheri/verify.py` checks every draft before anything can be
+sent; the idea follows Meta's Verifiable Agents workshop (28 Oct): verify the work in code, show the
+verification, and never let the agent mark its own homework.
+
+1. **Code first, 12 checks, free.** The owner's rules; the schema; evidence that exists in the profile;
+   every number, date, amount and plan name present in the facts the draft cites; no pronoun the customer
+   never gave; the message says "you", with their name only in the greeting (the why-text, for the owner,
+   names them); one problem, the one behind their journey stage; the customer's language; length; links
+   only to the business's own sites; no money offer unless it is an `offer_discount` the rules allow; and
+   the **middle step** (below).
+2. **Then a judge**, only if code passed: Muse Spark Open on Baseten, effort low, answers true or false
+   per claim: "is this claim supported by the cited fact ids?" It sees only the facts and quotes the
+   draft cites.
+3. **Failures go back.** The reasons return to the model as the next turn of the same conversation, up
+   to `PHERI_VERIFY_MAX_ATTEMPTS` drafts (3). After that the draft goes to the owner's queue with the
+   reasons. It is never sent: approving it cannot send it either.
+4. **The model cannot skip it or call it.** It is not a tool. `autonomy.submit()` runs `verify_draft()`
+   itself and stores the result, with a hash of the exact payload, on the action; the send step
+   (`_execute`) refuses any customer-facing action whose stored verification did not pass for that
+   payload. `api/tests/test_verify.py` sends everything it can (every action on "act alone", every queued
+   item approved) and proves each message that went out passed, and that with verification failing
+   nothing goes out at all.
+5. **Only three tools.** Any other tool call (`issue_refund`, `verify_draft`, `send_message`) is
+   discarded, never run, and written to the audit log as `tool_call_discarded`.
+
+**The middle step** is checked before the message is written. Code scores its own journey stage and each
+plan against the labelled truth set (`data/synth/*/_truth.json`: true stages, and per stage the plans that
+fit, from the twin's hidden table): of the customers code puts in a stage, how many truly are there, and
+how many the plan truly fits. Money actions (discount, upgrade, subscription) need 100%, nudges 80%, set
+per business. `check_rules` returns that verdict in the loop, so the model hears "send_checkin fits 0% of
+onboarding customers" and picks another plan. The Rules screen shows the scores.
+
+**Muse Wonder's report** goes through the same loop: a rejected part goes back with the reason, at most two
+more calls on that one report. The recorded run: attempt 1's headline stated no result, attempt 2 passed.
+
+What you see: the Decision trace shows every draft, which layer caught it and why, and the reasons sent
+back; each card's footer reads "Verified: 12 code checks + judge"; Proof has the totals. In the recorded
+live run of the 12 showcase decisions: 24 drafts, 3 caught by code, 10 by the judge, 12 retries, 11
+verified, 1 sent to the owner (Aarav: the judge rejected an unsupported claim in all three drafts).
+
+```bash
+python evals/run.py     # includes the verification numbers: labelled broken drafts, tool attacks, middle step,
+                        # and the loop on the recorded showcase; all $0
+```
+
 ## Every reply is read safely first
 
 `pheri/guard.py` reads each inbound customer reply before anything else happens:
 
 1. A **code screen** looks for injection patterns (rule overrides, "system override", "reveal all
-   customer emails", "refund everything", false owner authority, prompt markup, encoded payloads) in
+   customer emails", "refund everything", false owner authority, prompt markup, encoded payloads, a tool
+   called by name) in
    English, Spanish, Portuguese, Hindi and Nepali.
 2. The **model** labels the reply (question, complaint, objection, stop, purchase intent, attack,
    other) and gives its language and a short safe summary. The customer's text goes in as escaped
@@ -110,8 +158,10 @@ python -m pheri.twin brightdesk            # 200 customers, $0; writes chart-rea
 python -m pheri.learn ../.pheri/twin/brightdesk-n200-seed7.json   # mock report, checked in code
 ```
 
-`evals/attacks.jsonl` holds 52 attacks (direct, indirect, multilingual, semantic) and 27 harmless
-messages that look alarming. `evals/replies.jsonl` holds 60 labelled replies, 12 per language. The
+`evals/attacks.jsonl` holds 55 attacks (direct, indirect, multilingual, semantic, and 3 that try to make
+Pheri call a tool it does not have) and 27 harmless messages that look alarming. `evals/replies.jsonl`
+holds 60 labelled replies, 12 per language. `evals/drafts.jsonl` holds 22 labelled drafts: 17 broken on
+purpose, one way each, for code to catch; 2 whose flaw only a judge can see; 3 clean. The
 code screen's patterns were written alongside these sets, so its own catch rate here is an upper
 bound; the semantic attacks are the ones it is not meant to catch.
 
@@ -131,9 +181,10 @@ replays the same requests and checks every one is found). Replay plays those rep
 network, no model key and no spend, while code still runs every rule check, evidence check and the
 autonomy dial. A reply is found by the conversation it answered, so if a prompt or the data changes,
 that conversation falls back to the offline stand-in, and the page says so: every decision card
-names who decided ("Decided by Muse Spark 1.3 · $0.0166 · 3 turns", or "the offline stand-in"),
-and the header reads "Recorded from a live run". `api/tests/test_app.py` fails if Maya's recording
-stops matching the code.
+names who decided and how it was checked ("Decided by Muse Spark 1.3 · $0.0157 · 3 turns · Verified:
+12 code checks + judge", or "the offline stand-in"), and the header reads "Recorded from a live run".
+The judge's verdicts are recorded too. `api/tests/test_app.py` fails if the recording stops matching the
+code.
 
 Deploy: `render.yaml` is a Render blueprint with two services. `pheri-api` (Python, replay mode, no
 keys) and `pheri-web` (Node). Set `PHERI_API_URL` on `pheri-web` to the API's public URL. The browser's

@@ -55,6 +55,16 @@ def _envf(name: str, default: float):
     return field(default_factory=read)
 
 
+def _envi(name: str, default: int):
+    def read() -> int:
+        try:
+            return int(os.environ.get(name, default))
+        except ValueError:
+            return default
+
+    return field(default_factory=read)
+
+
 @dataclass(frozen=True)
 class Settings:
     # "live" calls real providers; "mock" never touches the network (tests, offline demos); "replay" never
@@ -85,6 +95,9 @@ class Settings:
     meta_offset_usd: float = _envf("PHERI_META_SPEND_OFFSET_USD", 0.0)
     # Refuse any single call estimated above this, unless the caller explicitly allows it.
     max_call_usd: float = _envf("PHERI_MAX_CALL_USD", 0.50)
+
+    # Pheri checks its own drafts (verify.py): how many drafts the model may write before a person takes over.
+    verify_max_attempts: int = _envi("PHERI_VERIFY_MAX_ATTEMPTS", 3)
 
     # Ledger storage: Postgres when DATABASE_URL is set, else a local SQLite file.
     database_url: str | None = _env("DATABASE_URL")

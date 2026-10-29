@@ -1,5 +1,6 @@
 """The HTTP API, end to end through FastAPI's test client. Mock mode only: no network, no spend."""
 
+import re
 from urllib.parse import quote
 
 import pytest
@@ -91,7 +92,9 @@ def test_one_customer_and_their_profile(client, llm, monkeypatch):
 def test_maya_decision_then_approval(client):
     out = client.post(f"{c(MAYA)}/decision").json()
     assert out["decision"]["action"] == "send_help" and out["action"]["status"] == "awaiting_approval"
-    assert out["prechecks"][0] == {"action": "offer_discount", "allowed": False, "violations": [FIRST_MONTH]}
+    first = out["prechecks"][0]  # refused by the owner's rule, and by the middle-step check of the plan
+    assert first["action"] == "offer_discount" and not first["allowed"] and first["violations"][0] == FIRST_MONTH
+    assert out["verification"]["passed"] and out["action"]["payload"]["verification"]["passed"]
     assert {e["kind"] for e in out["evidence"]} == {"fact", "quote"}
     q = client.get(f"{BD}/approvals").json()
     assert [x["action"]["id"] for x in q] == [out["action"]["id"]]
@@ -268,17 +271,30 @@ def test_replay_serves_mayas_recorded_live_run(monkeypatch, tmp_path):
     assert card["decided_by"] == {"provider": "meta", "model": "muse-spark-1.3", "source": "recorded"}
     d = card["decision"]
     assert d["action"] == "send_help" and "90%" in d["message"] and "weekly client reports" in d["message"]
-    assert "renews in 8 days" in d["why_now"] and " she " in f" {d['why_this'].casefold()} "
+    assert "renews in 8 days" in d["why_now"] and re.search(r"\b(she|her)\b", f"{d['why_this']} {d['why_now']}")
+    assert "Maya" not in d["message"].split(",", 1)[1]  # "you" to her face: her name only in the greeting
+    assert card["verification"]["passed"] and card["verification"]["judge"] and card["verification"]["judge_recorded"]
     assert "inbox" not in d["message"]  # one problem: the export behind her stage, not her second ticket
     assert card["cost_usd"] > 0 and card["turns"] == 3  # what the live run paid, for its turns
     assert llm.ledger.totals("meta").settled_usd == 0  # replaying it spent nothing
     api = TestClient(create_app(llm))
     assert api.get("/health").json()["mode"] == "replay"
-    # Muse Wonder's report on the 5,000-customer twin is recorded too; its headline stated no result, so
-    # code replaced it and says so.
+    # Muse Wonder's report on the 5,000-customer twin is recorded too: its first headline stated no result, code
+    # sent the reason back, and the second attempt passed every check.
     rep = api.get(f"{BD}/learned").json()
     assert rep["source"] == "recorded" and rep["model"] == "muse-wonder-1.0" and len(rep["findings"]) == 6
-    assert [r["part"] for r in rep["rejected"]] == ["headline"] and rep["headline"].startswith("Across 5000")
+    assert [(a["attempt"], a["passed"], a["rejected"]) for a in rep["attempts"]] == [(1, False, ["headline"]), (2, True, [])]
+    assert rep["rejected"] == [] and not rep["headline"].startswith("Across 5000")  # Wonder's own, checked
     assert api.get("/businesses/kettle/learned").json()["source"] == "stand-in"  # not recorded: one call only
-    for card in api.get(f"{BD}/next-steps").json() + api.get("/businesses/kettle/next-steps").json():
+    cards = api.get(f"{BD}/next-steps").json() + api.get("/businesses/kettle/next-steps").json()
+    for card in cards:
         assert card["decided_by"]["source"] == "recorded", card["customer"]["name"]
+        assert card["verification"]["judge_recorded"], card["customer"]["name"]  # the judge's verdicts too
+    # A real failure, kept: the judge rejected claims in all three of Aarav's drafts, so he is with the owner.
+    held = [c["customer"]["name"] for c in cards if not c["verification"]["passed"]]
+    assert held == ["Aarav Silva"]
+    aarav = next(c for c in cards if c["customer"]["name"] == "Aarav Silva")
+    assert aarav["verification"]["caught_by"] == "judge" and aarav["verification"]["attempts"] == 3
+    assert aarav["action"]["status"] == "awaiting_approval" and not aarav["action"]["payload"]["verification"]["passed"]
+    totals = api.get(f"{BD}/verification").json()
+    assert totals["decisions"] == 6 and totals["sent_to_owner"] == 1 and totals["drafts"] > totals["decisions"]

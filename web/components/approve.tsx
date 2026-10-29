@@ -4,8 +4,10 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { call } from "@/lib/api";
 
-/** Approve (code re-checks the rules first) or reject a queued action. */
-export function ApproveReject({ business, approvalId }: { business: string; approvalId: string }) {
+/** Approve (code re-checks the rules first) or reject a queued action. A draft that failed Pheri's own checks can
+ * only be rejected: the send step never sends an unverified draft, whoever approves it. */
+export function ApproveReject({ business, approvalId, verified = true }: { business: string; approvalId: string;
+  verified?: boolean }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -25,13 +27,19 @@ export function ApproveReject({ business, approvalId }: { business: string; appr
 
   return (
     <div className="flex flex-col items-stretch gap-2">
-      <button
-        onClick={() => decide("approve")}
-        disabled={pending}
-        className="rounded-xl bg-teal px-5 py-2.5 text-[0.98rem] font-medium text-white hover:bg-teal-ink disabled:opacity-60"
-      >
-        Approve
-      </button>
+      {verified ? (
+        <button
+          onClick={() => decide("approve")}
+          disabled={pending}
+          className="rounded-xl bg-teal px-5 py-2.5 text-[0.98rem] font-medium text-white hover:bg-teal-ink disabled:opacity-60"
+        >
+          Approve
+        </button>
+      ) : (
+        <p className="text-[0.85rem] leading-snug text-amber">
+          Failed Pheri&rsquo;s checks, so it can&rsquo;t be sent as written. Reply yourself, or reject it.
+        </p>
+      )}
       <button
         onClick={() => decide("reject")}
         disabled={pending}

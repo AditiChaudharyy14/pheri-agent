@@ -164,13 +164,19 @@ def test_an_attack_becomes_one_escalation_and_never_an_action(store, llm, monkey
 
 @BOTH
 def test_stop_sets_do_not_contact_and_nothing_customer_facing_can_pass(store, llm):
-    a = submit(store, MAYA, ProposedAction(kind="send_help", channel="email", message="Steps"),
-               context_for(store, build_profile(load("brightdesk"), MAYA, llm)), why="", evidence=[{"ref": "x"}])
+    from pheri.journey import stage
+    from pheri.verify import Draft
+    from pheri.verify import context as verify_context
+
+    p = build_profile(load("brightdesk"), MAYA, llm)
+    j = stage("brightdesk", p.facts, p.provenance.get("facts"))
+    draft = Draft(ProposedAction(kind="send_help", channel="email", message="Here are the steps for the export."),
+                  "Maya's exports fail.", "Maya is stuck.", ["failed_exports_30d"], [])
+    a = submit(store, MAYA, draft, verify=verify_context(p, j, context_for(store, p), store, llm))
     assert a["status"] == "awaiting_approval"  # queued before the customer said stop
     g = handle_reply(store, llm, MAYA, "Please stop emailing me.", source_id="T9002")
     assert g.stop and store.do_not_contact(MAYA)["source"] == "T9002"
     # Approving what was queued earlier re-checks in code, and now refuses it.
-    p = build_profile(load("brightdesk"), MAYA, llm)
     done = approve(store, queue(store)[0]["id"], by="owner", context_for=lambda key: context_for(store, p))
     assert done["status"] == "blocked"
     assert "the customer asked not to be contacted" in [r["reason"] for r in done["rule_check"]["results"]]
@@ -306,7 +312,8 @@ def test_private_decide_is_one_call_with_every_rule_dry_run(brightdesk, llm, mon
     p = build_profile(brightdesk, MAYA, llm)
     calls = _calls(llm, monkeypatch)
     out = decide(p, store, llm)
-    assert len(calls) == 1 and calls[0]["provider"] == "baseten" and calls[0]["purpose"] == "decide_private"
+    # One decision call, then the judge checks the draft's claims: both on Muse Spark Open.
+    assert [c["purpose"] for c in calls] == ["decide_private", "judge"] and {c["provider"] for c in calls} == {"baseten"}
     assert out.private and out.turns == 1
     dry = {d["action"]: d for d in out.prechecks}
     assert not dry["offer_discount"]["allowed"]  # Maya's discount is blocked before the model even sees it
@@ -367,7 +374,7 @@ def test_full_private_mode_sends_nothing_to_the_meta_api(brightdesk, llm, monkey
     with private_fence(store, llm):
         seed(store, llm)  # the owner's rule is compiled privately too
     out = decide_customer(brightdesk, MAYA, store, llm)
-    assert {c["purpose"] for c in calls} == {"compile_rule", "guard", "profile_insights", "decide_private"}
+    assert {c["purpose"] for c in calls} == {"compile_rule", "guard", "profile_insights", "decide_private", "judge"}
     assert {c["provider"] for c in calls} == {"baseten"}  # every step, Muse Spark Open
     assert {c["effort"] for c in calls} == {"low"}  # the documented Baseten setting the brief asks for
     assert out.private and out.decision["action"] == "send_help"

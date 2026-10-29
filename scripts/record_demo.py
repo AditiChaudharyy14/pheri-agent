@@ -1,13 +1,15 @@
 """Record what the real model says for the demo's showcase cards, so the public site can replay it.
 
     python scripts/record_demo.py                          # mock dry run: counts the calls, spends nothing
-    python scripts/record_demo.py --live --budget 0.60     # real calls, appended to data/recorded/llm.jsonl
+    python scripts/record_demo.py --live --budget 0.60 --baseten-budget 0.30   # real calls, appended to
+                                                                               # data/recorded/llm.jsonl
 
 It drives the API itself (in-process) and asks for each business's Next steps, exactly as the site does,
 so every recorded conversation is the one a replay server rebuilds: the starting rules compiled, then for
-each showcase customer the guard's read of their replies, their profile, and the decision's whole tool
-loop. Only synthetic data is sent. As a backstop the Meta cap for this one process is lowered to "spent so
-far + budget", so the ledger refuses any call past the budget. A run stopped part-way resumes: replies
+each showcase customer the guard's read of their replies, their profile, the decision's whole tool loop,
+and the judge's check of every draft (Muse Spark Open on Baseten), retries included. Only synthetic data is
+sent. As a backstop the Meta and Baseten caps for this one process are lowered to "spent so far + budget",
+so the ledger refuses any call past either budget. A run stopped part-way resumes: replies
 already recorded for the same conversation are reused, not bought again.
 
 Afterwards it replays the same requests offline, checks every one is found, and drops recorded replies
@@ -63,7 +65,8 @@ def watch_calls(on_result) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--live", action="store_true")
-    ap.add_argument("--budget", type=float, default=0.60)
+    ap.add_argument("--budget", type=float, default=0.60, help="USD on the Meta Model API")
+    ap.add_argument("--baseten-budget", type=float, default=0.30, help="USD on Baseten (the judge)")
     args = ap.parse_args()
 
     os.environ["DATABASE_URL"] = ""
@@ -81,9 +84,11 @@ def main() -> None:
     from pheri.config import Settings
     from pheri.ledger import Ledger
 
-    spent = Ledger(Settings()).totals("meta").committed_usd
+    led = Ledger(Settings())
+    spent, spent_b = led.totals("meta").committed_usd, led.totals("baseten").committed_usd
     os.environ.update(PHERI_LLM_MODE="live", PHERI_API_ALLOW_LIVE="1", PHERI_LLM_RECORD=str(RECORDING),
-                      PHERI_META_CAP_USD=f"{spent + args.budget:.6f}")
+                      PHERI_META_CAP_USD=f"{spent + args.budget:.6f}",
+                      PHERI_BASETEN_CAP_USD=f"{spent_b + args.baseten_budget:.6f}")
     before = len(RECORDING.read_text(encoding="utf-8").splitlines()) if RECORDING.exists() else 0
     cards = run()
     rows = [json.loads(x) for x in RECORDING.read_text(encoding="utf-8").splitlines()[before:]]
@@ -91,14 +96,18 @@ def main() -> None:
           ", ".join(f"{p} x{sum(r['purpose'] == p for r in rows)}" for p in dict.fromkeys(r["purpose"] for r in rows)))
     for key, card in cards.items():
         d = card["decision"]
+        v = card.get("verification") or {}
         print(f"\n{card['customer']['name']} ({card['customer']['stage']}): {d['action']}, {card['turns']} turns,"
-              f" ${card['cost_usd']:.4f}\n  message: {d['message']}\n  why this: {d['why_this']}\n"
-              f"  why now: {d['why_now']}")
+              f" ${card['cost_usd']:.4f}, {v.get('attempts', 0)} draft(s), "
+              + ("verified" if v.get("passed") else f"NOT verified ({v.get('caught_by')})")
+              + f"\n  message: {d['message']}\n  why this: {d['why_this']}\n  why now: {d['why_now']}")
+        for r in v.get("reasons") or []:
+            print(f"  ! {r}")
 
     # Replay the same requests offline: every one must be found in the recording.
     os.environ.update(PHERI_LLM_MODE="replay", PHERI_LEDGER_PATH=str(REPO / ".pheri" / "mock-ledger.sqlite"),
                       PHERI_LLM_REPLAY=str(RECORDING))
-    del os.environ["PHERI_LLM_RECORD"], os.environ["PHERI_META_CAP_USD"]
+    del os.environ["PHERI_LLM_RECORD"], os.environ["PHERI_META_CAP_USD"], os.environ["PHERI_BASETEN_CAP_USD"]
     from pheri.llm import recording_key
 
     used, misses = set(), []

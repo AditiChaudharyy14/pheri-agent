@@ -2,7 +2,6 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { ApproveReject } from "@/components/approve";
 import { DecidedByLine } from "@/components/decided-by";
-import { OfferDiscount } from "@/components/discount";
 import { EvidenceChips } from "@/components/evidence";
 import { Badge, Card, Chip, Label, ModeBadge, Skeleton, StageBadge } from "@/components/ui";
 import { api, customerPath, type CustomerDetail, type Insight, type NextStep, type Profile } from "@/lib/api";
@@ -33,8 +32,8 @@ async function Customer({ params }: { params: Params }) {
     <>
       <header className="mb-8 flex items-end justify-between gap-6">
         <div>
-          <Link href={`/${business}/journey`} className="text-[0.92rem] text-muted hover:text-teal-ink">
-            ← Journey
+          <Link href={`/${business}`} className="text-[0.92rem] text-muted hover:text-teal-ink">
+            ← Next steps
           </Link>
           <div className="mt-2 flex flex-wrap items-baseline gap-4">
             <h1 className="text-[2.6rem] leading-tight font-medium">{c.name}</h1>
@@ -54,7 +53,12 @@ async function Customer({ params }: { params: Params }) {
       <div className="grid grid-cols-[1fr_420px] items-start gap-8">
         <div className="space-y-6">
           <Card>
-            <h2 className="text-[1.45rem] font-medium">Why {first} is here</h2>
+            <div className="flex items-baseline justify-between gap-4">
+              <h2 className="text-[1.45rem] font-medium">Why {first} is here</h2>
+              <Link href={`/${business}/journey`} className="text-[0.92rem] text-muted hover:text-teal-ink">
+                Every stage →
+              </Link>
+            </div>
             <p className="mt-1 text-ink-2">The journey rule that matched, counted in code.</p>
             <div className="mt-4 flex flex-wrap gap-2">
               {c.journey.because.map((b) => (
@@ -67,8 +71,11 @@ async function Customer({ params }: { params: Params }) {
           </Card>
 
           <Card>
-            <h2 className="text-[1.45rem] font-medium">Facts, with their sources</h2>
-            <p className="mt-1 text-ink-2">Every number is counted in code and names the rows it came from.</p>
+            <details>
+              <summary className="cursor-pointer">
+                <span className="text-[1.45rem] font-medium">Facts, with their sources</span>
+                <span className="mt-1 block text-ink-2">Every number is counted in code and names the rows it came from.</span>
+              </summary>
             <table className="mt-4 w-full text-[0.95rem]">
               <tbody>
                 {Object.entries(c.facts).map(([f, v]) => {
@@ -94,6 +101,7 @@ async function Customer({ params }: { params: Params }) {
                 })}
               </tbody>
             </table>
+            </details>
           </Card>
 
           <Card>
@@ -164,12 +172,6 @@ async function Customer({ params }: { params: Params }) {
                 override={step.override}
               />
             </div>
-          </Card>
-
-          <Card>
-            <Label>Try it</Label>
-            <p className="mt-2 mb-4 text-ink-2">Would the owner&rsquo;s rules let Pheri offer {first} a discount?</p>
-            <OfferDiscount business={business} customerKey={key} name={first} />
           </Card>
         </div>
       </div>

@@ -35,6 +35,23 @@ PARTNER_PRICES: dict[str, Price] = {
 # Per-hour price for speech-to-text (metered in seconds).
 TRANSCRIBE_USD_PER_HOUR = 0.18
 
+# Modal GPU prices per second, checked on https://modal.com/pricing on 29 Oct 2026. Glimmer runs on our own
+# container there, so a call costs the GPU's wall-clock time, not tokens.
+MODAL_GPU_USD_PER_SECOND: dict[str, float] = {
+    "L4": 0.000222,
+    "A10": 0.000306,
+    "L40S": 0.000542,
+    "A100-40GB": 0.000583,
+    "A100-80GB": 0.000694,
+    "H100": 0.001097,
+}
+
+
+def gpu_usd(gpu: str, seconds: float) -> float:
+    if gpu not in MODAL_GPU_USD_PER_SECOND:
+        raise KeyError(f"No price on file for Modal GPU {gpu!r}; add it to pricing.py first.")
+    return MODAL_GPU_USD_PER_SECOND[gpu] * max(0.0, seconds)
+
 
 def price_for(provider: str, model: str) -> Price:
     if provider == "meta":

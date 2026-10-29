@@ -4,13 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BUSINESSES, type Business } from "@/lib/api";
 
+// The agent's work first; Journey is reached from a customer, Spend from the footer.
 const LINKS = [
   { href: "", label: "Next steps" },
-  { href: "/journey", label: "Journey" },
   { href: "/rules", label: "Rules" },
   { href: "/safety", label: "Safety" },
   { href: "/proof", label: "Proof" },
-  { href: "/spend", label: "Spend" },
 ];
 
 export function Nav({ business }: { business: Business }) {

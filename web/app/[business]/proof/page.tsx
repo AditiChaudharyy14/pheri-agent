@@ -1,7 +1,9 @@
 import { Suspense } from "react";
-import { LearningCurve, LiftChart } from "@/components/proof-charts";
+import { LiftChart } from "@/components/proof-charts";
 import { Badge, Card, Label, PageHead, Skeleton } from "@/components/ui";
 import { api, type Learned, pct, pp, type TwinResults, type VerificationTotals } from "@/lib/api";
+
+const SHOWN_FINDINGS = 3;
 import { stageLabel } from "@/lib/labels";
 
 export default function ProofPage({ params }: PageProps<"/[business]/proof">) {
@@ -9,7 +11,7 @@ export default function ProofPage({ params }: PageProps<"/[business]/proof">) {
     <>
       <PageHead
         title="Proof"
-        lead="Did Pheri's next steps work? Every result is against a holdout: customers Pheri deliberately left alone. Here it is measured in a customer twin."
+        lead="Did Pheri's follow-ups work? Measured against a holdout: customers Pheri deliberately left alone."
         right={
           <span className="rounded-xl border-2 border-amber/50 bg-amber-soft px-4 py-2 text-[0.95rem] font-semibold tracking-[0.12em] text-amber">
             SIMULATED
@@ -31,94 +33,39 @@ async function Proof({ params }: { params: PageProps<"/[business]/proof">["param
     api<VerificationTotals>(`/businesses/${business}/verification`),
   ]);
   const o = twin.overall;
+  const held = Math.round(twin.holdout_share * 100);
   return (
     <div className="space-y-8">
-      <p className="rounded-xl border border-amber/30 bg-amber-soft/60 px-5 py-3 text-ink-2">
-        A customer twin of {twin.customers.toLocaleString()} synthetic customers. Their responses come from a hidden table
-        (maths, no model); {Math.round(twin.holdout_share * 100)}% are held out and get nothing. Pheri sees each stage
-        only through its own journey rules&rsquo; measured mistakes, and learns which action works over {twin.rounds}{" "}
-        rounds (Thompson sampling).
-      </p>
-
-      <div className="grid grid-cols-3 gap-6">
-        <Card>
-          <Label>Lift against the holdout</Label>
-          <p className="mt-2 font-serif text-[3rem] leading-none text-ink">{pp(o.lift_pp)}</p>
-          <p className="mt-1 text-ink-2">percentage points</p>
-          <p className="mt-3 text-[0.92rem] text-muted">
-            95% interval {pp(o.ci_pp?.[0])} to {pp(o.ci_pp?.[1])} ·{" "}
-            <span className={o.verdict === "works" ? "text-teal-ink" : ""}>
-              {o.verdict === "works" ? "✓ works" : "? not clear yet"}
-            </span>
-          </p>
-        </Card>
-        <Card className="col-span-2">
-          <Label>Who responded</Label>
-          <div className="mt-3 grid grid-cols-3 gap-6">
-            <Tile value={pct(o.treated.rate)} label="Pheri, learning" sub={`${o.treated.n.toLocaleString()} customers`} strong />
-            <Tile
-              value={pct(o.random_policy?.rate)}
-              label="Same steps, picked at random"
-              sub="same customers, same luck"
-            />
-            <Tile value={pct(o.holdout.rate)} label="Holdout, no action" sub={`${o.holdout.n.toLocaleString()} customers`} />
-          </div>
-        </Card>
-      </div>
-
       <Card>
-        <h2 className="mb-5 text-[1.6rem] font-medium">Lift by stage, and what Pheri learned works best</h2>
-        <LiftChart stages={twin.stages} />
+        <p className="font-serif text-[1.9rem] leading-snug text-ink">
+          Customers Pheri followed up with responded {pct(o.treated.rate)} of the time. The {held}% held back, who got
+          nothing, responded {pct(o.holdout.rate)}.{" "}
+          <span className={o.verdict === "works" ? "text-teal-ink" : ""}>That is {pp(o.lift_pp)} points</span>.
+        </p>
+        <p className="mt-3 text-ink-2">
+          95% interval {pp(o.ci_pp?.[0])} to {pp(o.ci_pp?.[1])} ({o.verdict === "works" ? "it works" : "not clear yet"}), on{" "}
+          {twin.customers.toLocaleString()} simulated customers whose responses come from a hidden table (maths, no model).
+          Pheri sees each one only through its own journey rules, mistakes included, and learns what works over{" "}
+          {twin.rounds} rounds.
+        </p>
+        <p className="mt-4 border-t border-line pt-3 text-ink-2">
+          <span className="font-medium text-ink">Nothing goes out unchecked.</span> For the {checked.decisions} next steps
+          on the first page Pheri wrote {checked.drafts} drafts: code caught {checked.caught_by_code}, the judge caught{" "}
+          {checked.caught_by_judge}, {checked.retries} were rewritten with the reasons, and {checked.sent_to_owner} went to
+          the owner instead of the customer.
+        </p>
       </Card>
 
-      <div className="grid grid-cols-[auto_1fr] items-start gap-6">
-        <Card>
-          <h2 className="text-[1.35rem] font-medium">Learning, round by round</h2>
-          <p className="mt-1 mb-4 max-w-[30rem] text-[0.95rem] text-ink-2">
-            Share of Pheri&rsquo;s picks that were the truly best allowed action. The twin knows the truth; a real business
-            would see only the lift.
-          </p>
-          <LearningCurve curve={twin.learning_curve} />
-          <p className="mt-1 text-center text-[0.82rem] text-muted">round</p>
-        </Card>
-        <Report learned={learned} />
-      </div>
+      <Report learned={learned} />
 
-      <VerificationBlock v={checked} />
-    </div>
-  );
-}
-
-function VerificationBlock({ v }: { v: VerificationTotals }) {
-  const checks = Object.entries(v.by_check);
-  return (
-    <Card>
-      <div className="flex flex-wrap items-baseline justify-between gap-4">
-        <h2 className="text-[1.35rem] font-medium">Verification: Pheri checks its own drafts</h2>
-        <p className="text-[0.88rem] text-muted">The {v.decisions} next steps on the first page, every draft counted</p>
-      </div>
-      <div className="mt-4 grid grid-cols-5 gap-6">
-        <Tile value={String(v.drafts)} label="Drafts written" sub={`for ${v.decisions} decisions`} />
-        <Tile value={String(v.caught_by_code)} label="Caught by code" sub={`${v.code_checks} checks, free, always first`} />
-        <Tile value={String(v.caught_by_judge)} label="Caught by the judge" sub="Muse Spark Open, claim by claim" />
-        <Tile value={String(v.retries)} label="Retries" sub="reasons sent back to the model" />
-        <Tile value={String(v.sent_to_owner)} label="Sent to the owner" sub="out only if the owner overrides a soft check" />
-      </div>
-      {checks.length > 0 && (
-        <p className="mt-4 text-[0.9rem] text-ink-2">
-          What code caught: {checks.map(([k, n]) => `${k.replaceAll("_", " ")} ×${n}`).join(", ")}.
-        </p>
-      )}
-    </Card>
-  );
-}
-
-function Tile({ value, label, sub, strong }: { value: string; label: string; sub: string; strong?: boolean }) {
-  return (
-    <div>
-      <p className={`font-serif text-[2.4rem] leading-none ${strong ? "text-teal-ink" : "text-ink"}`}>{value}</p>
-      <p className="mt-2 font-medium text-ink">{label}</p>
-      <p className="text-[0.88rem] text-muted">{sub}</p>
+      <Card>
+        <details>
+          <summary className="cursor-pointer text-[1.15rem] font-medium">How we know: the lift for each stage</summary>
+          <div className="mt-5">
+            <LiftChart stages={twin.stages} />
+          </div>
+        </details>
+      </Card>
     </div>
   );
 }
@@ -147,7 +94,7 @@ function Report({ learned }: { learned: Learned }) {
       )}
       <p className="mt-4 font-serif text-[1.15rem] leading-snug text-ink">{learned.headline}</p>
       <ul className="mt-4 space-y-2.5">
-        {learned.findings.map((f) => (
+        {learned.findings.slice(0, SHOWN_FINDINGS).map((f) => (
           <li key={f.stage} className="grid grid-cols-[8.5rem_1fr] gap-3 text-[0.95rem]">
             <span className="text-ink">
               {stageLabel(f.stage)}

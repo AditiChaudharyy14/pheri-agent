@@ -48,6 +48,19 @@ function Frame({ business, right, nav }: { business?: string; right?: React.Reac
   );
 }
 
+// Spend proves the build stayed inside the free credits; it is evidence, not a section, so it lives down here.
+async function Footer({ params }: { params: LayoutProps<"/[business]">["params"] }) {
+  const { business } = await params;
+  if (!isBusiness(business)) return null;
+  return (
+    <footer className="mx-auto max-w-[1240px] border-t border-line px-10 py-6 text-[0.88rem] text-muted">
+      <Link href={`/${business}/spend`} className="hover:text-teal-ink">
+        Built on free credits: what every model call cost →
+      </Link>
+    </footer>
+  );
+}
+
 // Reading the route's business is URL data: it streams behind Suspense, with the plain frame as the fallback.
 async function Header({ params }: { params: LayoutProps<"/[business]">["params"] }) {
   const { business } = await params;
@@ -75,6 +88,9 @@ export default function BusinessLayout({ children, params }: LayoutProps<"/[busi
         <Header params={params} />
       </Suspense>
       <main className="mx-auto max-w-[1240px] px-10 py-10">{children}</main>
+      <Suspense fallback={null}>
+        <Footer params={params} />
+      </Suspense>
     </div>
   );
 }

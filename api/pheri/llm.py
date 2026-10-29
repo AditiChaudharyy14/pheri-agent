@@ -17,6 +17,9 @@ Protocols (checked against https://dev.meta.ai/docs on 27 Oct 2026):
              (`reasoning.max_tokens` is not enforced for it), so `max_tokens` is the only length control
              and it caps reasoning + answer together. Reasoning text comes back in `reasoning_content`.
   modal   -> Muse Glimmer (open weights), Chat Completions.
+  `transcribe` -> Muse Voice Transcribe, `POST /v1/asr/transcribe` (multipart: `request` JSON + `audio` WAV),
+             checked on https://dev.meta.ai/docs/api-reference/voice/transcribe (29 Oct 2026). Hindi and
+             English are in its 25 languages; Nepali and Bhojpuri are not.
 Reasoning tokens are billed as output, so `max_tokens` bounds reasoning + answer together.
 
 JSON on every provider: `complete_json` asks for `json_schema` first. If a Chat Completions partner
@@ -62,8 +65,11 @@ from pydantic import BaseModel, ValidationError
 
 from .config import Settings, get_settings
 from .ledger import Ledger, SpendCapExceeded  # noqa: F401  (re-exported)
-from .pricing import cost_usd, price_for
+from .pricing import TRANSCRIBE_USD_PER_HOUR, cost_usd, gpu_usd, price_for
 
+TRANSCRIBE_MODEL = "muse-voice-transcribe-1.0"
+MAX_AUDIO_MS = 10 * 60 * 1000  # the endpoint refuses longer clips
+MAX_AUDIO_BYTES = 32 * 1024 * 1024
 MAX_OUTPUT_TOKENS = 8192
 DEFAULT_OUTPUT_TOKENS = 1200
 MAX_ATTEMPTS = 3
@@ -76,6 +82,18 @@ MUSE_SPARK_OPEN_SAMPLING = {"temperature": 1.0, "top_p": 1.0}  # Meta's recommen
 
 class DataPolicyError(RuntimeError):
     """Raised when non-synthetic data would be sent somewhere it must not go."""
+
+
+class _HTTPError(RuntimeError):
+    """A provider answered with an error status (raw HTTP calls; the OpenAI SDK raises its own)."""
+
+    def __init__(self, status_code: int, message: str, response=None):
+        super().__init__(f"HTTP {status_code}: {message}")
+        self.status_code, self.message, self.response = status_code, message, response
+
+
+class _TransportError(RuntimeError):
+    """The request never got an answer (connection, timeout): it may still have been billed."""
 
 
 class ModelOutputError(RuntimeError):
@@ -125,13 +143,39 @@ def register_mock(purpose: str, fn: MockFn) -> None:
     _mock_responders[purpose] = fn
 
 
+AUDIO_TOKENS_PER_SECOND = 100  # a pessimistic guess for the reservation only; the usage report settles it
+AUDIO_MAX_SECONDS = 300  # Baseten's limit per file (5 minutes): the worst case when the length is unknown
+
+
 def _estimate_input_tokens(messages: list[dict]) -> int:
-    chars = 0
+    chars, audio_tokens = 0, 0
     for m in messages:
         content = m.get("content", m)  # tool items (function_call_output, ...) have no "content"
+        if isinstance(content, list):  # content parts: audio is billed by length, not by its base64 size
+            for part in content:
+                if isinstance(part, dict) and part.get("type") == "audio_url":
+                    audio_tokens += math.ceil(_audio_seconds(part["audio_url"]["url"]) * AUDIO_TOKENS_PER_SECOND)
+                else:
+                    chars += len(json.dumps(part, ensure_ascii=False))
+            continue
         chars += len(content) if isinstance(content, str) else len(json.dumps(content, ensure_ascii=False))
     # ~3 characters per token is pessimistic for English and fair for Devanagari; overestimating is the safe side.
-    return math.ceil(chars / 3) + 16 * len(messages)
+    return math.ceil(chars / 3) + 16 * len(messages) + audio_tokens
+
+
+def _audio_seconds(url: str) -> float:
+    """Length of a base64 WAV data URL; anything else (a link, another format) counts as the longest allowed."""
+    import base64
+    import io
+    import wave
+
+    if url.startswith("data:audio/wav;base64,"):
+        try:
+            with wave.open(io.BytesIO(base64.b64decode(url.split(",", 1)[1]))) as w:
+                return w.getnframes() / w.getframerate()
+        except (wave.Error, EOFError, ValueError):
+            pass
+    return AUDIO_MAX_SECONDS
 
 
 # ---- request builders (pure functions, unit-tested) ------------------------------
@@ -181,6 +225,7 @@ class LLM:
         self._json_mode: dict[str, str] = {}  # provider -> "instructions" once it refused json_schema
         self._only: frozenset[str] | None = None  # inside `only(...)`: the providers calls may go to
         self._recordings: dict[str, dict] | None = None  # replay mode: key -> recorded reply, read on first use
+        self._modal_last_end: float | None = None  # when the last Modal request ended (GPU-seconds, see _gpu_seconds)
 
     # ---- providers -------------------------------------------------------
     def _client(self, provider: str):
@@ -197,7 +242,8 @@ class LLM:
         if not base or not key:
             raise RuntimeError(f"{provider}: base URL or API key missing. Set it in .env (see .env.example).")
         # The OpenAI SDK does not read MODEL_API_KEY by itself, so we pass it explicitly.
-        client = OpenAI(base_url=base, api_key=key, max_retries=0, timeout=120)
+        timeout = s.modal_timeout_s if provider == "modal" else 120  # Modal: a cold start waits inside the request
+        client = OpenAI(base_url=base, api_key=key, max_retries=0, timeout=timeout)
         self._clients[provider] = client
         return client
 
@@ -270,6 +316,9 @@ class LLM:
         if previous_response_id:
             est_in += self._context_tokens.get(previous_response_id, UNKNOWN_CONTEXT_TOKENS)
         est = cost_usd(price, est_in, max_tokens)
+        if provider == "modal":  # billed by GPU time: the longest a request may run, plus the idle tail after it
+            s = self.settings
+            est = gpu_usd(s.modal_gpu, s.modal_timeout_s + s.modal_scaledown_s)
         if est > self.settings.max_call_usd and not allow_expensive:
             raise SpendCapExceeded(
                 f"Single call estimated at ${est:.4f} > per-call limit ${self.settings.max_call_usd:.2f}. "
@@ -316,7 +365,11 @@ class LLM:
         # 4. Settle with the real cost.
         in_tok, cached_tok, out_tok = usage
         actual = 0.0 if offline or rec is not None else cost_usd(price, in_tok, out_tok, cached_tok)
-        self.ledger.settle(rid, actual, in_tok, cached_tok, out_tok)
+        gpu_s = None
+        if provider == "modal" and not offline and rec is None:
+            gpu_s = self._gpu_seconds(latency)
+            actual = gpu_usd(self.settings.modal_gpu, gpu_s)
+        self.ledger.settle(rid, actual, in_tok, cached_tok, out_tok, gpu_seconds=gpu_s)
         if tools and resp_id and not stateless:
             self._context_tokens.pop(previous_response_id or "", None)  # our chains are linear
             self._context_tokens[resp_id] = in_tok + out_tok
@@ -345,6 +398,14 @@ class LLM:
                     raise err from (exc if err is not exc else None)
                 result.parse_error = f"cut off ({incomplete})" if incomplete else str(exc)
         return result
+
+    def _gpu_seconds(self, latency: float) -> float:
+        """GPU time one Modal request costs: its wall clock (a cold start waits inside it), plus, for the
+        first request of a burst, the idle tail the container stays up for once the burst ends."""
+        now = time.monotonic()
+        new_burst = self._modal_last_end is None or now - latency - self._modal_last_end > self.settings.modal_scaledown_s
+        self._modal_last_end = now
+        return latency + (self.settings.modal_scaledown_s if new_burst else 0.0)
 
     # ---- JSON on any provider ----------------------------------------------
     def json_mode(self, provider: str) -> str:
@@ -379,6 +440,90 @@ class LLM:
             r.parsed = _parse(_json_object(r.text), schema)
         return r
 
+    # ---- speech to text -----------------------------------------------------
+    def transcribe(self, audio: bytes, *, purpose: str, language_bias: list[str] | None = None,
+                   keywords: list[str] | None = None, data_class: str = "synthetic") -> LLMResult:
+        """Muse Voice Transcribe on one WAV clip (mono PCM16, 16 or 24 kHz, at most 10 minutes), through the
+        same door as every other call: data policy, private fence, ledger, retries, recording and replay.
+        `language_bias` takes language names ("Hindi", "English"). The transcript is in `.text`; `.parsed`
+        holds {"audio_ms", "turns"}. Billed per second of audio, so the reservation is exact."""
+        provider, model = "meta", TRANSCRIBE_MODEL
+        if self._only is not None and provider not in self._only:
+            raise DataPolicyError(f"This business is in full private mode: a {purpose!r} transcription was "
+                                  f"refused before sending (allowed: {sorted(self._only)}).")
+        if data_class != "synthetic" and not self.settings.allow_real_data:
+            raise DataPolicyError("Only synthetic data may be sent to models. Set PHERI_ALLOW_REAL_DATA=1 only "
+                                  "with a paid, standard-mode setup.")
+        audio_ms = wav_duration_ms(audio)  # raises ValueError on anything the endpoint would refuse
+        est = audio_ms / 3_600_000 * TRANSCRIBE_USD_PER_HOUR
+        rid = self.ledger.reserve(provider, model, purpose, est)
+
+        settings = {"model": model, "audioEncoding": "WAV", "mode": "PUSH_TO_TALK"}
+        if language_bias:
+            settings["languageBias"] = list(language_bias)
+        if keywords:
+            settings["keywords"] = list(keywords)
+        offline = self.settings.llm_mode != "live"
+        replay = self.settings.llm_mode == "replay" or bool(self.settings.record_path)
+        key = transcription_key(purpose, audio, settings) if replay or self.settings.record_path else None
+        rec = self._recorded(key) if replay else None
+        start = time.monotonic()
+        try:
+            if rec is not None:
+                text, body = rec["text"], {"audioDurationMs": rec.get("audio_ms", audio_ms), "turns": []}
+            elif offline:
+                fn = _mock_responders.get(purpose)
+                if fn is None:
+                    raise RuntimeError(f"No mock responder registered for purpose {purpose!r}.")
+                sha = hashlib.sha256(audio).hexdigest()
+                text = fn([{"role": "user", "content": f"<audio sha256={sha}>"}], None)
+                body = {"audioDurationMs": audio_ms, "turns": []}
+            else:
+                body = self._with_retries(lambda: self._transcribe(settings, audio))
+                text = body.get("transcript") or ""
+        except BaseException as exc:
+            status = getattr(exc, "status_code", None)
+            if not offline and ((status is not None and status >= 500) or isinstance(exc, _TransportError)):
+                self.ledger.settle(rid, est, 0, 0, 0)  # it may have been billed: count the whole clip
+            else:
+                self.ledger.release(rid)
+            raise
+        latency = time.monotonic() - start
+        billed_ms = int(body.get("audioDurationMs") or audio_ms)
+        actual = 0.0 if offline or rec is not None else billed_ms / 3_600_000 * TRANSCRIBE_USD_PER_HOUR
+        self.ledger.settle(rid, actual, 0, 0, 0)
+        if rec is not None:
+            actual = rec["cost_usd"]
+        elif self.settings.record_path and not offline:
+            row = {"key": key, "purpose": purpose, "provider": provider, "model": model,
+                   "recorded_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "text": text,
+                   "function_calls": [], "items": [], "usage": [0, 0, 0], "cost_usd": actual, "incomplete": None,
+                   "reasoning_tokens": None, "audio_ms": billed_ms}
+            path = Path(self.settings.record_path)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with path.open("a", encoding="utf-8") as f:
+                f.write(json.dumps(row, ensure_ascii=False) + "\n")
+        parsed = {"audio_ms": billed_ms, "turns": body.get("turns") or []}
+        return LLMResult(text, parsed, provider, model, 0, 0, 0, actual, latency, body.get("sessionId"), body,
+                         recorded=rec is not None)
+
+    def _transcribe(self, settings: dict, audio: bytes) -> dict:
+        import httpx  # comes with the openai SDK; imported lazily so mock mode needs no network libs
+
+        s = self.settings
+        if not s.meta_api_key:
+            raise RuntimeError("meta: API key missing. Set MODEL_API_KEY in .env (see .env.example).")
+        try:
+            resp = httpx.post(f"{s.meta_base_url.rstrip('/')}/asr/transcribe", timeout=120,
+                              headers={"Authorization": f"Bearer {s.meta_api_key}", "Accept": "application/json"},
+                              files={"request": (None, json.dumps(settings), "application/json"),
+                                     "audio": ("clip.wav", audio, "audio/wav")})
+        except httpx.TransportError as exc:
+            raise _TransportError(str(exc)) from exc
+        if resp.status_code >= 400:
+            raise _HTTPError(resp.status_code, resp.text[:500], resp)
+        return resp.json()
+
     # ---- transports -------------------------------------------------------
     def _responses(self, req: dict):
         resp = self._client("meta").responses.create(**req)
@@ -405,7 +550,8 @@ class LLM:
                 return fn()
             except Exception as exc:  # noqa: BLE001
                 status = getattr(exc, "status_code", None)
-                network_error = status is None and exc.__class__.__name__ in ("APIConnectionError", "APITimeoutError")
+                network_error = status is None and (isinstance(exc, _TransportError) or exc.__class__.__name__ in (
+                    "APIConnectionError", "APITimeoutError"))
                 if attempt == MAX_ATTEMPTS or not (status in RETRYABLE_STATUS or network_error):
                     raise
                 time.sleep(_retry_delay(exc, attempt))
@@ -478,6 +624,35 @@ def recording_key(purpose: str, provider: str, model: str, messages: list, schem
                        "tools": [t.get("name") for t in tools or []]},
                       sort_keys=True, ensure_ascii=False, default=str)
     return hashlib.sha256(_RANDOM_ID.sub("<id>", blob).encode("utf-8")).hexdigest()[:32]
+
+
+def transcription_key(purpose: str, audio: bytes, settings: dict) -> str:
+    """What a transcript answered: the exact audio bytes and the settings they were sent with."""
+    blob = json.dumps({"purpose": purpose, "audio_sha256": hashlib.sha256(audio).hexdigest(), "settings": settings},
+                      sort_keys=True, ensure_ascii=False)
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()[:32]
+
+
+def wav_duration_ms(audio: bytes) -> int:
+    """Length of a clip Muse Voice accepts (RIFF/WAVE, mono, 16-bit PCM, 16 or 24 kHz, at most 10 minutes).
+    Anything else raises ValueError before a cent is reserved: the endpoint would refuse it with a 400."""
+    import io
+    import wave
+
+    if len(audio) > MAX_AUDIO_BYTES:
+        raise ValueError(f"Audio is {len(audio)} bytes; the endpoint takes at most {MAX_AUDIO_BYTES}.")
+    try:
+        with wave.open(io.BytesIO(audio)) as w:
+            channels, width, rate, frames = w.getnchannels(), w.getsampwidth(), w.getframerate(), w.getnframes()
+    except (wave.Error, EOFError) as exc:
+        raise ValueError(f"Not a PCM WAV file: {exc}") from exc
+    if channels != 1 or width != 2 or rate not in (16_000, 24_000):
+        raise ValueError(f"Muse Voice takes mono 16-bit PCM at 16 or 24 kHz; this clip is {channels} channel(s), "
+                         f"{width * 8}-bit, {rate} Hz. Convert it first (ffmpeg -ac 1 -ar 16000 -sample_fmt s16).")
+    ms = round(frames * 1000 / rate)
+    if ms > MAX_AUDIO_MS:
+        raise ValueError(f"Audio is {ms / 1000:.0f} s; the endpoint takes at most {MAX_AUDIO_MS // 1000} s.")
+    return ms
 
 
 def _from_recording(rec: dict):

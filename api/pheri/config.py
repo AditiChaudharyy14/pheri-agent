@@ -86,11 +86,15 @@ class Settings:
     modal_base_url: str | None = _env("MODAL_BASE_URL")
     modal_api_key: str | None = _env("MODAL_PROXY_TOKEN")
     modal_model: str = _env("MODAL_MODEL", "meta-models/Muse-Glimmer-30B")
+    # Modal bills the GPU per second, not per token: the ledger counts wall-clock GPU time at this GPU's rate.
+    modal_gpu: str = _env("PHERI_MODAL_GPU", "L40S")
+    modal_timeout_s: float = _envf("PHERI_MODAL_TIMEOUT_S", 300.0)  # one request, a cold start included
+    modal_scaledown_s: float = _envf("PHERI_MODAL_SCALEDOWN_S", 120.0)  # idle GPU time after the last request
 
     # Spend guard. Meta gives $150 of free credit; we stop at $130 to keep a buffer.
     meta_cap_usd: float = _envf("PHERI_META_CAP_USD", 130.0)
     baseten_cap_usd: float = _envf("PHERI_BASETEN_CAP_USD", 90.0)
-    modal_cap_usd: float = _envf("PHERI_MODAL_CAP_USD", 90.0)
+    modal_cap_usd: float = _envf("PHERI_MODAL_CAP_USD", 25.0)  # set by Aditi, 29 Oct: Glimmer stays small
     # Spend made outside Pheri (dashboard Chat, Muse Code). Add it here so the cap stays honest.
     meta_offset_usd: float = _envf("PHERI_META_SPEND_OFFSET_USD", 0.0)
     # Refuse any single call estimated above this, unless the caller explicitly allows it.

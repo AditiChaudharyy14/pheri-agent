@@ -218,7 +218,8 @@ CREATE TABLE spend_ledger (
     actual_usd     double precision,
     input_tokens   integer,
     cached_tokens  integer,
-    output_tokens  integer
+    output_tokens  integer,
+    gpu_seconds    double precision
 );
 
 -- ---- row-level security ----------------------------------------------------------

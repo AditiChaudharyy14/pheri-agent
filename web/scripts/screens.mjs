@@ -34,12 +34,8 @@ const ACTIONS = {
     await page.getByRole("status").waitFor({ timeout: 30_000 });
     await page.waitForTimeout(200);
   },
-  customer: async (page) => {
-    const button = page.getByRole("button", { name: "Offer a discount" });
-    await button.scrollIntoViewIfNeeded();
-    await button.click();
-    await page.getByRole("status").waitFor({ timeout: 30_000 });
-    await page.getByRole("status").scrollIntoViewIfNeeded();
+  proof: async (page) => {
+    await page.getByText("How we know: the lift for each stage").click();
     await page.waitForTimeout(200);
   },
 };

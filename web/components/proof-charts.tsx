@@ -1,4 +1,4 @@
-import type { StageResult, TwinResults } from "@/lib/api";
+import type { StageResult } from "@/lib/api";
 import { pct, pp } from "@/lib/api";
 import { actionLabel, stageLabel } from "@/lib/labels";
 
@@ -93,46 +93,5 @@ export function LiftChart({ stages }: { stages: StageResult[] }) {
         when it includes zero (not clear yet). Hover a row for the counts.
       </p>
     </div>
-  );
-}
-
-/** How often Pheri picked the truly best allowed action, round by round (the twin knows the truth). */
-export function LearningCurve({ curve }: { curve: TwinResults["learning_curve"] }) {
-  const W = 500, H = 210, PAD = { l: 44, r: 52, t: 12, b: 28 };
-  const pts = curve.filter((c) => c.best_pick_share != null);
-  const n = curve.length;
-  const x = (i: number) => PAD.l + (i / Math.max(1, n - 1)) * (W - PAD.l - PAD.r);
-  const y = (v: number) => PAD.t + (1 - v) * (H - PAD.t - PAD.b);
-  const path = pts.map((c, i) => `${i ? "L" : "M"}${x(c.round)},${y(c.best_pick_share!)}`).join(" ");
-  const last = pts[pts.length - 1];
-  return (
-    <svg width={W} height={H} role="img" aria-label="Share of picks that were the truly best action, by round">
-      {[0, 0.25, 0.5, 0.75, 1].map((v) => (
-        <g key={v}>
-          <line x1={PAD.l} x2={W - PAD.r} y1={y(v)} y2={y(v)} stroke={C.grid} strokeWidth={1} />
-          <text x={PAD.l - 8} y={y(v) + 4} textAnchor="end" fill={C.muted} fontSize={12}>
-            {v * 100}%
-          </text>
-        </g>
-      ))}
-      {curve.map((c) => (
-        <text key={c.round} x={x(c.round)} y={H - 8} textAnchor="middle" fill={C.muted} fontSize={12}>
-          {c.round + 1}
-        </text>
-      ))}
-      <path d={path} fill="none" stroke={C.chart} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
-      {pts.map((c) => (
-        <g key={c.round}>
-          <title>{`Round ${c.round + 1}: ${pct(c.best_pick_share)} of picks were the truly best action`}</title>
-          <circle cx={x(c.round)} cy={y(c.best_pick_share!)} r={12} fill="transparent" />
-          <circle cx={x(c.round)} cy={y(c.best_pick_share!)} r={4.5} fill={C.chart} stroke={C.surface} strokeWidth={2} />
-        </g>
-      ))}
-      {last && (
-        <text x={x(last.round) + 10} y={y(last.best_pick_share!) + 4} fill={C.ink} fontSize={13} fontWeight={500}>
-          {pct(last.best_pick_share, 0)}
-        </text>
-      )}
-    </svg>
   );
 }

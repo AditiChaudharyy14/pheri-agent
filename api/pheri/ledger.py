@@ -52,7 +52,8 @@ CREATE TABLE IF NOT EXISTS spend_ledger (
     actual_usd REAL,
     input_tokens INTEGER,
     cached_tokens INTEGER,
-    output_tokens INTEGER
+    output_tokens INTEGER,
+    gpu_seconds REAL                -- open weights on our own GPU (Modal): billed per second, not per token
 );
 """
 
@@ -66,6 +67,9 @@ class Ledger:
             Path(self.settings.ledger_path).parent.mkdir(parents=True, exist_ok=True)
             with self._sqlite() as con:
                 con.executescript(_SCHEMA_SQLITE)
+                # A ledger made before GPU-seconds were tracked keeps its rows and gains the column.
+                if "gpu_seconds" not in {r[1] for r in con.execute("PRAGMA table_info(spend_ledger)")}:
+                    con.execute("ALTER TABLE spend_ledger ADD COLUMN gpu_seconds REAL")
 
     # ---- storage -------------------------------------------------------
     @contextmanager
@@ -149,13 +153,20 @@ class Ledger:
             )
             return rid
 
-    def settle(self, rid: str, actual_usd: float, input_tokens: int, cached_tokens: int, output_tokens: int) -> None:
+    def settle(self, rid: str, actual_usd: float, input_tokens: int, cached_tokens: int, output_tokens: int,
+               gpu_seconds: float | None = None) -> None:
         with self._tx() as cur:
             cur.execute(
                 "UPDATE spend_ledger SET status = 'settled', actual_usd = %s, input_tokens = %s, "
-                "cached_tokens = %s, output_tokens = %s WHERE id = %s",
-                (actual_usd, input_tokens, cached_tokens, output_tokens, rid),
+                "cached_tokens = %s, output_tokens = %s, gpu_seconds = %s WHERE id = %s",
+                (actual_usd, input_tokens, cached_tokens, output_tokens, gpu_seconds, rid),
             )
+
+    def gpu_seconds(self, provider: str = "modal") -> float:
+        """GPU-seconds settled for a provider billed by the second (compare with its dashboard)."""
+        with self._tx() as cur:
+            return float(cur.scalar("SELECT COALESCE(SUM(gpu_seconds), 0) FROM spend_ledger "
+                                    "WHERE provider = %s AND status = 'settled'", (provider,)))
 
     def release(self, rid: str) -> None:
         with self._tx() as cur:

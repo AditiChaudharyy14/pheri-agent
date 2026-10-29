@@ -31,9 +31,20 @@ Read this before every task. These rules are not optional.
   evals/judge_recorded.jsonl: the real judge on 20 cases in evals/drafts.jsonl: 10/10 planted claims caught,
   9/10 supported passed (S04 "still saved": strict, pinned in test_evals).
   Re-record: python scripts/record_demo.py --live --budget <usd> --baseten-budget <usd>.
-- Next: deploy on Render together (docs/DEPLOY.md; push only when agreed), README polish, demo video.
+- Pivot (approved 29 Oct; plan in ~/.claude/plans/pasted-content-id-3e3c-use-the-humming-bachman.md): hero
+  becomes Birgunj Saree Ghar (Kettle reskinned), six moments: Morning brief, Night shift, Slop vs Pheri, Speak a
+  rule, Nepali reply attack, Proof. Code freeze Mon 2 Nov 23:59; video Tue 3 – Wed 4.
+- Thu night done: LLM.transcribe (Muse Voice, /v1/asr/transcribe, WAV mono PCM16 16/24 kHz, billed per second,
+  recorded + replayed by audio hash; live smoke OK, scripts/transcribe.py). Modal billed by GPU-seconds
+  (PHERI_MODAL_GPU, default L40S; reserve timeout + scale-down tail; ledger column gpu_seconds), Modal cap $25.
+  Audio parts estimated by length (scripts/probe_audio.py ready for the Nepali clip, ≤ $0.10). Language probe
+  (docs/live-runs.md): Bhojpuri labels 9/10 but read as Hindi; Roman Nepali fine on Spark Open; code screen has
+  no Bhojpuri/Roman-Nepali attack patterns yet. Web: nav = Next steps, Rules, Safety, Proof (Journey from a
+  customer, Spend in the footer); Proof is one sentence + verification line + 3 findings + lift chart folded;
+  discount widget and scaffold SVGs gone.
+- Waiting on Aditi: Modal card check (no Modal deploy until then), Nepali + Hindi clips, OK to push for Render.
   Servers for screenshots: uvicorn :8000 (replay, no --reload: restart after API changes), next dev :3000.
-- Live spend: Meta $1.4575 of $130, Baseten $0.5886 of $90. Tests: 326 pass (mock + replay tests).
+- Live spend: Meta $1.5019 of $130, Baseten $0.6317 of $90, Modal $0 of $25. Tests: 340 (15 skip without Postgres).
 
 ## What we are building
 Pheri: an AI agent that understands each customer, decides their next best action ("why this, why now"),

@@ -99,10 +99,10 @@ function VerificationBlock({ v }: { v: VerificationTotals }) {
       </div>
       <div className="mt-4 grid grid-cols-5 gap-6">
         <Tile value={String(v.drafts)} label="Drafts written" sub={`for ${v.decisions} decisions`} />
-        <Tile value={String(v.caught_by_code)} label="Caught by code" sub="12 checks, free, always first" />
+        <Tile value={String(v.caught_by_code)} label="Caught by code" sub={`${v.code_checks} checks, free, always first`} />
         <Tile value={String(v.caught_by_judge)} label="Caught by the judge" sub="Muse Spark Open, claim by claim" />
         <Tile value={String(v.retries)} label="Retries" sub="reasons sent back to the model" />
-        <Tile value={String(v.sent_to_owner)} label="Sent to the owner" sub="never out unverified" />
+        <Tile value={String(v.sent_to_owner)} label="Sent to the owner" sub="out only if the owner overrides a soft check" />
       </div>
       {checks.length > 0 && (
         <p className="mt-4 text-[0.9rem] text-ink-2">

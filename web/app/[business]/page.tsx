@@ -51,7 +51,7 @@ async function Steps({ params }: { params: PageProps<"/[business]">["params"] })
 function StepCard({ business, step }: { business: string; step: NextStep }) {
   const { customer, decision: d, action } = step;
   const v = step.verification;
-  const held = v && !v.passed ? v.reasons : [];
+  const held = v && !v.passed && !step.override ? v.reasons : [];
   return (
     <Card>
       <div className="grid grid-cols-[1fr_auto] gap-8">
@@ -116,7 +116,7 @@ function StepCard({ business, step }: { business: string; step: NextStep }) {
             </div>
           )}
           {step.approval?.decision === "pending" && (
-            <ApproveReject business={business} approvalId={step.approval.id} verified={v?.passed !== false} />
+            <ApproveReject business={business} approvalId={step.approval.id} check={action?.payload.verification} />
           )}
         </aside>
       </div>
@@ -129,6 +129,7 @@ function StepCard({ business, step }: { business: string; step: NextStep }) {
           turns={step.turns}
           isPrivate={step.private}
           verification={step.verification}
+          override={step.override}
         />
       </div>
     </Card>

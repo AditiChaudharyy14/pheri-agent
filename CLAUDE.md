@@ -7,21 +7,25 @@ Read this before every task. These rules are not optional.
   evidence by id), autonomy + approvals, guard + private mode (Muse Spark Open), evals, twin + Thompson (5,000,
   12/12 learned right, close calls flagged), Wonder report (checked in code), FastAPI, all 7 web screens, card
   footer, pronouns (only Maya's given), replay mode (PHERI_LLM_MODE=replay; pill "Recorded from a live run").
-- Verification (pheri/verify.py): verify_draft = 12 code checks (rules, schema, evidence, facts, pronouns, address
-  "you"/name only in greeting, one problem, language, length, link allowlist, money, middle step), then a judge
+- Verification (pheri/verify.py): verify_draft = 13 code checks (rules, schema, evidence, facts, pronouns, address
+  "you"/name only in greeting, one problem, language, length, link allowlist, money, middle step, tools), then a judge
   (Muse Spark Open, Baseten, low) per claim. Reasons go back, max PHERI_VERIFY_MAX_ATTEMPTS=3 drafts, then the
   owner's queue (never sent). Runs inside autonomy.submit(); _execute() sends only a payload whose stored
   verification passed (sha). Middle step: stage + plan scored vs _truth.json (plans from the twin's table), money
   100% / nudges 80% per business, in check_rules and on the Rules screen. Tool allowlist: other calls discarded +
   audited. Wonder: same loop, max 2 retries. Shown in the trace (per draft), card footer, Proof block.
+  Owner override: soft checks only (judge, address, one problem, length, language, middle step); audit
+  "owner_override" has who, when, checks, reasons, exact text; hard checks (rules incl. do-not-contact and quiet
+  hours, schema, evidence, facts, pronouns, links, money, tools) never. tidy_message lowercases "Hi Maya, Your".
 - Recorded (data/recorded/llm.jsonl, 99 replies): the 12 showcase cards through the loop (24 drafts: 3 caught by
   code, 10 by the judge, 12 retries, 11 verified; Aarav sent to the owner after 3 drafts, kept on purpose) and the
   Brightdesk Wonder report (attempt 1 headline rejected, attempt 2 passed). Kettle's report is still the stand-in.
-  evals/judge_recorded.jsonl: the real judge on evals/drafts.jsonl (2/2 caught, 3/3 clean passed).
+  evals/judge_recorded.jsonl: the real judge on 20 cases in evals/drafts.jsonl: 10/10 planted claims caught,
+  8/10 supported passed (G01 "CSV", S04 "still saved": strict, pinned in test_evals).
   Re-record: python scripts/record_demo.py --live --budget <usd> --baseten-budget <usd>.
 - Next: deploy on Render together (docs/DEPLOY.md; push only when agreed), README polish, demo video.
   Servers for screenshots: uvicorn :8000 (replay, no --reload: restart after API changes), next dev :3000.
-- Live spend: Meta $1.3838 of $130, Baseten $0.3137 of $90. Tests: 300 pass (mock + replay tests).
+- Live spend: Meta $1.3838 of $130, Baseten $0.3726 of $90. Tests: 311 pass (mock + replay tests).
 
 ## What we are building
 Pheri: an AI agent that understands each customer, decides their next best action ("why this, why now"),

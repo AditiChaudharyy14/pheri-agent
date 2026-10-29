@@ -39,6 +39,7 @@ from .autonomy import escalate, modes, open_escalation, sent_messages, submit
 from .verify import (FEEDBACK_HEAD, NO_QUOTES, Draft, attach_evidence, fact_names, feedback,  # noqa: F401
                      message_problems, middle_step, quote_index, unsupported_numbers, verify_draft)
 from .verify import context as verify_context
+from .verify import tidy_message
 from .guard import GuardResult, screen_history
 from .privacy import PRIVATE_EFFORT as _PRIVACY_EFFORT
 from .privacy import private_fence, private_mode
@@ -319,6 +320,7 @@ def decide(p: Profile, store, llm: LLM, now: datetime = NOW, data_class: str = "
     run = _Run(p, j, store, context_for(store, p, now), latest)
     schema = decision_schema(fact_names(p), list(quote_index(p)))
     vc = verify_context(p, j, run.ctx, store, llm, data_class, latest)
+    vc.discarded_tools = run.discarded  # the same list: a call discarded in the loop fails the "tools" check
     private = private_mode(store)["decide"]
     loop = (_PrivateLoop if private else _ToolLoop)(run, llm, now, data_class, schema)
 
@@ -329,14 +331,14 @@ def decide(p: Profile, store, llm: LLM, now: datetime = NOW, data_class: str = "
         answer, fallback = loop.answer(fb)
         if answer is None:
             break  # no usable draft this time: keep the last one (it goes to the owner) or fall back
-        decision = answer
+        decision = answer.model_copy(update={"message": tidy_message(answer.message)})  # "Hi Maya, your ..."
         v = verify_draft(Draft.of(decision, now), vc)
         run.attempts.append({"attempt": attempt, "decision": decision.model_dump(), "verification": v.as_dict(),
                              "turns": [t["turn"] for t in run.turn_log if t.get("attempt") == attempt]})
         store.audit("pheri", "draft_checked", "customer", p.customer_key,
                     {"attempt": attempt, "passed": v.passed, "caught_by": v.caught_by, "reasons": v.reasons})
-        if v.passed or v.judge_error:
-            break  # verified; or the judge could not answer, which another draft would not change
+        if v.passed or v.judge_error or "tools" in v.failed:
+            break  # verified; or something another draft would not change (the judge, a tool already called)
         fb = feedback(v)
     if decision is None:
         decision = _fallback(fallback)

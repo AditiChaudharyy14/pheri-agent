@@ -273,6 +273,7 @@ def test_replay_serves_mayas_recorded_live_run(monkeypatch, tmp_path):
     assert d["action"] == "send_help" and "90%" in d["message"] and "weekly client reports" in d["message"]
     assert "renews in 8 days" in d["why_now"] and re.search(r"\b(she|her)\b", f"{d['why_this']} {d['why_now']}")
     assert "Maya" not in d["message"].split(",", 1)[1]  # "you" to her face: her name only in the greeting
+    assert d["message"].startswith("Hi Maya, your weekly report")  # the model wrote "Your"; code lowercased it
     assert card["verification"]["passed"] and card["verification"]["judge"] and card["verification"]["judge_recorded"]
     assert "inbox" not in d["message"]  # one problem: the export behind her stage, not her second ticket
     assert card["cost_usd"] > 0 and card["turns"] == 3  # what the live run paid, for its turns
@@ -296,5 +297,18 @@ def test_replay_serves_mayas_recorded_live_run(monkeypatch, tmp_path):
     aarav = next(c for c in cards if c["customer"]["name"] == "Aarav Silva")
     assert aarav["verification"]["caught_by"] == "judge" and aarav["verification"]["attempts"] == 3
     assert aarav["action"]["status"] == "awaiting_approval" and not aarav["action"]["payload"]["verification"]["passed"]
+    # The judge is a soft check: the owner may send Aarav's draft anyway, on the record; a plain approve is refused.
+    v = aarav["action"]["payload"]["verification"]
+    assert v["soft_failed"] == ["judge"] and v["hard_failed"] == [] and v["judge_flagged"] == 2
+    pid = aarav["approval"]["id"]
+    refused = api.post(f"{BD}/approvals/{pid}/approve", json={"by": "owner:aditi"})
+    assert refused.status_code == 409 and "owner override" in refused.json()["detail"]
+    sent = api.post(f"{BD}/approvals/{pid}/approve", json={"by": "owner:aditi", "override": True}).json()
+    assert sent["status"] == "executed"
+    card = next(c for c in api.get(f"{BD}/next-steps").json() if c["customer"]["name"] == "Aarav Silva")
+    assert card["override"]["summary"] == "judge flagged 2 claims" and card["override"]["by"] == "owner:aditi"
+    assert card["override"]["text"] == aarav["decision"]["message"] and card["override"]["overridden"] == ["judge"]
+    log = api.get(f"{BD}/audit", params={"subject_id": sent["id"]}).json()
+    assert [e["event"] for e in log][-3:] == ["approved", "owner_override", "executed"]
     totals = api.get(f"{BD}/verification").json()
     assert totals["decisions"] == 6 and totals["sent_to_owner"] == 1 and totals["drafts"] > totals["decisions"]

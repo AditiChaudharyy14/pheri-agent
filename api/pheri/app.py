@@ -9,7 +9,8 @@ Routes, per business (brightdesk, kettle):
   POST /businesses/{b}/customers/{key}/decision      guard, profile, decide: the next best action
   POST /businesses/{b}/customers/{key}/discount-check   would a discount pass the owner's rules?
   GET  /businesses/{b}/approvals                     the approval queue
-  POST /businesses/{b}/approvals/{id}/approve|reject approve (rules checked again) or reject
+  POST /businesses/{b}/approvals/{id}/approve|reject approve (rules checked again) or reject; approve with
+                                                     {"override": true} sends a draft that failed only soft checks
   GET  /businesses/{b}/rules  POST /rules  POST /rules/{id}/confirm   the owner's rules
   GET|PUT /businesses/{b}/private-mode               which steps run on Muse Spark Open
   GET  /businesses/{b}/twin                          the customer twin's results (chart-ready)
@@ -50,7 +51,7 @@ from .profile import Profile, build_profile, compute_facts, load, norm_email
 from .rules import CheckContext, active_rules, check, confirm, describe, propose, seed
 from .store import MemoryStore, NotFound, PgStore
 from .synth import BUSINESS_NAMES, NOW
-from .verify import CODE_CHECKS, THRESHOLDS, middle_step_scores
+from .verify import CODE_CHECKS, THRESHOLDS, middle_step_scores, override_summary
 
 BUSINESSES = tuple(BUSINESS_NAMES)
 TWIN_DIR = REPO_ROOT / "data" / "twin"
@@ -61,6 +62,10 @@ PROVIDERS = ("meta", "baseten")
 # ---- request bodies ---------------------------------------------------------------
 class By(BaseModel):
     by: str = Field(min_length=1, max_length=120, description="who: owner:<name>")
+
+
+class ApproveIn(By):
+    override: bool = Field(default=False, description="send a draft that failed only soft checks, as an owner override")
 
 
 class RejectIn(By):
@@ -241,11 +246,12 @@ def create_app(llm: LLM | None = None) -> FastAPI:
             return queue(state.stores[b])
 
     @app.post("/businesses/{b}/approvals/{approval_id}/approve")
-    def approve_one(approval_id: str, body: By, b: str = Depends(business)):
+    def approve_one(approval_id: str, body: ApproveIn, b: str = Depends(business)):
         with state.lock:
             try:
                 # The re-check needs code-computed facts only: approving never costs a model call.
-                return approve(state.stores[b], approval_id, body.by, context_for=lambda k: ctx_for(b, k))
+                return approve(state.stores[b], approval_id, body.by, context_for=lambda k: ctx_for(b, k),
+                               override=body.override)
             except NotFound:
                 raise HTTPException(404, f"no approval {approval_id!r}") from None
             except ValueError as exc:
@@ -372,7 +378,24 @@ def create_app(llm: LLM | None = None) -> FastAPI:
                 "approval": approval, "skipped": out["skipped"], "fallback": out["fallback"],
                 "unsupported_numbers": out["unsupported_numbers"], "message_problems": out["message_problems"],
                 "private": out["private"], "cost_usd": out["cost_usd"], "turns": out["turns"],
-                "decided_by": decided_by(out), "verification": verification_line(out)}
+                "decided_by": decided_by(out), "verification": verification_line(out),
+                "override": override_of(b, action)}
+
+    from .verify import SOFT_CHECKS as SOFT
+
+    def failed_of(v: dict) -> list[str]:
+        return [c["name"] for c in v["checks"] if c["applies"] and not c["passed"]] + (
+            ["judge"] if v["caught_by"] == "judge" else [])
+
+    def override_of(b: str, action: dict | None) -> dict | None:
+        """An owner's override of soft checks, from the audit log: who, when, what, and the text sent."""
+        if not action:
+            return None
+        e = next((x for x in reversed(state.stores[b].audit_log(action["id"])) if x["event"] == "owner_override"), None)
+        if e is None:
+            return None
+        return {**e["details"], "summary": override_summary(action["payload"].get("verification") or {}),
+                "logged_at": str(e["at"])}
 
     def verification_line(out: dict) -> dict | None:
         """For the card's footer: "Verified: 12 code checks + judge", or why a person has it."""
@@ -381,6 +404,7 @@ def create_app(llm: LLM | None = None) -> FastAPI:
             return None
         return {"passed": v["passed"], "code_checks": v["code_checks"], "judge": v["judge_ran"],
                 "caught_by": v["caught_by"], "reasons": v["reasons"], "attempts": len(out.get("attempts") or []),
+                "hard_failed": [c for c in failed_of(v) if c not in SOFT], "soft_failed": [c for c in failed_of(v) if c in SOFT],
                 "judge_cost_usd": out.get("verify_cost_usd", 0.0),
                 "judge_recorded": all(a["verification"]["judge_recorded"] for a in out.get("attempts") or []
                                       if a["verification"]["judge_ran"])}
@@ -415,7 +439,7 @@ def create_app(llm: LLM | None = None) -> FastAPI:
         by_check = {name: sum(1 for a in drafts if name in [c["name"] for c in a["verification"]["checks"]
                                                             if c["applies"] and not c["passed"]])
                     for name in CODE_CHECKS}
-        return {"decisions": len(outs), "drafts": len(drafts),
+        return {"decisions": len(outs), "drafts": len(drafts), "code_checks": len(CODE_CHECKS),
                 "caught_by_code": sum(a["verification"]["caught_by"] == "code" for a in drafts),
                 "caught_by_judge": sum(a["verification"]["caught_by"] == "judge" for a in drafts),
                 "retries": sum(max(0, len(o["attempts"]) - 1) for o in outs),

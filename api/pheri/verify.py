@@ -27,6 +27,13 @@ greeting) is skipped, not passed:
                rules allow
   middle_step  the journey stage and the plan (action) behind the draft, scored against the labelled
                truth set: money actions need the business's money threshold (100%), nudges theirs (80%)
+  tools        the loop that wrote it called no tool Pheri does not have
+
+Hard and soft. A draft that fails verification never goes out on its own. The owner may still send one
+that failed only SOFT_CHECKS (the judge, tone and address, one problem, length, language, the middle
+step's bar), after reading it: an owner override, logged with who, when, what was overridden and the
+exact text. HARD_CHECKS can never be overridden: the rules (which hold do-not-contact and quiet hours),
+the schema, evidence, invented numbers and facts, guessed pronouns, links, money offers, unknown tools.
 
 Layer 2, the judge, only once layer 1 passes: Muse Spark Open on Baseten (Meta's open-weight model, served
 by a partner), effort low, answers true or false per claim: is this claim supported by the cited fact ids?
@@ -64,7 +71,9 @@ JUDGE_MAX_OUTPUT_TOKENS = 2500  # Muse Spark Open always reasons; the guard need
 MAX_CLAIMS = 12
 
 CODE_CHECKS = ("rules", "schema", "evidence", "facts", "pronouns", "address", "one_problem", "language", "length",
-               "links", "money", "middle_step")
+               "links", "money", "middle_step", "tools")
+SOFT_CHECKS = ("address", "one_problem", "length", "language", "middle_step", "judge")  # an owner may override these
+HARD_CHECKS = tuple(c for c in CODE_CHECKS if c not in SOFT_CHECKS)  # never, by anyone
 FEEDBACK_HEAD = "Code checked your draft before anything was sent, and it did not pass:"
 
 
@@ -81,12 +90,33 @@ class Draft:
     @classmethod
     def of(cls, d, now=None) -> "Draft":
         """From a decide.Decision (anything with its fields)."""
-        return cls(ProposedAction(kind=d.action, channel=d.channel, discount_pct=d.discount_pct, message=d.message,
-                                  send_at=now), d.why_this, d.why_now, list(d.fact_keys), list(d.quote_ids))
+        return cls(ProposedAction(kind=d.action, channel=d.channel, discount_pct=d.discount_pct,
+                                  message=tidy_message(d.message), send_at=now),
+                   d.why_this, d.why_now, list(d.fact_keys), list(d.quote_ids))
 
     @property
     def why(self) -> str:
         return f"Why this: {self.why_this}\nWhy now: {self.why_now}".strip()
+
+
+# "Hi Maya, Your export..." reads as two sentences: after the greeting's comma, a common word goes lowercase.
+# Only words on this list: a name, a product or "I" keeps its capital.
+_AFTER_GREETING = re.compile(r"^(\s*(?:hi|hello|hey|dear|good (?:morning|afternoon|evening))\b[^,!.\n]{0,30},\s+)(\S+)",
+                             re.I)
+_LOWER_AFTER_GREETING = {
+    "you", "your", "yours", "you're", "you've", "you'll", "we", "we're", "we've", "we'll", "our", "thanks", "thank",
+    "with", "just", "hope", "finding", "it", "it's", "this", "that", "there", "here", "sorry", "since", "as", "looks",
+    "great", "good", "quick", "happy", "welcome", "glad", "saw", "noticed", "wanted", "checking", "following", "after",
+    "before", "now", "still", "so", "a", "an", "the", "congrats", "congratulations", "hoping", "looking"}
+
+
+def tidy_message(message: str) -> str:
+    """Code's one edit to a draft, before it is verified: lowercase the common word after the greeting comma."""
+    m = _AFTER_GREETING.match(message or "")
+    if not m or not m.group(2)[:1].isupper() or m.group(2).strip(".,!?;:").casefold() not in _LOWER_AFTER_GREETING:
+        return message
+    i = m.start(2)
+    return message[:i] + message[i].lower() + message[i + 1:]
 
 
 def payload_sha(kind: str, channel: str | None, discount_pct: float | None, message: str | None) -> str:
@@ -104,6 +134,7 @@ class VerifyContext:
     llm: LLM
     data_class: str = "synthetic"
     language: str | None = None  # the language the customer writes in, when known
+    discarded_tools: list = field(default_factory=list)  # tool calls the loop made that Pheri does not have
     _judged: dict = field(default_factory=dict)  # claims + evidence hash -> the judge's answer (paid once)
 
 
@@ -141,12 +172,22 @@ class Verification:
     def check(self, name: str) -> dict:
         return next(c for c in self.checks if c["name"] == name)
 
+    @property
+    def failed(self) -> list[str]:
+        return [c["name"] for c in self.checks if c["applies"] and not c["passed"]] + (
+            ["judge"] if self.caught_by == "judge" else [])
+
     def record(self) -> dict:
-        """What the action stores: enough for the send step's gate and for a person to read."""
+        """What the action stores: enough for the send step's gate, the owner's override, and a person to read."""
+        failed = self.failed
+        hard = [c for c in failed if c in HARD_CHECKS]
+        soft = [c for c in failed if c in SOFT_CHECKS]
         return {"passed": self.passed, "sha": self.sha, "caught_by": self.caught_by, "reasons": self.reasons,
-                "code_checks": self.code_checks, "judge_ran": self.judge_ran,
-                "failed": [c["name"] for c in self.checks if c["applies"] and not c["passed"]]
-                + (["judge"] if self.caught_by == "judge" else [])}
+                "code_checks": self.code_checks, "judge_ran": self.judge_ran, "failed": failed,
+                "hard_failed": hard, "soft_failed": soft,
+                "overridable": not self.passed and not hard and bool(soft),  # nothing named failed: fail closed
+                "judge_flagged": sum(1 for r in self.judge if not r["supported"]),
+                "hard_reasons": [r for r in self.reasons if r.split(":", 1)[0] in hard]}
 
     def as_dict(self) -> dict:
         from dataclasses import asdict
@@ -446,7 +487,7 @@ def claims(d: Draft) -> list[str]:
         for s in re.split(r"(?<=[.!?])\s+", text):
             s = s.strip()
             if len(re.findall(r"[^\W\d_]", s)) >= 3:
-                out.append(s)
+                out.append(s[:1].upper() + s[1:])  # a claim is a sentence: "your export fails" reads "Your..."
     return out[:MAX_CLAIMS]
 
 
@@ -526,13 +567,16 @@ def verify_draft(d: Draft, vc: VerifyContext) -> Verification:
         ("links", facing, lambda: _links(business, d.action.message)),
         ("money", facing, lambda: _money(d, rule.allowed)),
         ("middle_step", ms["applies"], lambda: ms["reasons"]),
+        ("tools", True, lambda: [f"the loop called {', '.join(map(repr, vc.discarded_tools))}, not one of Pheri's "
+                                 "tools: discarded, and this draft can never be sent"] if vc.discarded_tools else []),
     ]
     checks = []
     for name, applies, fn in plan:
         reasons = fn() if applies else []
         checks.append({"name": name, "applies": applies, "passed": not reasons, "reasons": reasons})
     if ms["applies"]:
-        checks[-1]["scores"] = {k: ms[k] for k in ("stage", "class", "stage_score", "plan_score", "threshold")}
+        next(c for c in checks if c["name"] == "middle_step")["scores"] = {
+            k: ms[k] for k in ("stage", "class", "stage_score", "plan_score", "threshold")}
     v = Verification(False, checks, evidence=kept, dropped=dropped, rule_check=rule.as_dict(),
                      sha=payload_sha(d.action.kind, d.action.channel, d.action.discount_pct, d.action.message))
     failed = [c for c in checks if c["applies"] and not c["passed"]]
@@ -597,5 +641,17 @@ def judge_worst_case_usd(n_claims: int = MAX_CLAIMS) -> float:
     return cost_usd(price_for(JUDGE_PROVIDER, ""), 1500 + 60 * n_claims, JUDGE_MAX_OUTPUT_TOKENS)
 
 
+def override_summary(v: dict) -> str:
+    """'judge flagged 1 claim', 'one problem, length': what an owner's override sent past."""
+    parts = []
+    for c in v.get("soft_failed") or []:
+        if c == "judge":
+            n = v.get("judge_flagged") or 0
+            parts.append(f"judge flagged {n} claim{'' if n == 1 else 's'}" if n else "the judge could not answer")
+        else:
+            parts.append(c.replace("_", " "))
+    return ", ".join(parts)
+
+
 __all__ = ["Draft", "VerifyContext", "Verification", "verify_draft", "feedback", "middle_step", "middle_step_scores",
-           "THRESHOLDS", "CODE_CHECKS", "context", "payload_sha"]
+           "THRESHOLDS", "CODE_CHECKS", "SOFT_CHECKS", "HARD_CHECKS", "context", "payload_sha", "override_summary"]

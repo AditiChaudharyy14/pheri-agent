@@ -2,22 +2,23 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { call } from "@/lib/api";
+import { call, softSummary, type StoredVerification } from "@/lib/api";
 
-/** Approve (code re-checks the rules first) or reject a queued action. A draft that failed Pheri's own checks can
- * only be rejected: the send step never sends an unverified draft, whoever approves it. */
-export function ApproveReject({ business, approvalId, verified = true }: { business: string; approvalId: string;
-  verified?: boolean }) {
+/** Approve (code re-checks the rules first) or reject a queued action. A draft that failed only soft checks can be
+ * sent anyway, as an owner override on the record; one that failed a hard check can only be rejected. */
+export function ApproveReject({ business, approvalId, check }: { business: string; approvalId: string;
+  check?: StoredVerification | null }) {
+  const verified = !check || check.passed;
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  const decide = (verb: "approve" | "reject") =>
+  const decide = (verb: "approve" | "reject", override = false) =>
     start(async () => {
       setError(null);
       try {
         await call(`/businesses/${business}/approvals/${approvalId}/${verb}`, {
-          body: verb === "approve" ? { by: "owner:demo" } : { by: "owner:demo", note: "Not now" },
+          body: verb === "approve" ? { by: "owner:demo", override } : { by: "owner:demo", note: "Not now" },
         });
         router.refresh();
       } catch (e) {
@@ -35,9 +36,22 @@ export function ApproveReject({ business, approvalId, verified = true }: { busin
         >
           Approve
         </button>
+      ) : check?.overridable ? (
+        <>
+          <p className="text-[0.85rem] leading-snug text-amber">Failed soft checks: {softSummary(check)}.</p>
+          <button
+            onClick={() => decide("approve", true)}
+            disabled={pending}
+            title="You read it and send it anyway. The audit log records who, when, which checks, and the exact text."
+            className="rounded-xl border-2 border-amber/60 bg-amber-soft px-5 py-2 text-[0.98rem] font-medium text-amber hover:bg-amber-soft/70 disabled:opacity-60"
+          >
+            Send anyway
+          </button>
+        </>
       ) : (
-        <p className="text-[0.85rem] leading-snug text-amber">
-          Failed Pheri&rsquo;s checks, so it can&rsquo;t be sent as written. Reply yourself, or reject it.
+        <p className="text-[0.85rem] leading-snug text-rose">
+          Can&rsquo;t be sent: {(check?.hard_failed ?? []).map((c) => c.replaceAll("_", " ")).join(", ") || "it failed Pheri\u2019s checks"}
+          , which no one can override. Reply yourself, or reject it.
         </p>
       )}
       <button

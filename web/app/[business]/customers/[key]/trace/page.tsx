@@ -118,12 +118,20 @@ async function TraceView({ params }: { params: Params }) {
             that passed.
           </Step>
           <ul className="mt-4 space-y-2">
+            {t.override && (
+              <li className="rounded-lg bg-amber-soft px-3 py-2 text-[0.93rem] text-amber">
+                Sent by owner override: {t.override.summary}. {t.override.by} read it and sent it anyway at{" "}
+                {t.override.at.replace("T", " ").slice(0, 16)}; the audit log holds the exact text and every reason.
+              </li>
+            )}
             {t.final_verification ? (
               <>
                 <Check ok={t.final_verification.passed}>
                   {t.final_verification.passed
                     ? `${t.final_verification.code_checks} code checks passed${t.final_verification.judge_ran ? `, and the judge supported all ${t.final_verification.judge.length} claims` : ""}`
-                    : `Not verified (caught by ${t.final_verification.caught_by}): it waits for you and is never sent as written`}
+                    : t.action?.payload.verification?.overridable
+                      ? `Not verified (caught by ${t.final_verification.caught_by}): only soft checks failed, so only you can send it`
+                      : `Not verified (caught by ${t.final_verification.caught_by}): a hard check failed, so no one can send it`}
                 </Check>
                 {t.discarded_tools.length > 0 && (
                   <Check ok={false}>Tool calls discarded and logged: {t.discarded_tools.join(", ")}</Check>

@@ -53,7 +53,24 @@ export type Decision = { action: string; channel: string | null; discount_pct: n
 
 /** What the action stores: the send step sends it only if this passed for exactly this payload. */
 export type StoredVerification = { passed: boolean; sha: string; caught_by: "code" | "judge" | null; reasons: string[];
-  code_checks: number; judge_ran: boolean; failed: string[] };
+  code_checks: number; judge_ran: boolean; failed: string[]; hard_failed?: string[]; soft_failed?: string[];
+  overridable?: boolean; judge_flagged?: number; hard_reasons?: string[] };
+
+/** An owner sent a draft that failed only soft checks, on the record. */
+export type Override = { by: string; at: string; overridden: string[]; reasons: string[]; text: string;
+  channel: string | null; sha: string; summary: string; logged_at: string };
+
+/** "judge flagged 1 claim, one problem": what an override would send past (the API's override_summary). */
+export const softSummary = (v: StoredVerification) =>
+  (v.soft_failed ?? [])
+    .map((c) =>
+      c === "judge"
+        ? v.judge_flagged
+          ? `judge flagged ${v.judge_flagged} claim${v.judge_flagged === 1 ? "" : "s"}`
+          : "the judge could not answer"
+        : c.replaceAll("_", " "),
+    )
+    .join(", ");
 
 /** One check in code, or the judge's verdict on one claim. */
 export type CheckRow = { name: string; applies: boolean; passed: boolean; reasons: string[];
@@ -65,10 +82,11 @@ export type Verification = { passed: boolean; checks: CheckRow[]; judge: JudgeRo
 export type Attempt = { attempt: number; decision: Decision; verification: Verification; turns: number[] };
 /** The card's footer: "Verified: 12 code checks + judge". */
 export type VerificationLine = { passed: boolean; code_checks: number; judge: boolean; caught_by: "code" | "judge" | null;
-  reasons: string[]; attempts: number; judge_cost_usd: number; judge_recorded: boolean };
+  reasons: string[]; attempts: number; judge_cost_usd: number; judge_recorded: boolean; hard_failed: string[];
+  soft_failed: string[] };
 export type VerificationTotals = { decisions: number; drafts: number; caught_by_code: number; caught_by_judge: number;
   retries: number; verified: number; sent_to_owner: number; judge_calls: number; by_check: Record<string, number>;
-  first_try: number };
+  first_try: number; code_checks: number };
 export type MiddleStep = { thresholds: { money: number; nudge: number }; actions: string[];
   stages: { stage: string; customers: number; stage_score: number; fits: string[];
     plans: { action: string; class: "money" | "nudge"; plan_score: number; threshold: number; passed: boolean }[] }[] };
@@ -91,6 +109,7 @@ export type NextStep = {
   turns: number;
   decided_by: DecidedBy | null;
   verification: VerificationLine | null;
+  override: Override | null;
 };
 
 export type CustomerRow = { key: string; name: string; company: string | null; stage: string;

@@ -102,7 +102,18 @@ def test_the_judge_gets_claims_and_only_the_cited_facts(data, llm, monkeypatch):
 def test_claims_skip_the_greeting_and_the_sign_off():
     d = Draft(ProposedAction(kind="send_help", channel="email", message="Hi Maya, the fix is ready. Reply to try it. "
                              "— The Brightdesk team"), "Maya is stuck.", "Maya renews soon.", [], [])
-    assert claims(d) == ["Maya is stuck.", "Maya renews soon.", "the fix is ready.", "Reply to try it."]
+    assert claims(d) == ["Maya is stuck.", "Maya renews soon.", "The fix is ready.", "Reply to try it."]
+
+
+def test_the_word_after_the_greeting_comma_is_lowercased_before_verifying():
+    """Recorded live: "Hi Maya, Your weekly report export..." A name, a product or "I" keeps its capital."""
+    from pheri.verify import tidy_message
+
+    assert tidy_message("Hi Maya, Your weekly report export fails.") == "Hi Maya, your weekly report export fails."
+    assert tidy_message("Hello Pablo, You recently hit your seat limit.") == "Hello Pablo, you recently hit your seat limit."
+    assert tidy_message("Hi Bikash, I hear you.") == "Hi Bikash, I hear you."
+    assert tidy_message("Hi Isha, Ilam Green is back.") == "Hi Isha, Ilam Green is back."
+    assert tidy_message("Please pause Zara's subscription.") == "Please pause Zara's subscription."
 
 
 # ---- the address fix that started this --------------------------------------------------------
@@ -212,7 +223,12 @@ def test_the_model_cannot_call_verification_or_send_anything_itself(data, llm, m
     assert out.discarded_tools == ["verify_draft", "send_message"]
     assert [a["details"]["tool"] for a in store.audit_log() if a["event"] == "tool_call_discarded"] == \
         ["verify_draft", "send_message"]
-    assert out.verification["passed"] and len(out.attempts) == 1  # code verified it, as it would have anyway
+    # An unknown tool call is a hard failure: no second draft (it cannot be undone), and no one can send it.
+    v = out.action["payload"]["verification"]
+    assert not out.verification["passed"] and len(out.attempts) == 1 and v["hard_failed"] == ["tools"]
+    with pytest.raises(ValueError, match=r"no one can override \(tools\)"):
+        approve(store, queue(store)[0]["id"], by="owner", override=True,
+                context_for=lambda k: CheckContext("brightdesk", build_profile(data["brightdesk"], k, llm).facts, NOW))
 
 
 # ---- no path sends a message without passing verification ----------------------------------------
@@ -228,9 +244,10 @@ def _sample(ds, per_stage=3):
     return picked
 
 
-def _send_everything(data, llm, verify_fails=False, monkeypatch=None):
-    """Every customer-facing action on act alone, then the owner approves everything left in the queue."""
-    stores = {}
+def _send_everything(data, llm):
+    """Every customer-facing action on act alone, then the owner approves everything left in the queue, with an
+    override wherever one is allowed. Returns the stores and how many approvals were refused."""
+    stores, refused = {}, []
     for b, ds in data.items():
         store = stores[b] = MemoryStore(b)
         seed(store, llm)
@@ -240,37 +257,55 @@ def _send_everything(data, llm, verify_fails=False, monkeypatch=None):
         for key in _sample(ds) + ([MAYA] if b == "brightdesk" else []):
             decide_customer(ds, key, store, llm)
         for item in queue(store):
-            approve(store, item["id"], by="owner", context_for=lambda k, b=b, store=store: CheckContext(
-                b, build_profile(data[b], k, llm).facts, NOW))
-    return stores
+            v = item["action"]["payload"].get("verification") or {}
+            try:
+                approve(store, item["id"], by="owner", override=bool(v.get("overridable")),
+                        context_for=lambda k, b=b, store=store: CheckContext(b, build_profile(data[b], k, llm).facts, NOW))
+            except ValueError:
+                refused.append(item["action"]["id"])
+    return stores, refused
 
 
 def test_no_path_sends_a_message_without_passing_verification(data, llm):
-    stores = _send_everything(data, llm)
-    sent = 0
+    """Every message that went out passed verification for its exact text, or failed only soft checks and an owner
+    overrode them, on the record, for that exact text. Nothing that failed a hard check went out."""
+    stores, _ = _send_everything(data, llm)
+    sent = overridden = 0
     for store in stores.values():
         for a in store.actions():
             if a["status"] != "executed" or not CATALOG[a["kind"]].customer_facing:
                 continue
             sent += 1
             p, v = a["payload"], a["payload"]["verification"]
-            assert v["passed"] and v["sha"] == payload_sha(a["kind"], p["channel"], p["discount_pct"], p["message"])
+            sha = payload_sha(a["kind"], p["channel"], p["discount_pct"], p["message"])
             events = [e["event"] for e in store.audit_log(a["id"])]
-            assert events.index("verified") < events.index("executed")
-    assert sent >= 10  # the sample really did send
+            if v["passed"]:
+                assert v["sha"] == sha and events.index("verified") < events.index("executed")
+                continue
+            overridden += 1
+            o = next(e["details"] for e in store.audit_log(a["id"]) if e["event"] == "owner_override")
+            assert v["hard_failed"] == [] and set(v["soft_failed"]) <= set(o["overridden"])
+            assert o["sha"] == sha and o["text"] == p["message"] and events.index("owner_override") < events.index("executed")
+        for a in store.actions():
+            v = a["payload"].get("verification") or {}
+            if v.get("hard_failed"):
+                assert a["status"] != "executed", a  # hard: never sent, override or not
+    assert sent >= 10 and overridden >= 1  # the sample really did send, both ways
 
 
 def test_with_verification_failing_nothing_is_sent_even_on_act_alone_and_owner_approval(data, llm, monkeypatch):
     from pheri import autonomy
     from pheri.verify import Verification
 
+    facts_failed = [{"name": "facts", "applies": True, "passed": False, "reasons": ["writes 30, forced"]}]
     monkeypatch.setattr(autonomy, "verify_draft", lambda d, vc: Verification(
-        False, [], caught_by="code", reasons=["forced: test"], rule_check={"allowed": True, "results": []},
+        False, facts_failed, caught_by="code", reasons=["facts: writes 30, forced"],
+        rule_check={"allowed": True, "results": []},
         sha=payload_sha(d.action.kind, d.action.channel, d.action.discount_pct, d.action.message)))
-    stores = _send_everything(data, llm)
+    stores, refused = _send_everything(data, llm)
     for store in stores.values():
         assert not [a for a in store.actions() if a["status"] == "executed" and CATALOG[a["kind"]].customer_facing]
-        assert any(e["event"] == "send_refused" for e in store.audit_log())  # the owner approved; the send step refused
+    assert refused  # the owner tried, with an override: an invented number is a hard check
 
 
 def test_only_the_send_step_marks_a_message_executed():
@@ -283,7 +318,7 @@ def test_only_the_send_step_marks_a_message_executed():
     escalation = src.index('if action["kind"] == ESCALATE:')
     assert any(execute < s < src.index("def approve(") for s in sites)
     assert any(escalation < s < escalation + 400 for s in sites)
-    assert src.index("verified_to_send(action)", execute) < sites[[execute < s for s in sites].index(True)]
+    assert src.index("verified_to_send(action, override)", execute) < sites[[execute < s for s in sites].index(True)]
     for path in (REPO_ROOT / "api" / "pheri").glob("*.py"):
         if path.name != "autonomy.py":
             assert not re.search(r'"executed"\s*,\s*executed_at', path.read_text(encoding="utf-8")), path.name

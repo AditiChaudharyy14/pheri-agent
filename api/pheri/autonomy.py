@@ -9,7 +9,10 @@ Before any of that, submit() verifies the draft (verify.verify_draft: code check
 runs the rule check; a blocked action goes nowhere, and a draft that failed verification goes to the
 owner's queue with the reasons, never out. The send step, _execute(), refuses any customer-facing action
 whose stored verification did not pass for exactly the payload being sent, so no path (acting alone,
-an owner's approval) can send an unverified message.
+an owner's approval) can send an unverified message. The one exception is an owner's override, and only
+of soft checks (verify.SOFT_CHECKS): the owner read the draft and sends it anyway; the audit log records
+who, when, which checks, and the exact text. Hard checks (rules, invented numbers, money, unknown tools,
+...) cannot be overridden by anyone.
 Approving re-runs the rule check, because rules, limits and the clock may have moved since Pheri asked.
 Every step is written to the audit log. Delivery is simulated for now: "executed" means recorded
 as done, and nothing is sent to anyone yet.
@@ -116,21 +119,26 @@ def open_escalation(store, customer_key: str) -> dict | None:
                  if a["kind"] == ESCALATE and a["status"] == "awaiting_approval"), None)
 
 
-def verified_to_send(action: dict) -> bool:
+def verified_to_send(action: dict, override: dict | None = None) -> bool:
     """The send step's gate: a customer-facing action goes out only if its stored verification passed for
-    exactly this payload (kind, channel, discount, message)."""
+    exactly this payload (kind, channel, discount, message), or an owner overrode every check it failed, all
+    of them soft, for exactly this payload."""
     t = CATALOG.get(action["kind"])
     if not (t and t.customer_facing):
         return True  # sends nothing to the customer
     p = action["payload"]
     v = p.get("verification") or {}
-    return v.get("passed") is True and v.get("sha") == payload_sha(action["kind"], p.get("channel"),
-                                                                    p.get("discount_pct"), p.get("message"))
+    sha = payload_sha(action["kind"], p.get("channel"), p.get("discount_pct"), p.get("message"))
+    if v.get("passed") is True:
+        return v.get("sha") == sha
+    return (override is not None and v.get("overridable") is True and v.get("hard_failed") == []
+            and override.get("sha") == sha == v.get("sha")
+            and set(v.get("soft_failed") or ["?"]) <= set(override.get("overridden") or []))
 
 
-def _execute(store, action_id: str, now: datetime, actor: str) -> bool:
+def _execute(store, action_id: str, now: datetime, actor: str, override: dict | None = None) -> bool:
     action = store.get_action(action_id)
-    if not verified_to_send(action):
+    if not verified_to_send(action, override):
         store.set_action(action_id, "blocked")
         store.audit("pheri", "send_refused", "action", action_id,
                     {"customer": action["customer_key"], "reason": "not verified: Pheri never sends an unverified draft",
@@ -141,12 +149,26 @@ def _execute(store, action_id: str, now: datetime, actor: str) -> bool:
     return True
 
 
-def approve(store, approval_id: str, by: str, context_for: Callable[[str], CheckContext]) -> dict:
-    """The owner says yes. The rules are checked again now, in code, before anything happens."""
+def approve(store, approval_id: str, by: str, context_for: Callable[[str], CheckContext],
+            override: bool = False) -> dict:
+    """The owner says yes. The rules are checked again now, in code, before anything happens.
+    A draft that failed verification: refused if any hard check failed; sent only with override=True if every
+    failed check is soft, and then logged as an owner override."""
     with store.tx():
         approval = store.get_approval(approval_id)
         action = store.get_action(approval["action_id"])
         p = action["payload"]
+        v = p.get("verification") or {}
+        t = CATALOG.get(action["kind"])
+        unverified = bool(t and t.customer_facing and v and not v.get("passed"))
+        if unverified and approval["decision"] == "pending":
+            if not v.get("overridable"):
+                raise ValueError("Pheri can't send this draft: it failed checks no one can override ("
+                                 + (", ".join(v.get("hard_failed") or []) or "nothing it could name") + "). "
+                                 + "; ".join(v.get("hard_reasons") or []) + " Reject it, or write to them yourself.")
+            if not override:
+                raise ValueError(f"This draft failed soft checks ({', '.join(v['soft_failed'])}). Read it, then send "
+                                 "it anyway with an owner override, or reject it.")
         proposed = ProposedAction(kind=action["kind"], channel=p.get("channel"), discount_pct=p.get("discount_pct"),
                                   message=p.get("message", ""))  # sent now, not at the time first planned
         store.decide_approval(approval_id, "approved", by)
@@ -156,10 +178,16 @@ def approve(store, approval_id: str, by: str, context_for: Callable[[str], Check
             store.audit(by, "escalation_closed", "action", action["id"], {})
             return store.get_action(action["id"])
         ctx = context_for(action["customer_key"])
-        result = check(active_rules(store), proposed, ctx)
+        result = check(active_rules(store), proposed, ctx)  # do-not-contact and quiet hours too: never overridden
         if result.allowed:
             store.set_action(action["id"], "approved", rule_check=result.as_dict())
-            _execute(store, action["id"], ctx.now, by)
+            sent_anyway = None
+            if unverified:
+                sent_anyway = {"by": by, "at": ctx.now.isoformat(), "overridden": list(v["soft_failed"]),
+                               "reasons": v.get("reasons", []), "text": p.get("message", ""),
+                               "channel": p.get("channel"), "sha": v.get("sha")}
+                store.audit(by, "owner_override", "action", action["id"], sent_anyway)
+            _execute(store, action["id"], ctx.now, by, override=sent_anyway)
         else:
             store.set_action(action["id"], "blocked", rule_check=result.as_dict())
             store.audit("pheri", "rule_blocked", "action", action["id"],

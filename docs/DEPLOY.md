@@ -81,20 +81,23 @@ Wait for **pheri-web** to show "Your service is live", then open its URL.
 3. Maya Okafor's card:
    - the message names the CSV export failing at 90% and her weekly client reports;
    - WHY NOW says "renews in 8 days";
-   - the footer reads "Decided by Muse Spark 1.3 · $… · 3 turns · ✓ Verified: 12 code checks + judge ·
+   - the message starts "Hi Maya, your weekly report export";
+   - the footer reads "Decided by Muse Spark 1.3 · $… · 3 turns · ✓ Verified: 13 code checks + judge ·
      View trace".
 4. Click **View trace**. You should see Draft 1 with 3 turns, tokens and cost, marked "Recorded from a live
    run", and under it the 12 code checks and the judge's verdict on each claim.
    - Aarav Silva's card (second) reads "Not verified after 3 drafts: caught by judge". That is real and
-     on purpose: his trace shows each draft, what the judge rejected, and the reasons sent back. His card
-     offers only Reject.
+     on purpose: his trace shows each draft, what the judge rejected, and the reasons sent back. The judge
+     is a soft check, so his card offers **Send anyway** ("Failed soft checks: judge flagged 2 claims").
+     Pressing it sends the draft as an owner override: the footer then reads "Sent by owner override:
+     judge flagged 2 claims". Restart the API afterwards to bring the card back (step 5).
 5. Back on Maya's page, click **Offer a discount**.
    - The refusal quotes the rule "Never offer discounts in a customer's first month."
    - This proves the browser's `/api` calls reach the API.
    - If it says "The Pheri API is not reachable", `PHERI_API_URL` is wrong: go back to step 3.
 6. **Proof**: the report says "Written by Muse Wonder, recorded from a live run" and "Attempt 1 rejected
    by code: headline → Attempt 2 passed". At the bottom, the Verification block: 12 drafts, 3 caught by
-   code, 4 by the judge, 6 retries, 1 sent to the owner.
+   code, 4 by the judge, 6 retries, 1 sent to the owner, and "13 checks" under "Caught by code".
    - **Rules**: under the rules, "Before Pheri writes a message" shows the stage and plan scores, with
      "Money actions need 100%" and "Nudges need 80%".
 7. **Spend**: Meta and Baseten spend against the caps. "This server" says **Replay mode**.

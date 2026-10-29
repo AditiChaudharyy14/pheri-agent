@@ -147,7 +147,7 @@ async function Customer({ params }: { params: Params }) {
                   <ApproveReject
                     business={business}
                     approvalId={step.approval.id}
-                    verified={step.action?.payload.verification?.passed !== false}
+                    check={step.action?.payload.verification}
                   />
                 </div>
               )}
@@ -161,6 +161,7 @@ async function Customer({ params }: { params: Params }) {
                 turns={step.turns}
                 isPrivate={step.private}
                 verification={step.verification}
+                override={step.override}
               />
             </div>
           </Card>

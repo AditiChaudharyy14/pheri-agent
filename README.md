@@ -67,26 +67,37 @@ A model's draft is a claim, not an action. `pheri/verify.py` checks every draft 
 sent; the idea follows Meta's Verifiable Agents workshop (28 Oct): verify the work in code, show the
 verification, and never let the agent mark its own homework.
 
-1. **Code first, 12 checks, free.** The owner's rules; the schema; evidence that exists in the profile;
+1. **Code first, 13 checks, free.** The owner's rules; the schema; evidence that exists in the profile;
    every number, date, amount and plan name present in the facts the draft cites; no pronoun the customer
    never gave; the message says "you", with their name only in the greeting (the why-text, for the owner,
    names them); one problem, the one behind their journey stage; the customer's language; length; links
-   only to the business's own sites; no money offer unless it is an `offer_discount` the rules allow; and
-   the **middle step** (below).
+   only to the business's own sites; no money offer unless it is an `offer_discount` the rules allow; no
+   tool call Pheri does not have; and the **middle step** (below). Before checking, code makes one edit:
+   the common word after the greeting's comma goes lowercase ("Hi Maya, Your..." becomes "Hi Maya, your...").
 2. **Then a judge**, only if code passed: Muse Spark Open on Baseten, effort low, answers true or false
    per claim: "is this claim supported by the cited fact ids?" It sees only the facts and quotes the
    draft cites.
 3. **Failures go back.** The reasons return to the model as the next turn of the same conversation, up
    to `PHERI_VERIFY_MAX_ATTEMPTS` drafts (3). After that the draft goes to the owner's queue with the
-   reasons. It is never sent: approving it cannot send it either.
+   reasons, and Pheri never sends it on its own.
+   - **Soft checks** (the judge, tone and address, one problem, length, language, the middle step's bar):
+     the owner may read the draft and press **Send anyway**. That is an owner override: the audit log
+     records who, when, which checks were overridden, the reasons, and the exact text sent, and the trace
+     shows "Sent by owner override: judge flagged 2 claims".
+   - **Hard checks** can never be overridden, by anyone: the owner's rules (which hold do-not-contact
+     and quiet hours, and are checked again at approval), the schema, evidence, invented numbers, dates
+     and plans, guessed pronouns, links, money offers, unknown tools. The queue says which one failed
+     and why, and offers only Reject.
 4. **The model cannot skip it or call it.** It is not a tool. `autonomy.submit()` runs `verify_draft()`
    itself and stores the result, with a hash of the exact payload, on the action; the send step
    (`_execute`) refuses any customer-facing action whose stored verification did not pass for that
-   payload. `api/tests/test_verify.py` sends everything it can (every action on "act alone", every queued
-   item approved) and proves each message that went out passed, and that with verification failing
-   nothing goes out at all.
+   payload, unless an owner overrode every check it failed, all soft, for that same payload.
+   `api/tests/test_verify.py` sends everything it can (every action on "act alone", every queued item
+   approved, with an override wherever one is allowed) and proves each message that went out either passed
+   or was overridden on the record for its exact text, and that nothing with a hard failure went out.
 5. **Only three tools.** Any other tool call (`issue_refund`, `verify_draft`, `send_message`) is
-   discarded, never run, and written to the audit log as `tool_call_discarded`.
+   discarded, never run, and written to the audit log as `tool_call_discarded`; the draft then fails the
+   hard `tools` check.
 
 **The middle step** is checked before the message is written. Code scores its own journey stage and each
 plan against the labelled truth set (`data/synth/*/_truth.json`: true stages, and per stage the plans that
@@ -99,9 +110,17 @@ onboarding customers" and picks another plan. The Rules screen shows the scores.
 more calls on that one report. The recorded run: attempt 1's headline stated no result, attempt 2 passed.
 
 What you see: the Decision trace shows every draft, which layer caught it and why, and the reasons sent
-back; each card's footer reads "Verified: 12 code checks + judge"; Proof has the totals. In the recorded
+back; each card's footer reads "Verified: 13 code checks + judge"; Proof has the totals. In the recorded
 live run of the 12 showcase decisions: 24 drafts, 3 caught by code, 10 by the judge, 12 retries, 11
 verified, 1 sent to the owner (Aarav: the judge rejected an unsupported claim in all three drafts).
+
+**How good is the judge?** `evals/drafts.jsonl` has 20 cases for it, each passing every code check: 10
+drafts that say only what they cite, and 10 with one planted claim no fact backs (an invented reason,
+competitor, threat, preference, growth story, or a contradiction of a cited fact, all in words, so code
+cannot see them). Muse Spark Open, recorded once for $0.06 (`evals/judge_recorded.jsonl`): it caught 10 of
+10 planted claims and passed 8 of 10 supported drafts. Its two false alarms are strict rather than wrong:
+"the items in your cart are still saved" and "your CSV export keeps failing" each say a little more than
+the cited facts.
 
 ```bash
 python evals/run.py     # includes the verification numbers: labelled broken drafts, tool attacks, middle step,
@@ -160,8 +179,8 @@ python -m pheri.learn ../.pheri/twin/brightdesk-n200-seed7.json   # mock report,
 
 `evals/attacks.jsonl` holds 55 attacks (direct, indirect, multilingual, semantic, and 3 that try to make
 Pheri call a tool it does not have) and 27 harmless messages that look alarming. `evals/replies.jsonl`
-holds 60 labelled replies, 12 per language. `evals/drafts.jsonl` holds 22 labelled drafts: 17 broken on
-purpose, one way each, for code to catch; 2 whose flaw only a judge can see; 3 clean. The
+holds 60 labelled replies, 12 per language. `evals/drafts.jsonl` holds 37 labelled drafts: 17 broken on
+purpose, one way each, for code to catch, and 20 for the judge (10 supported, 10 not). The
 code screen's patterns were written alongside these sets, so its own catch rate here is an upper
 bound; the semantic attacks are the ones it is not meant to catch.
 
@@ -182,7 +201,7 @@ network, no model key and no spend, while code still runs every rule check, evid
 autonomy dial. A reply is found by the conversation it answered, so if a prompt or the data changes,
 that conversation falls back to the offline stand-in, and the page says so: every decision card
 names who decided and how it was checked ("Decided by Muse Spark 1.3 · $0.0157 · 3 turns · Verified:
-12 code checks + judge", or "the offline stand-in"), and the header reads "Recorded from a live run".
+13 code checks + judge", or "the offline stand-in"), and the header reads "Recorded from a live run".
 The judge's verdicts are recorded too. `api/tests/test_app.py` fails if the recording stops matching the
 code.
 

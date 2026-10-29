@@ -291,9 +291,9 @@ def verification_report(drafts: dict, tools: dict, middle: dict, loop: dict | No
     lines = ["== verification: how Pheri checks its own drafts ($0)",
              f"  caught by code        {pct((sum(r['ok'] for r in code), len(code)))}   "
              f"(drafts broken on purpose, one way each)",
-             f"  clean drafts passed   {pct((sum(r['ok'] for r in clean), len(clean)))}   (code and judge: no false alarms)",
+             f"  clean drafts passed   {pct((sum(r['ok'] for r in clean), len(clean)))}   (code and the judge let these through)",
              f"  caught by the judge   {pct((sum(r['ok'] for r in judged), len(judged)))}   "
-             f"(claims no fact backs, nothing code can see; judge: {who})"]
+             f"(a claim no fact backs, nothing code can see; judge: {who})"]
     per: dict[str, list[bool]] = {}
     for r in code:
         per.setdefault(r["expect"][0], []).append(r["ok"])

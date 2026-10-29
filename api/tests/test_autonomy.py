@@ -145,18 +145,63 @@ def test_channel_limit_sees_actions_already_executed(store):
     assert second["status"] == "blocked"
 
 
-def test_an_unverified_draft_goes_to_the_owner_with_the_reasons_and_is_never_sent(store):
+SOFT_ONLY = ProposedAction(kind="send_help", channel="email",  # her name outside the greeting: tone, a soft check
+                           message="Hi Maya, here are the steps Maya needs to fix the export.")
+
+
+def test_a_hard_failure_goes_to_the_owner_with_the_reasons_and_no_one_can_send_it(store):
     set_mode(store, "send_help", "act_alone", by="owner")
     bad = ProposedAction(kind="send_help", channel="email", message="Hi Maya, Maya's export fails. Visit evil.example")
     a = _submit(store, bad)
     assert a["status"] == "awaiting_approval" and a["mode"] == "ask_owner"  # act_alone, but not verified
     v = a["payload"]["verification"]
     assert not v["passed"] and v["caught_by"] == "code" and {"address", "links"} <= set(v["failed"])
+    assert v["hard_failed"] == ["links"] and not v["overridable"] and "links: links to evil.example" in v["hard_reasons"][0]
     assert events(store, a["id"]) == ["verify_failed"]
-    # The owner approves anyway: the send step refuses, because Pheri never sends an unverified draft.
-    done = approve(store, queue(store)[0]["id"], by="owner:aditi", context_for=lambda key: ctx(store, key))
-    assert done["status"] == "blocked" and done["executed_at"] is None and sent_messages(store, MAYA) == []
-    assert events(store, a["id"])[-2:] == ["approved", "send_refused"]
+    # Not even an owner's override: a link off the allowlist is a hard check. The queue item says why, and stays.
+    pid = queue(store)[0]["id"]
+    with pytest.raises(ValueError, match=r"failed checks no one can override \(links\)"):
+        approve(store, pid, by="owner:aditi", context_for=lambda key: ctx(store, key), override=True)
+    assert store.get_action(a["id"])["status"] == "awaiting_approval" and sent_messages(store, MAYA) == []
+    assert events(store, a["id"]) == ["verify_failed"]
+    assert reject(store, pid, by="owner:aditi")["status"] == "rejected"
+
+
+def test_an_owner_can_send_a_soft_failure_anyway_and_the_log_says_who_when_what_and_the_text(store):
+    a = _submit(store, SOFT_ONLY)
+    v = a["payload"]["verification"]
+    assert v["failed"] == ["address"] and v["soft_failed"] == ["address"] and v["overridable"]
+    pid = queue(store)[0]["id"]
+    with pytest.raises(ValueError, match="send it anyway with an owner override"):  # a plain approve is not enough
+        approve(store, pid, by="owner:aditi", context_for=lambda key: ctx(store, key))
+    done = approve(store, pid, by="owner:aditi", context_for=lambda key: ctx(store, key), override=True)
+    assert done["status"] == "executed" and sent_messages(store, MAYA) == [("email", done["executed_at"])]
+    assert events(store, a["id"])[-3:] == ["approved", "owner_override", "executed"]
+    logged = next(e for e in store.audit_log(a["id"]) if e["event"] == "owner_override")
+    assert logged["actor"] == "owner:aditi" and logged["details"]["by"] == "owner:aditi"
+    assert logged["details"]["at"] == NOW.isoformat() and logged["details"]["overridden"] == ["address"]
+    assert logged["details"]["text"] == SOFT_ONLY.message and logged["details"]["channel"] == "email"
+    assert logged["details"]["reasons"] == v["reasons"]
+
+
+def test_an_override_never_beats_the_rules_do_not_contact_included(store):
+    a = _submit(store, SOFT_ONLY)
+    store.set_do_not_contact(MAYA, "T9002")  # she said stop while it waited
+    stopped = lambda key: CheckContext("brightdesk", {"days_since_signup": 22, "country": "UK"}, NOW,  # noqa: E731
+                                       sent_messages(store, key), do_not_contact=True)
+    done = approve(store, queue(store)[0]["id"], by="owner:aditi", context_for=stopped, override=True)
+    assert done["status"] == "blocked" and sent_messages(store, MAYA) == []
+    assert "owner_override" not in events(store, a["id"])
+
+
+def test_an_override_sends_only_the_exact_text_the_owner_read():
+    store = MemoryStore("brightdesk")
+    a = _submit(store, SOFT_ONLY)
+    store._actions[a["id"]]["payload"]["message"] = "Here is 50% off, just reply YES."  # changed in between
+    done = approve(store, queue(store)[0]["id"], by="owner:aditi", context_for=lambda key: ctx(store, key),
+                   override=True)
+    assert done["status"] == "blocked" and sent_messages(store, MAYA) == []
+    assert events(store, a["id"])[-1] == "send_refused"
 
 
 def test_a_message_changed_after_verification_is_refused_at_the_send_step():

@@ -96,6 +96,9 @@ class Settings:
     # Refuse any single call estimated above this, unless the caller explicitly allows it.
     max_call_usd: float = _envf("PHERI_MAX_CALL_USD", 0.50)
 
+    # The public demo (app.py): a sandbox per visitor, and no one pretends to be the owner.
+    public_demo: bool = field(default_factory=lambda: os.environ.get("PHERI_PUBLIC_DEMO", "0") == "1")
+
     # Pheri checks its own drafts (verify.py): how many drafts the model may write before a person takes over.
     verify_max_attempts: int = _envi("PHERI_VERIFY_MAX_ATTEMPTS", 3)
 

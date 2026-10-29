@@ -1,17 +1,17 @@
 {
- "as_of": "2026-10-29T14:17:12",
+ "as_of": "2026-10-29T14:55:41",
  "providers": {
   "meta": {
-   "settled_usd": 1.383846,
+   "settled_usd": 1.457485,
    "offset_usd": 0.0,
    "cap_usd": 130.0,
-   "remaining_usd": 128.616154
+   "remaining_usd": 128.542515
   },
   "baseten": {
-   "settled_usd": 0.37262,
+   "settled_usd": 0.588592,
    "offset_usd": 0.0,
    "cap_usd": 90.0,
-   "remaining_usd": 89.62738
+   "remaining_usd": 89.411408
   }
  },
  "calls": [
@@ -19,31 +19,31 @@
    "provider": "meta",
    "model": "muse-spark-1.3",
    "purpose": "decide",
-   "calls": 261,
-   "usd": 0.864249,
-   "input_tokens": 566202,
-   "cached_tokens": 359910,
-   "output_tokens": 156045
-  },
-  {
-   "provider": "meta",
-   "model": "muse-spark-1.3",
-   "purpose": "profile_insights",
-   "calls": 84,
-   "usd": 0.255271,
-   "input_tokens": 68920,
-   "cached_tokens": 36069,
-   "output_tokens": 83252
+   "calls": 365,
+   "usd": 0.937889,
+   "input_tokens": 857151,
+   "cached_tokens": 534026,
+   "output_tokens": 230365
   },
   {
    "provider": "baseten",
    "model": "meta-models/muse-spark-open-1026",
    "purpose": "judge",
-   "calls": 56,
-   "usd": 0.227918,
-   "input_tokens": 30742,
-   "cached_tokens": 10752,
-   "output_tokens": 44586
+   "calls": 139,
+   "usd": 0.44389,
+   "input_tokens": 77461,
+   "cached_tokens": 33280,
+   "output_tokens": 120914
+  },
+  {
+   "provider": "meta",
+   "model": "muse-spark-1.3",
+   "purpose": "profile_insights",
+   "calls": 98,
+   "usd": 0.255271,
+   "input_tokens": 81892,
+   "cached_tokens": 43599,
+   "output_tokens": 98240
   },
   {
    "provider": "meta",
@@ -69,11 +69,11 @@
    "provider": "meta",
    "model": "muse-spark-1.3",
    "purpose": "guard",
-   "calls": 82,
+   "calls": 112,
    "usd": 0.081539,
-   "input_tokens": 43940,
-   "cached_tokens": 33171,
-   "output_tokens": 42548
+   "input_tokens": 60042,
+   "cached_tokens": 45099,
+   "output_tokens": 58506
   },
   {
    "provider": "baseten",
@@ -89,11 +89,11 @@
    "provider": "meta",
    "model": "muse-spark-1.3",
    "purpose": "compile_rule",
-   "calls": 11,
+   "calls": 13,
    "usd": 0.007657,
-   "input_tokens": 6357,
+   "input_tokens": 7651,
    "cached_tokens": 0,
-   "output_tokens": 5649
+   "output_tokens": 7193
   },
   {
    "provider": "baseten",

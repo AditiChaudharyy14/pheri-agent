@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { BusinessSwitch, Nav } from "@/components/nav";
+import { ResetDemo } from "@/components/reset-demo";
 import { api, isBusiness } from "@/lib/api";
 
 export function generateStaticParams() {
@@ -9,15 +10,18 @@ export function generateStaticParams() {
 }
 
 async function ModePill() {
-  const h = await api<{ mode: string }>("/health");
+  const h = await api<{ mode: string; public_demo: boolean }>("/health");
   if (h.mode === "replay") {
     return (
-      <span
-        className="rounded-full bg-teal-soft px-3 py-1 text-[0.8rem] text-teal-ink"
-        title="The model's replies were recorded in a live run and are replayed here; code runs every check again. No model calls, no spend."
-      >
-        Recorded from a live run · synthetic data
-      </span>
+      <>
+        <ResetDemo publicDemo={h.public_demo} />
+        <span
+          className="rounded-full bg-teal-soft px-3 py-1 text-[0.8rem] text-teal-ink"
+          title="The model's replies were recorded in a live run and are replayed here; code runs every check again. No model calls, no spend."
+        >
+          Recorded from a live run · synthetic data
+        </span>
+      </>
     );
   }
   return h.mode === "mock" ? (

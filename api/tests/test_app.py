@@ -50,7 +50,7 @@ def attacker():
 
 # ---- the basics ---------------------------------------------------------------------
 def test_health_and_businesses(client):
-    assert client.get("/health").json() == {"ok": True, "mode": "mock"}
+    assert client.get("/health").json() == {"ok": True, "mode": "mock", "public_demo": False}
     assert [b["slug"] for b in client.get("/businesses").json()] == ["brightdesk", "kettle"]
     assert client.get("/businesses/acme/customers").status_code == 404
 
@@ -312,3 +312,59 @@ def test_replay_serves_mayas_recorded_live_run(monkeypatch, tmp_path):
     assert [e["event"] for e in log][-3:] == ["approved", "owner_override", "executed"]
     totals = api.get(f"{BD}/verification").json()
     assert totals["decisions"] == 6 and totals["sent_to_owner"] == 1 and totals["drafts"] > totals["decisions"]
+
+
+# ---- the public demo: a sandbox per visitor, and no pretend owner ------------------------------------
+@pytest.fixture
+def public(llm, monkeypatch):
+    from pheri import app as app_module
+
+    monkeypatch.setenv("PHERI_PUBLIC_DEMO", "1")
+    return app_module, app_module.create_app(LLM(Settings()))
+
+
+def test_each_visitor_gets_their_own_sandbox_and_the_log_names_no_owner(public):
+    app_module, app = public
+    alice, bob = TestClient(app), TestClient(app)
+    assert alice.get("/health").json()["public_demo"] is True
+    pid = alice.get(f"{BD}/next-steps") and alice.get(f"{BD}/approvals").json()[0]["id"]
+    done = alice.post(f"{BD}/approvals/{pid}/approve", json={"by": "owner:aditi"}).json()  # the name sent is ignored
+    assert done["status"] == "executed"
+    approved = [e for e in alice.get(f"{BD}/audit").json() if e["event"] == "approved"]
+    assert [e["actor"] for e in approved] == [app_module.DEMO_ACTOR] == ["demo visitor (public demo, no login)"]
+    assert pid in [a["id"] for a in bob.get(f"{BD}/approvals").json()]  # Bob's copy is untouched
+    assert all(e["event"] != "approved" for e in bob.get(f"{BD}/audit").json())
+    rules = alice.get(f"{BD}/rules").json()
+    assert rules[0]["confirmed_by"] == app_module.DEMO_SETUP  # the starting rules: the demo's, not an owner's
+    assert alice.cookies.get(app_module.SANDBOX_COOKIE) != bob.cookies.get(app_module.SANDBOX_COOKIE)
+
+
+def test_reset_demo_puts_only_this_visitors_sandbox_back(public):
+    _, app = public
+    alice, bob = TestClient(app), TestClient(app)
+    for v in (alice, bob):
+        v.get(f"{BD}/next-steps")
+        pid = v.get(f"{BD}/approvals").json()[0]["id"]
+        v.post(f"{BD}/approvals/{pid}/reject", json={"by": "x"})
+    assert alice.post("/demo/reset").json() == {"reset": True, "public_demo": True}
+    assert alice.get(f"{BD}/approvals").json() and not any(
+        e["event"] == "rejected" for e in alice.get(f"{BD}/audit").json())
+    assert any(e["event"] == "rejected" for e in bob.get(f"{BD}/audit").json())  # Bob's stays as he left it
+
+
+def test_at_most_max_sandboxes_the_idle_longest_dropped_and_each_expires(public, monkeypatch):
+    app_module, app = public
+    monkeypatch.setattr(app_module, "MAX_SANDBOXES", 2)
+    state = app.state.pheri
+    visitors = [TestClient(app) for _ in range(3)]
+    for v in visitors:
+        v.get(f"{BD}/approvals")
+    ids = [v.cookies.get(app_module.SANDBOX_COOKIE) for v in visitors]
+    assert list(state.sandboxes) == ids[1:]  # the first, idle longest, was dropped
+    # The web app's server forwards the cookie as a header: the same sandbox.
+    raw = TestClient(app)
+    raw.get(f"{BD}/approvals", headers={app_module.SANDBOX_HEADER: ids[2]})
+    assert list(state.sandboxes)[-1] == ids[2] and len(state.sandboxes) == 2
+    monkeypatch.setattr(app_module, "SANDBOX_IDLE_S", -1)  # every sandbox is now past its 30 minutes
+    visitors[1].get(f"{BD}/approvals")
+    assert list(state.sandboxes) == [ids[1]]  # the others expired; this one was made again, fresh

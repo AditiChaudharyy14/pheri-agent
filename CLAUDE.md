@@ -16,16 +16,21 @@ Read this before every task. These rules are not optional.
   audited. Wonder: same loop, max 2 retries. Shown in the trace (per draft), card footer, Proof block.
   Owner override: soft checks only (judge, address, one problem, length, language, middle step); audit
   "owner_override" has who, when, checks, reasons, exact text; hard checks (rules incl. do-not-contact and quiet
-  hours, schema, evidence, facts, pronouns, links, money, tools) never. tidy_message lowercases "Hi Maya, Your".
-- Recorded (data/recorded/llm.jsonl, 99 replies): the 12 showcase cards through the loop (24 drafts: 3 caught by
-  code, 10 by the judge, 12 retries, 11 verified; Aarav sent to the owner after 3 drafts, kept on purpose) and the
+  hours, schema, evidence, facts, pronouns, links, money, tools) never, for any drafted action (owner tasks too).
+  The judge runs whenever hard checks pass (overrides always show its verdict); message claims first; >12 claims
+  or a why over 400 chars fails schema. A cited fact's window (_30d) backs "30". tidy_message lowercases "Your".
+- Public demo (PHERI_PUBLIC_DEMO=1, render.yaml): a sandbox per visitor (cookie pheri_sandbox via web/proxy.ts,
+  in memory, max 100, 30 min idle, idlest dropped first); "Reset demo" button; audit actor "demo visitor (public
+  demo, no login)", rules by "demo setup (public demo, no login)".
+- Recorded (data/recorded/llm.jsonl, 96 replies): the 12 showcase cards through the loop (22 drafts: 2 caught by
+  code, 9 by the judge, 10 retries, 11 verified; Aarav sent to the owner after 3 drafts, soft, kept on purpose) and the
   Brightdesk Wonder report (attempt 1 headline rejected, attempt 2 passed). Kettle's report is still the stand-in.
   evals/judge_recorded.jsonl: the real judge on 20 cases in evals/drafts.jsonl: 10/10 planted claims caught,
-  8/10 supported passed (G01 "CSV", S04 "still saved": strict, pinned in test_evals).
+  9/10 supported passed (S04 "still saved": strict, pinned in test_evals).
   Re-record: python scripts/record_demo.py --live --budget <usd> --baseten-budget <usd>.
 - Next: deploy on Render together (docs/DEPLOY.md; push only when agreed), README polish, demo video.
   Servers for screenshots: uvicorn :8000 (replay, no --reload: restart after API changes), next dev :3000.
-- Live spend: Meta $1.3838 of $130, Baseten $0.3726 of $90. Tests: 311 pass (mock + replay tests).
+- Live spend: Meta $1.4575 of $130, Baseten $0.5886 of $90. Tests: 321 pass (mock + replay tests).
 
 ## What we are building
 Pheri: an AI agent that understands each customer, decides their next best action ("why this, why now"),
@@ -48,7 +53,7 @@ the theme is picked on the submission form).
 - Hard caps (env): Meta $130 (`PHERI_META_CAP_USD`), Baseten $90, Modal $90. Per-call limit $0.50.
 - Tests and dev default to `PHERI_LLM_MODE=mock` (zero network, zero spend). Use `live` only on purpose.
 - Develop on small samples (≤ 20 customers). Run the full 5,000-customer twin once, on Sat 31 Oct.
-- Never use `muse-wonder-1.0` in loops. Never click "Stop using free credits" on the Billing page.
+- Never use `muse-wonder-1.0` per customer; at most 3 calls per report. Never click "Stop using free credits" on the Billing page.
 
 ## Data and secrets
 - Only synthetic data goes to any model (free-credit content may be used by Meta). Enforced in `llm.py`.

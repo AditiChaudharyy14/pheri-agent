@@ -12,7 +12,8 @@ whose stored verification did not pass for exactly the payload being sent, so no
 an owner's approval) can send an unverified message. The one exception is an owner's override, and only
 of soft checks (verify.SOFT_CHECKS): the owner read the draft and sends it anyway; the audit log records
 who, when, which checks, and the exact text. Hard checks (rules, invented numbers, money, unknown tools,
-...) cannot be overridden by anyone.
+...) cannot be overridden by anyone, and that holds for every action Pheri drafted, an owner task included:
+a task with an invented number is not carried out either.
 Approving re-runs the rule check, because rules, limits and the clock may have moved since Pheri asked.
 Every step is written to the audit log. Delivery is simulated for now: "executed" means recorded
 as done, and nothing is sent to anyone yet.
@@ -120,14 +121,15 @@ def open_escalation(store, customer_key: str) -> dict | None:
 
 
 def verified_to_send(action: dict, override: dict | None = None) -> bool:
-    """The send step's gate: a customer-facing action goes out only if its stored verification passed for
-    exactly this payload (kind, channel, discount, message), or an owner overrode every check it failed, all
-    of them soft, for exactly this payload."""
+    """The send step's gate, for every action Pheri drafted (customer-facing or an owner task): it is carried
+    out only if its stored verification passed for exactly this payload (kind, channel, discount, message), or
+    an owner overrode every check it failed, all of them soft, for exactly this payload. Only an action code
+    made itself, with no draft behind it (an escalation), has no verification, and it never reaches a customer."""
     t = CATALOG.get(action["kind"])
-    if not (t and t.customer_facing):
-        return True  # sends nothing to the customer
     p = action["payload"]
-    v = p.get("verification") or {}
+    v = p.get("verification")
+    if v is None:
+        return not (t and t.customer_facing)
     sha = payload_sha(action["kind"], p.get("channel"), p.get("discount_pct"), p.get("message"))
     if v.get("passed") is True:
         return v.get("sha") == sha
@@ -159,8 +161,7 @@ def approve(store, approval_id: str, by: str, context_for: Callable[[str], Check
         action = store.get_action(approval["action_id"])
         p = action["payload"]
         v = p.get("verification") or {}
-        t = CATALOG.get(action["kind"])
-        unverified = bool(t and t.customer_facing and v and not v.get("passed"))
+        unverified = bool(v) and not v.get("passed")  # any drafted action: an owner task too
         if unverified and approval["decision"] == "pending":
             if not v.get("overridable"):
                 raise ValueError("Pheri can't send this draft: it failed checks no one can override ("

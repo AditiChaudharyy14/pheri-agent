@@ -13,7 +13,8 @@ customer-facing action whose stored verification did not pass for exactly the pa
 Layer 1, code (free, always first). A check that does not apply to the action (an owner task has no
 greeting) is skipped, not passed:
   rules        the owner's rules and the catalog (the same check() as everywhere)
-  schema       the fields a draft needs, filled; a channel only where a message goes out
+  schema       the fields a draft needs, filled; a channel only where a message goes out; why_this and why_now
+               at most MAX_WHY_CHARS each; at most MAX_CLAIMS claims in all, so the judge reads every one
   evidence     it cites at least one fact the profile holds, and nothing the profile does not hold
   facts        every number, date, amount and plan name it writes is in the facts and quotes it cites
   pronouns     no pronoun the customer never gave
@@ -35,8 +36,10 @@ step's bar), after reading it: an owner override, logged with who, when, what wa
 exact text. HARD_CHECKS can never be overridden: the rules (which hold do-not-contact and quiet hours),
 the schema, evidence, invented numbers and facts, guessed pronouns, links, money offers, unknown tools.
 
-Layer 2, the judge, only once layer 1 passes: Muse Spark Open on Baseten (Meta's open-weight model, served
-by a partner), effort low, answers true or false per claim: is this claim supported by the cited fact ids?
+Layer 2, the judge, once every hard check passes (a soft failure does not stop it, so an owner who overrides
+one always sees the judge's verdict): Muse Spark Open on Baseten (Meta's open-weight model, served by a
+partner), effort low, answers true or false per claim: is this claim supported by the cited fact ids? The
+message's claims go first, and a draft with more claims than the judge reads fails the schema check.
 """
 
 from __future__ import annotations
@@ -57,6 +60,7 @@ from .rules import CheckContext, active_rules, check
 
 # ---- settings ---------------------------------------------------------------------
 MAX_MESSAGE_CHARS = 420  # two or three short sentences and a sign-off
+MAX_WHY_CHARS = 400  # why_this and why_now, each: the owner reads them at a glance
 LINK_ALLOWLIST = {"brightdesk": ("brightdesk.example",), "kettle": ("kettle.example",)}
 PLAN_NAMES = {"brightdesk": ("Starter", "Team", "Business"), "kettle": ()}
 MONEY_ACTIONS = ("offer_discount", "offer_upgrade", "offer_subscription")  # they change what the customer pays
@@ -162,6 +166,22 @@ class Verification:
     judge_error: str | None = None  # the judge could not answer: a person checks it
 
     @property
+    def judge_failed(self) -> bool:
+        return self.judge_error is not None or any(not r["supported"] for r in self.judge)
+
+    @property
+    def judge_summary(self) -> str:
+        """What the judge said, in words an owner reads before overriding anything."""
+        if self.judge_error:
+            return "the judge could not answer"
+        if not self.judge_ran:
+            return "judge did not run"
+        n = sum(1 for r in self.judge if not r["supported"])
+        if n:
+            return f"judge flagged {n} claim{'' if n == 1 else 's'}"
+        return f"judge supported all {len(self.judge)} claim{'' if len(self.judge) == 1 else 's'}"
+
+    @property
     def code_checks(self) -> int:
         return sum(1 for c in self.checks if c["applies"])
 
@@ -175,7 +195,7 @@ class Verification:
     @property
     def failed(self) -> list[str]:
         return [c["name"] for c in self.checks if c["applies"] and not c["passed"]] + (
-            ["judge"] if self.caught_by == "judge" else [])
+            ["judge"] if self.judge_failed else [])
 
     def record(self) -> dict:
         """What the action stores: enough for the send step's gate, the owner's override, and a person to read."""
@@ -185,8 +205,11 @@ class Verification:
         return {"passed": self.passed, "sha": self.sha, "caught_by": self.caught_by, "reasons": self.reasons,
                 "code_checks": self.code_checks, "judge_ran": self.judge_ran, "failed": failed,
                 "hard_failed": hard, "soft_failed": soft,
-                "overridable": not self.passed and not hard and bool(soft),  # nothing named failed: fail closed
+                # Only with the judge's verdict in hand, and only if something named failed: fail closed.
+                "overridable": not self.passed and not hard and bool(soft) and (self.judge_ran or bool(self.judge_error)),
                 "judge_flagged": sum(1 for r in self.judge if not r["supported"]),
+                "judge_summary": self.judge_summary,
+                "summary": override_summary({"soft_failed": soft, "judge_summary": self.judge_summary}),
                 "hard_reasons": [r for r in self.reasons if r.split(":", 1)[0] in hard]}
 
     def as_dict(self) -> dict:
@@ -244,6 +267,9 @@ def _texts(d) -> str:
     return " ".join((d.why_this, d.why_now, message))
 
 
+_WINDOW = re.compile(r"_(\d+)d$")  # failed_exports_30d, active_days_prev_60d: the days the fact counts over
+
+
 def unsupported_numbers(d, kept: list[dict]) -> list[str]:
     """Numbers the draft writes that no kept evidence (or the discount itself) contains."""
     def norm(n: str) -> str:  # "195.0", "195" and "195,0" are the same number
@@ -251,6 +277,8 @@ def unsupported_numbers(d, kept: list[dict]) -> list[str]:
 
     backed = " ".join(e["value"] for e in kept)
     allowed = {norm(n) for n in _NUMBER.findall(backed)}
+    # A cited fact's window is backed too: active_days_30d = 2 says "2 active days in the last 30 days".
+    allowed |= {norm(m) for e in kept if e["kind"] == "fact" for m in _WINDOW.findall(e["ref"])}
     pct = d.discount_pct if hasattr(d, "discount_pct") else d.action.discount_pct
     if pct:
         allowed.add(f"{pct:g}")
@@ -395,6 +423,11 @@ def _schema(d: Draft, business: str) -> list[str]:
         out.append(f"channel {d.action.channel!r} is not one {business} uses")
     if not t.customer_facing and d.action.channel is not None:
         out.append(f"{d.action.kind} sends nothing, so its channel must be null")
+    for part, text in (("why_this", d.why_this), ("why_now", d.why_now)):
+        if len(text) > MAX_WHY_CHARS:
+            out.append(f"{part} is {len(text)} characters; keep it under {MAX_WHY_CHARS}")
+    if (n := len(claims(d))) > MAX_CLAIMS:
+        out.append(f"the draft makes {n} claims and the judge reads at most {MAX_CLAIMS}: say less")
     return out
 
 
@@ -481,20 +514,22 @@ _SIGNOFF = re.compile(r"\s*(?:[-–—]+|warmly|best|thanks|cheers|regards)[,!.]
 
 
 def claims(d: Draft) -> list[str]:
+    """Every claim, the message's first: what the customer reads is always judged. Never cut here: a draft with
+    more than MAX_CLAIMS fails the schema check instead, so the judge never sees part of one."""
     out = []
-    for text in (d.why_this, d.why_now, d.action.message if d.action.kind != "no_action" else ""):
+    for text in (d.action.message if d.action.kind != "no_action" else "", d.why_this, d.why_now):
         text = _SIGNOFF.sub("", _GREETING.sub("", text.strip()))
         for s in re.split(r"(?<=[.!?])\s+", text):
             s = s.strip()
             if len(re.findall(r"[^\W\d_]", s)) >= 3:
                 out.append(s[:1].upper() + s[1:])  # a claim is a sentence: "your export fails" reads "Your..."
-    return out[:MAX_CLAIMS]
+    return out
 
 
 def _judge(d: Draft, vc: VerifyContext, evidence: list[dict]) -> tuple[list[dict], dict]:
     from .synth import BUSINESS_NAMES
 
-    said = claims(d)
+    said = claims(d)[:MAX_CLAIMS]  # the schema check already failed any draft with more
     if not said:
         return [], {}
     ids = [f"c{i + 1}" for i in range(len(said))]
@@ -580,31 +615,33 @@ def verify_draft(d: Draft, vc: VerifyContext) -> Verification:
     v = Verification(False, checks, evidence=kept, dropped=dropped, rule_check=rule.as_dict(),
                      sha=payload_sha(d.action.kind, d.action.channel, d.action.discount_pct, d.action.message))
     failed = [c for c in checks if c["applies"] and not c["passed"]]
-    if failed:
-        v.caught_by = "code"
-        v.reasons = [f"{c['name']}: {r}" for c in failed for r in c["reasons"]]
+    v.reasons = [f"{c['name']}: {r}" for c in failed for r in c["reasons"]]
+    if any(c["name"] in HARD_CHECKS for c in failed):
+        v.caught_by = "code"  # no one may send it, so the judge is not paid to read it
         return v
     try:
         rows, meta = _judge(d, vc, kept)
     except ModelOutputError as exc:
-        v.caught_by, v.judge_error = "judge", f"the judge's answer was not usable: {str(exc)[:160]}"
-        v.reasons = [f"judge: {v.judge_error}"]
-        return v
+        v.judge_error = f"the judge's answer was not usable: {str(exc)[:160]}"
     except Exception as exc:  # noqa: BLE001
         status = getattr(exc, "status_code", None)
         if status is None or not 400 <= status < 500:
             raise  # spend cap, data policy, outages: stop, never wave the draft through
-        v.caught_by, v.judge_error = "judge", f"the judge's API refused the request ({status})"
-        v.reasons = [f"judge: {v.judge_error}"]
-        return v
-    v.judge_ran, v.judge = True, rows
-    v.judge_model, v.judge_cost_usd, v.judge_recorded = meta.get("model"), meta.get("cost_usd", 0.0), \
-        meta.get("recorded", False)
-    if bad := [r for r in rows if not r["supported"]]:
+        v.judge_error = f"the judge's API refused the request ({status})"
+    else:
+        v.judge_ran, v.judge = True, rows
+        v.judge_model, v.judge_cost_usd, v.judge_recorded = meta.get("model"), meta.get("cost_usd", 0.0), \
+            meta.get("recorded", False)
+    if v.judge_error:
+        v.reasons.append(f"judge: {v.judge_error}")
+    v.reasons += [f"judge: {r['claim']!r} is not supported by the facts it cites ({r['reason']})"
+                  for r in v.judge if not r["supported"]]
+    if failed:
+        v.caught_by = "code"  # code caught it first; the judge's verdict is there too
+    elif v.judge_failed:
         v.caught_by = "judge"
-        v.reasons = [f"judge: {r['claim']!r} is not supported by the facts it cites ({r['reason']})" for r in bad]
-        return v
-    v.passed = True
+    else:
+        v.passed = True
     return v
 
 
@@ -642,15 +679,11 @@ def judge_worst_case_usd(n_claims: int = MAX_CLAIMS) -> float:
 
 
 def override_summary(v: dict) -> str:
-    """'judge flagged 1 claim', 'one problem, length': what an owner's override sent past."""
-    parts = []
-    for c in v.get("soft_failed") or []:
-        if c == "judge":
-            n = v.get("judge_flagged") or 0
-            parts.append(f"judge flagged {n} claim{'' if n == 1 else 's'}" if n else "the judge could not answer")
-        else:
-            parts.append(c.replace("_", " "))
-    return ", ".join(parts)
+    """What an owner's override sends past, always with the judge's verdict: 'judge flagged 1 claim',
+    'one problem, length; judge supported all 4 claims', or '...; judge did not run'."""
+    checks = [c.replace("_", " ") for c in v.get("soft_failed") or [] if c != "judge"]
+    judge = v.get("judge_summary") or "judge did not run"
+    return "; ".join([", ".join(checks), judge] if checks else [judge])
 
 
 __all__ = ["Draft", "VerifyContext", "Verification", "verify_draft", "feedback", "middle_step", "middle_step_scores",

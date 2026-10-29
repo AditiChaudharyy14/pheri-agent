@@ -77,7 +77,7 @@ adds a suffix when a name is taken, e.g. `https://pheri-api-x7k2.onrender.com`.
 Wait for **pheri-web** to show "Your service is live", then open its URL.
 
 1. It redirects to `/brightdesk`.
-2. The header pill reads **Recorded from a live run · synthetic data**.
+2. The header pill reads **Recorded from a live run · synthetic data**, with **Reset demo** beside it.
 3. Maya Okafor's card:
    - the message names the CSV export failing at 90% and her weekly client reports;
    - WHY NOW says "renews in 8 days";
@@ -90,14 +90,16 @@ Wait for **pheri-web** to show "Your service is live", then open its URL.
      on purpose: his trace shows each draft, what the judge rejected, and the reasons sent back. The judge
      is a soft check, so his card offers **Send anyway** ("Failed soft checks: judge flagged 2 claims").
      Pressing it sends the draft as an owner override: the footer then reads "Sent by owner override:
-     judge flagged 2 claims". Restart the API afterwards to bring the card back (step 5).
+     judge flagged 2 claims". Press **Reset demo** to bring the card back.
+   - Open the site in a second browser (or a private window): Aarav's card is still waiting there. Each
+     visitor has their own sandbox.
 5. Back on Maya's page, click **Offer a discount**.
    - The refusal quotes the rule "Never offer discounts in a customer's first month."
    - This proves the browser's `/api` calls reach the API.
    - If it says "The Pheri API is not reachable", `PHERI_API_URL` is wrong: go back to step 3.
 6. **Proof**: the report says "Written by Muse Wonder, recorded from a live run" and "Attempt 1 rejected
-   by code: headline → Attempt 2 passed". At the bottom, the Verification block: 12 drafts, 3 caught by
-   code, 4 by the judge, 6 retries, 1 sent to the owner, and "13 checks" under "Caught by code".
+   by code: headline → Attempt 2 passed". At the bottom, the Verification block: 11 drafts, 2 caught by
+   code, 4 by the judge, 5 retries, 1 sent to the owner, and "13 checks" under "Caught by code".
    - **Rules**: under the rules, "Before Pheri writes a message" shows the stage and plan scores, with
      "Money actions need 100%" and "Nudges need 80%".
 7. **Spend**: Meta and Baseten spend against the caps. "This server" says **Replay mode**.
@@ -107,9 +109,10 @@ Wait for **pheri-web** to show "Your service is live", then open its URL.
 
 - **Wake both services.** Free services sleep after about 15 minutes idle, and the first request then
   takes up to a minute. Open the web URL and the API `/health` about 5 minutes before recording.
-- **Reset the demo state.** Approvals, rejections, new rules and the private-mode switch live in
-  memory, are shared by everyone who opens the site, and reset when the API restarts. On **pheri-api**,
-  open **Manual Deploy** and choose **Restart service** (or **Deploy latest commit**).
+- **Reset the demo state.** Each visitor's approvals, rejections, new rules and private-mode switch live
+  in their own sandbox in memory (`PHERI_PUBLIC_DEMO=1`). **Reset demo** in the header puts yours back to
+  the start. To reset everyone's, on **pheri-api** open **Manual Deploy** and choose **Restart service**.
+  The audit log names every action "demo visitor (public demo, no login)": there is no owner login.
 - **Private mode.** Turning it on shows decisions on Muse Spark Open. Those were not recorded, so they
   come from the offline stand-in, and the cards say so. Turn it off again for the main flow.
 

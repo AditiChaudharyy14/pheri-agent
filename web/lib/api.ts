@@ -7,8 +7,15 @@ export const BUSINESSES = { brightdesk: "Brightdesk", kettle: "Kettle & Co" } as
 export type Business = keyof typeof BUSINESSES;
 export const isBusiness = (b: string): b is Business => b in BUSINESSES;
 
+/** The visitor's sandbox id (proxy.ts sets the cookie); the API keys the public demo's state by it. */
+export const SANDBOX_COOKIE = "pheri_sandbox";
+export const SANDBOX_HEADER = "x-pheri-sandbox";
+
+/** From a server component: the visitor's own sandbox, by their cookie. */
 export async function api<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`);
+  const { cookies } = await import("next/headers");
+  const id = (await cookies()).get(SANDBOX_COOKIE)?.value;
+  const res = await fetch(`${API_URL}${path}`, { headers: id ? { [SANDBOX_HEADER]: id } : {} });
   if (!res.ok) throw new Error(`API ${res.status} on ${path}: ${await res.text()}`);
   return res.json() as Promise<T>;
 }
@@ -54,7 +61,7 @@ export type Decision = { action: string; channel: string | null; discount_pct: n
 /** What the action stores: the send step sends it only if this passed for exactly this payload. */
 export type StoredVerification = { passed: boolean; sha: string; caught_by: "code" | "judge" | null; reasons: string[];
   code_checks: number; judge_ran: boolean; failed: string[]; hard_failed?: string[]; soft_failed?: string[];
-  overridable?: boolean; judge_flagged?: number; hard_reasons?: string[] };
+  overridable?: boolean; judge_flagged?: number; hard_reasons?: string[]; judge_summary?: string; summary?: string };
 
 /** An owner sent a draft that failed only soft checks, on the record. */
 export type Override = { by: string; at: string; overridden: string[]; reasons: string[]; text: string;

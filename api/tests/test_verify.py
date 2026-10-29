@@ -16,8 +16,8 @@ from pheri.profile import build_profile, load
 from pheri.rules import CheckContext, seed
 from pheri.store import MemoryStore
 from pheri.synth import NOW
-from pheri.verify import (CODE_CHECKS, JUDGE_PURPOSE, THRESHOLDS, Draft, claims, context, middle_step,
-                          payload_sha, verify_draft)
+from pheri.verify import (CODE_CHECKS, HARD_CHECKS, JUDGE_PURPOSE, MAX_CLAIMS, MAX_WHY_CHARS, THRESHOLDS, Draft,
+                          claims, context, middle_step, override_summary, payload_sha, verify_draft)
 
 MAYA = "maya.okafor@pinecrest.example"
 PABLO = "pablo.nasser@brightwater.example"
@@ -67,7 +67,8 @@ def test_every_labelled_draft_is_caught_by_its_check_and_clean_ones_pass(row, da
     failed = {c["name"] for c in v.checks if c["applies"] and not c["passed"]}
     if row["expect"]:
         assert set(row["expect"]) <= failed and v.caught_by == "code" and not v.passed, (row["note"], v.reasons)
-        assert not v.judge_ran  # the judge only reads drafts code has passed
+        # The judge reads every draft whose hard checks pass, so an owner who overrides a soft one sees its verdict.
+        assert v.judge_ran == (not set(failed) & set(HARD_CHECKS)), (row["id"], failed)
     else:
         assert v.passed and v.judge_ran and v.code_checks == len(CODE_CHECKS), v.reasons
 
@@ -102,7 +103,85 @@ def test_the_judge_gets_claims_and_only_the_cited_facts(data, llm, monkeypatch):
 def test_claims_skip_the_greeting_and_the_sign_off():
     d = Draft(ProposedAction(kind="send_help", channel="email", message="Hi Maya, the fix is ready. Reply to try it. "
                              "— The Brightdesk team"), "Maya is stuck.", "Maya renews soon.", [], [])
-    assert claims(d) == ["Maya is stuck.", "Maya renews soon.", "The fix is ready.", "Reply to try it."]
+    assert claims(d) == ["The fix is ready.", "Reply to try it.", "Maya is stuck.", "Maya renews soon."]
+
+
+# ---- review, 29 Oct: what the judge sees, and when ----------------------------------------------
+def _maya_draft(**over) -> Draft:
+    d = next(r for r in DRAFTS if r["id"] == "G01")["draft"]
+    return _draft({**d, **over})
+
+
+def test_the_judge_always_sees_the_message_first_and_never_part_of_a_draft(data, llm, monkeypatch):
+    seen = []
+    real = llm_module._mock_responders[JUDGE_PURPOSE]
+    monkeypatch.setitem(llm_module._mock_responders, JUDGE_PURPOSE, lambda m, s: seen.append(m) or real(m, s))
+    vc = _vc(data, llm, "brightdesk", MAYA)
+    d = _maya_draft()
+    verify_draft(d, vc)
+    sent = [c["text"] for c in json.loads(seen[-1][-1]["content"])["claims"]]
+    assert sent[:2] == ["Sorry your CSV export keeps failing.",
+                        "Here are the steps that fix it, so your weekly client reports go out again."]
+    # A why that runs on past what the judge reads fails the draft (a hard check): nothing is judged in part.
+    many = " ".join(f"Maya is stuck, point {w}." for w in "abcdefghijkl")
+    v = verify_draft(_maya_draft(why_this=many[:MAX_WHY_CHARS]), vc)
+    assert len(claims(_maya_draft(why_this=many[:MAX_WHY_CHARS]))) > MAX_CLAIMS
+    assert "schema" in v.failed and not v.judge_ran
+    assert any("claims and the judge reads at most 12" in r for r in v.reasons)
+
+
+def test_why_this_and_why_now_are_capped(data, llm):
+    vc = _vc(data, llm, "brightdesk", MAYA)
+    v = verify_draft(_maya_draft(why_now="Maya renews in 8 days. " + "And more besides. " * 30), vc)
+    assert "schema" in v.failed and any(r.startswith(f"schema: why_now is") and str(MAX_WHY_CHARS) in r
+                                        for r in v.reasons)
+
+
+def test_the_judge_runs_when_only_a_soft_check_failed_and_the_override_says_what_it_said(data, llm):
+    vc = _vc(data, llm, "brightdesk", MAYA)
+    soft = _maya_draft(message="Hi Maya, sorry the CSV export Maya runs keeps failing. Here are the steps. "
+                               "- The Brightdesk team")  # her name outside the greeting: address, a soft check
+    v = verify_draft(soft, vc)
+    assert v.failed == ["address"] and v.judge_ran and v.caught_by == "code"
+    rec = v.record()
+    assert rec["overridable"] and rec["judge_summary"] == f"judge supported all {len(v.judge)} claims"
+    assert rec["summary"] == f"address; judge supported all {len(v.judge)} claims"
+    # A hard failure: the judge is not paid to read what no one may send, and nothing can be overridden.
+    hard = verify_draft(_maya_draft(why_now="Maya renews in 3 days."), vc)
+    assert not hard.judge_ran and not hard.record()["overridable"] and hard.record()["judge_summary"] == "judge did not run"
+    assert override_summary({"soft_failed": ["length"]}) == "length; judge did not run"
+
+
+def test_an_owner_cannot_override_without_the_judges_verdict(data, llm, monkeypatch):
+    monkeypatch.setitem(llm_module._mock_responders, JUDGE_PURPOSE, lambda m, s: "not json")  # it cannot answer
+    vc = _vc(data, llm, "brightdesk", MAYA)
+    v = verify_draft(_maya_draft(message="Hi Maya, the CSV export Maya runs has steps to fix it. - The Brightdesk team"),
+                     vc)
+    rec = v.record()
+    assert v.judge_error and rec["judge_summary"] == "the judge could not answer"
+    assert rec["overridable"] and "the judge could not answer" in rec["summary"]  # seen, in words, before any override
+
+
+def test_a_hard_failure_blocks_an_owner_task_too(data, llm):
+    """task_for_owner sends nothing to the customer, but an invented number in it is still a hard failure."""
+    store = MemoryStore("brightdesk")
+    seed(store, llm)
+    vc = _vc(data, llm, "brightdesk", MAYA, store)
+    task = Draft(ProposedAction(kind="task_for_owner", message="Call Maya: her 40 exports failed this week."),
+                 "Maya is stuck.", "Maya renews soon.", ["journey_stage", "failed_exports_30d"], [])
+    from pheri.autonomy import submit
+
+    a = submit(store, MAYA, task, verify=vc)  # owner tasks act alone by default
+    v = a["payload"]["verification"]
+    assert a["status"] == "awaiting_approval" and v["hard_failed"] == ["facts"] and not v["overridable"]
+    with pytest.raises(ValueError, match=r"no one can override \(facts\)"):
+        approve(store, queue(store)[0]["id"], by="owner", override=True,
+                context_for=lambda k: CheckContext("brightdesk", vc.profile.facts, NOW))
+    assert store.get_action(a["id"])["status"] == "awaiting_approval"
+    # and the send step itself refuses a drafted task whose verification failed
+    from pheri.autonomy import verified_to_send
+
+    assert not verified_to_send(store.get_action(a["id"]))
 
 
 def test_the_word_after_the_greeting_comma_is_lowercased_before_verifying():
@@ -322,3 +401,14 @@ def test_only_the_send_step_marks_a_message_executed():
     for path in (REPO_ROOT / "api" / "pheri").glob("*.py"):
         if path.name != "autonomy.py":
             assert not re.search(r'"executed"\s*,\s*executed_at', path.read_text(encoding="utf-8")), path.name
+
+
+def test_a_cited_facts_window_is_backed_but_no_other_number(data, llm):
+    """Recorded on 29 Oct: "2 active days in the last 30 days", citing active_days_30d, was refused as an invented 30."""
+    vc = _vc(data, llm, "brightdesk", MAYA)
+    ok = _maya_draft(why_now="Maya was active on 6 days in the last 30 days and renews in 8 days.",
+                     fact_keys=["journey_stage", "failed_exports_30d", "active_days_30d", "renewal_in_days"])
+    assert "facts" not in verify_draft(ok, vc).failed
+    bad = _maya_draft(why_now="Maya was active on 6 days in the last 60 days and renews in 8 days.",
+                      fact_keys=["journey_stage", "failed_exports_30d", "active_days_30d", "renewal_in_days"])
+    assert any("writes 60" in r for r in verify_draft(bad, vc).reasons)

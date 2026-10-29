@@ -31,14 +31,14 @@ from pydantic import BaseModel, create_model
 from .llm import LLM, ModelOutputError, register_mock
 
 PURPOSE = "learn_report"
-MODEL = "muse-wonder-1.0"  # reports and grading only, never in loops (CLAUDE.md)
+MODEL = "muse-wonder-1.0"  # reports and grading only: never per customer, at most 3 calls per report (CLAUDE.md)
 MAX_OUTPUT_TOKENS = 5000  # live, the 200-customer report used 2904 of 3000 (1651 reasoning): too close
 EFFORT = "medium"
 VERDICTS = ("works", "hurts", "unclear")
 CLAIM_WORDS = ("works", "worked", "proven", "clearly", "significant", "boost", "improves", "improved", "hurts",
                "hurt", "harms", "drives")  # an unclear finding may not say these
 ALWAYS_ALLOWED = {"95"}  # the interval's level is not a result
-WONDER_MAX_RETRIES = 2  # after the first report: at most two more Wonder calls, on the same report
+WONDER_MAX_RETRIES = 2  # after the first report: at most two more Wonder calls, so 3 per report (CLAUDE.md)
 FEEDBACK_HEAD = "Code checked your report against the facts and rejected these parts:"
 
 

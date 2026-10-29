@@ -74,20 +74,23 @@ verification, and never let the agent mark its own homework.
    only to the business's own sites; no money offer unless it is an `offer_discount` the rules allow; no
    tool call Pheri does not have; and the **middle step** (below). Before checking, code makes one edit:
    the common word after the greeting's comma goes lowercase ("Hi Maya, Your..." becomes "Hi Maya, your...").
-2. **Then a judge**, only if code passed: Muse Spark Open on Baseten, effort low, answers true or false
+2. **Then a judge**, whenever every hard check passed (a soft failure does not stop it, so an owner who
+   overrides one always sees its verdict): Muse Spark Open on Baseten, effort low, answers true or false
    per claim: "is this claim supported by the cited fact ids?" It sees only the facts and quotes the
-   draft cites.
+   draft cites, and the message's claims first. A draft with more claims than it reads (12), or a why
+   longer than 400 characters, fails the schema check, so the judge never reads part of one.
 3. **Failures go back.** The reasons return to the model as the next turn of the same conversation, up
    to `PHERI_VERIFY_MAX_ATTEMPTS` drafts (3). After that the draft goes to the owner's queue with the
    reasons, and Pheri never sends it on its own.
    - **Soft checks** (the judge, tone and address, one problem, length, language, the middle step's bar):
      the owner may read the draft and press **Send anyway**. That is an owner override: the audit log
      records who, when, which checks were overridden, the reasons, and the exact text sent, and the trace
-     shows "Sent by owner override: judge flagged 2 claims".
+     shows "Sent by owner override: judge flagged 2 claims". The summary always says what the judge
+     found ("address; judge supported all 4 claims"), and there is no override without a verdict.
    - **Hard checks** can never be overridden, by anyone: the owner's rules (which hold do-not-contact
      and quiet hours, and are checked again at approval), the schema, evidence, invented numbers, dates
      and plans, guessed pronouns, links, money offers, unknown tools. The queue says which one failed
-     and why, and offers only Reject.
+     and why, and offers only Reject. That holds for every action Pheri drafts, an owner task included.
 4. **The model cannot skip it or call it.** It is not a tool. `autonomy.submit()` runs `verify_draft()`
    itself and stores the result, with a hash of the exact payload, on the action; the send step
    (`_execute`) refuses any customer-facing action whose stored verification did not pass for that
@@ -111,16 +114,16 @@ more calls on that one report. The recorded run: attempt 1's headline stated no 
 
 What you see: the Decision trace shows every draft, which layer caught it and why, and the reasons sent
 back; each card's footer reads "Verified: 13 code checks + judge"; Proof has the totals. In the recorded
-live run of the 12 showcase decisions: 24 drafts, 3 caught by code, 10 by the judge, 12 retries, 11
-verified, 1 sent to the owner (Aarav: the judge rejected an unsupported claim in all three drafts).
+live run of the 12 showcase decisions: 22 drafts, 2 caught by code, 9 by the judge, 10 retries, 11
+verified, 1 sent to the owner (Aarav: the judge rejected unsupported claims in all three drafts; a soft
+check, so his card offers Send anyway).
 
 **How good is the judge?** `evals/drafts.jsonl` has 20 cases for it, each passing every code check: 10
 drafts that say only what they cite, and 10 with one planted claim no fact backs (an invented reason,
 competitor, threat, preference, growth story, or a contradiction of a cited fact, all in words, so code
-cannot see them). Muse Spark Open, recorded once for $0.06 (`evals/judge_recorded.jsonl`): it caught 10 of
-10 planted claims and passed 8 of 10 supported drafts. Its two false alarms are strict rather than wrong:
-"the items in your cart are still saved" and "your CSV export keeps failing" each say a little more than
-the cited facts.
+cannot see them). Muse Spark Open, recorded once for $0.11 (`evals/judge_recorded.jsonl`, with the 8 broken drafts it now also reads):
+it caught 10 of 10 planted claims and passed 9 of 10 supported drafts. Its one false alarm is strict rather
+than wrong: "the items in your cart are still saved" says a little more than the cited facts.
 
 ```bash
 python evals/run.py     # includes the verification numbers: labelled broken drafts, tool attacks, middle step,
@@ -205,11 +208,17 @@ names who decided and how it was checked ("Decided by Muse Spark 1.3 · $0.0157 
 The judge's verdicts are recorded too. `api/tests/test_app.py` fails if the recording stops matching the
 code.
 
+**Each visitor has their own sandbox.** With `PHERI_PUBLIC_DEMO=1` (set in `render.yaml`) the API gives every
+visitor a copy of the demo state in memory, keyed by a cookie the web app sets (`web/proxy.ts`): at most 100,
+each dropped after 30 minutes idle, the idlest dropped first when full. What one visitor approves, rejects or
+writes reaches no one else, and **Reset demo** in the header puts theirs back to the start. There is no login,
+so the audit log never names an owner: every approval is "by: demo visitor (public demo, no login)", and the
+starting rules are confirmed by "demo setup (public demo, no login)".
+
 Deploy: `render.yaml` is a Render blueprint with two services. `pheri-api` (Python, replay mode, no
 keys) and `pheri-web` (Node). Set `PHERI_API_URL` on `pheri-web` to the API's public URL. The browser's
 `/api/...` calls go through `web/app/api/[...path]/route.ts`, which reads that URL at run time, so
-changing it needs a restart, not a rebuild. The demo keeps its state in memory: approvals and new rules
-are shared by everyone using it and reset when the API restarts.
+changing it needs a restart, not a rebuild. All state is in memory and resets when the API restarts.
 
 `data/spend/live.json` is what this week's live runs cost, totals only, from the local ledger
 (`python scripts/spend_snapshot.py`); the Spend page shows it.

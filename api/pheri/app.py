@@ -22,6 +22,14 @@ Routes, per business (brightdesk, kettle):
   GET  /spend                                        model spend against the caps, per provider; plus the
                                                      live runs' snapshot (data/spend/live.json)
 
+  POST /demo/reset                                   the public demo: this visitor's sandbox back to the start
+
+The public demo (PHERI_PUBLIC_DEMO=1): every visitor gets their own sandbox, a copy of the demo state in
+memory, found by a cookie (or the web app's x-pheri-sandbox header): at most MAX_SANDBOXES, each dropped after
+SANDBOX_IDLE_S idle, the one idle longest dropped first when full. Nothing one visitor approves or writes
+reaches another. There is no login, so the audit log never names an owner: every approval, rule and switch
+is "by: demo visitor (public demo, no login)", and the starting rules are the demo setup's.
+
 Mock mode only for now: create_app() refuses live mode unless PHERI_API_ALLOW_LIVE=1, so no request can
 spend by accident. Even then, /learned never calls Muse Wonder; a Wonder report is a deliberate,
 budgeted run (scripts/live_learn.py).
@@ -29,13 +37,20 @@ budgeted run (scripts/live_learn.py).
 
 from __future__ import annotations
 
+import copy
 import dataclasses
 import json
 import os
+import re
 import threading
+import time
+import uuid
+from collections import OrderedDict
+from contextvars import ContextVar
+from dataclasses import dataclass, field
 from datetime import datetime
 
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
 from .actions import ProposedAction
@@ -90,23 +105,75 @@ class PrivateModeIn(By):
 
 
 # ---- state ------------------------------------------------------------------------
+DEMO_ACTOR = "demo visitor (public demo, no login)"  # who the audit log names in the public demo: never an owner
+DEMO_SETUP = "demo setup (public demo, no login)"  # who confirmed the starting rules there
+SANDBOX_COOKIE = "pheri_sandbox"
+SANDBOX_HEADER = "x-pheri-sandbox"  # the web app's server forwards the visitor's cookie this way
+MAX_SANDBOXES = 100
+SANDBOX_IDLE_S = 30 * 60
+_SANDBOX_ID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
+_visitor: ContextVar[str | None] = ContextVar("pheri_visitor", default=None)  # this request's sandbox id
+
+
+@dataclass
+class Sandbox:
+    """Everything a visitor can change: the stores (rules, approvals, the audit log), the decisions, the profiles."""
+    stores: dict
+    decided: dict[str, dict[str, dict]]  # business -> key -> Outcome
+    profiles: dict[tuple[str, str], Profile]
+    seen: float = field(default_factory=time.monotonic)
+
+
 class State:
     def __init__(self, llm: LLM):
         self.llm = llm
         self.settings = llm.settings
         self.data = {b: load(b) for b in BUSINESSES}
         self.stages = {b: stages(ds) for b, ds in self.data.items()}  # code only, no model
-        url = self.settings.database_url
-        self.stores = {b: PgStore(b, url) if url else MemoryStore(b) for b in BUSINESSES}
-        self.profiles: dict[tuple[str, str], Profile] = {}
-        self.learned: dict[tuple[str, int, int], dict] = {}
-        self.decided: dict[str, dict[str, dict]] = {b: {} for b in BUSINESSES}  # business -> key -> Outcome
+        self.learned: dict[tuple[str, int, int], dict] = {}  # the same for everyone: written from the twin's results
         self.lock = threading.RLock()  # the memory store is not thread-safe: one request at a time touches it
+        self.public_demo = self.settings.public_demo
+        if self.public_demo and self.settings.database_url:
+            raise RuntimeError("The public demo keeps each visitor's sandbox in memory: unset DATABASE_URL.")
+        self.base = self.fresh()  # the demo as it starts; in the public demo, only ever copied
+        self.base_warm = False
+        self.sandboxes: OrderedDict[str, Sandbox] = OrderedDict()  # least recently used first
+
+    def fresh(self) -> Sandbox:
+        url = self.settings.database_url
+        stores = {b: PgStore(b, url) if url else MemoryStore(b) for b in BUSINESSES}
         if self.settings.llm_mode != "live" or self.settings.record_path:
             # The demo's starting rules (Brightdesk: no discounts in the first month). A recording run seeds them
             # too, so replay rebuilds exactly the conversations it recorded.
             for b in BUSINESSES:
-                seed(self.stores[b], llm, by="owner:demo")
+                seed(stores[b], self.llm, by=DEMO_SETUP if self.public_demo else "owner:demo")
+        return Sandbox(stores, {b: {} for b in BUSINESSES}, {})
+
+    @property
+    def current(self) -> Sandbox:
+        sid = _visitor.get()
+        return self.base if sid is None else self.sandboxes[sid]
+
+    # The routes read these; in the public demo they are this visitor's own.
+    @property
+    def stores(self) -> dict:
+        return self.current.stores
+
+    @property
+    def decided(self) -> dict:
+        return self.current.decided
+
+    @property
+    def profiles(self) -> dict:
+        return self.current.profiles
+
+    @profiles.setter
+    def profiles(self, value: dict) -> None:
+        self.current.profiles = value
+
+    def who(self, by: str) -> str:
+        """The name the audit log records: in the public demo there is no login, so never a pretend owner."""
+        return DEMO_ACTOR if self.public_demo else by
 
 
 def create_app(llm: LLM | None = None) -> FastAPI:
@@ -117,6 +184,48 @@ def create_app(llm: LLM | None = None) -> FastAPI:
     state = State(llm or LLM(settings))
     app = FastAPI(title="Pheri", description="The next step for every customer, inside your rules.")
     app.state.pheri = state
+
+    def sandbox_for(sid: str) -> Sandbox:
+        """This visitor's sandbox: made from the warmed demo on the first request, dropped after SANDBOX_IDLE_S idle,
+        and the one idle longest dropped first when MAX_SANDBOXES are open."""
+        with state.lock:
+            now = time.monotonic()
+            for old in [k for k, sb in state.sandboxes.items() if now - sb.seen > SANDBOX_IDLE_S]:
+                del state.sandboxes[old]
+            sb = state.sandboxes.get(sid)
+            if sb is None:
+                if not state.base_warm:  # decide the showcase once, on the shared start; visitors get copies
+                    token = _visitor.set(None)
+                    try:
+                        for b in BUSINESSES:
+                            warm(b)
+                    finally:
+                        _visitor.reset(token)
+                    state.base_warm = True
+                while len(state.sandboxes) >= MAX_SANDBOXES:
+                    state.sandboxes.popitem(last=False)
+                base = state.base
+                sb = state.sandboxes[sid] = Sandbox(copy.deepcopy(base.stores),
+                                                    {b: dict(v) for b, v in base.decided.items()}, dict(base.profiles))
+            state.sandboxes.move_to_end(sid)
+            sb.seen = now
+            return sb
+
+    @app.middleware("http")
+    async def visitor_sandbox(request: Request, call_next):
+        if not state.public_demo:
+            return await call_next(request)
+        sid = request.headers.get(SANDBOX_HEADER) or request.cookies.get(SANDBOX_COOKIE) or ""
+        if not _SANDBOX_ID.fullmatch(sid):
+            sid = str(uuid.uuid4())
+        token = _visitor.set(sid)
+        try:
+            sandbox_for(sid)
+            response = await call_next(request)
+        finally:
+            _visitor.reset(token)
+        response.set_cookie(SANDBOX_COOKIE, sid, max_age=SANDBOX_IDLE_S, httponly=True, samesite="lax")
+        return response
 
     def business(b: str) -> str:
         if b not in BUSINESSES:
@@ -154,8 +263,20 @@ def create_app(llm: LLM | None = None) -> FastAPI:
     # ---- the basics ----
     @app.get("/health")
     def health():
-        """mode: live (real calls), replay (replies recorded in a live run, played back), or mock (the stand-in)."""
-        return {"ok": True, "mode": state.settings.llm_mode}
+        """mode: live (real calls), replay (replies recorded in a live run, played back), or mock (the stand-in).
+        public_demo: every visitor has their own sandbox, and no one is logged in."""
+        return {"ok": True, "mode": state.settings.llm_mode, "public_demo": state.public_demo}
+
+    @app.post("/demo/reset")
+    def reset_demo():
+        """Back to the start: in the public demo, this visitor's sandbox only (the next request copies the start
+        again); run locally, the one shared demo state."""
+        with state.lock:
+            if state.public_demo:
+                state.sandboxes.pop(_visitor.get() or "", None)
+            else:
+                state.base, state.base_warm = state.fresh(), False
+        return {"reset": True, "public_demo": state.public_demo}
 
     @app.get("/businesses")
     def businesses():
@@ -250,7 +371,7 @@ def create_app(llm: LLM | None = None) -> FastAPI:
         with state.lock:
             try:
                 # The re-check needs code-computed facts only: approving never costs a model call.
-                return approve(state.stores[b], approval_id, body.by, context_for=lambda k: ctx_for(b, k),
+                return approve(state.stores[b], approval_id, state.who(body.by), context_for=lambda k: ctx_for(b, k),
                                override=body.override)
             except NotFound:
                 raise HTTPException(404, f"no approval {approval_id!r}") from None
@@ -261,7 +382,7 @@ def create_app(llm: LLM | None = None) -> FastAPI:
     def reject_one(approval_id: str, body: RejectIn, b: str = Depends(business)):
         with state.lock:
             try:
-                return reject(state.stores[b], approval_id, body.by, body.note)
+                return reject(state.stores[b], approval_id, state.who(body.by), body.note)
             except NotFound:
                 raise HTTPException(404, f"no approval {approval_id!r}") from None
             except ValueError as exc:
@@ -278,7 +399,7 @@ def create_app(llm: LLM | None = None) -> FastAPI:
         """Compile the owner's words (the model translates, code validates). Not enforced until confirmed."""
         with state.lock:
             try:
-                draft = propose(state.stores[b], state.llm, body.text, actor=body.by)
+                draft = propose(state.stores[b], state.llm, body.text, actor=state.who(body.by))
             except ValueError as exc:
                 raise HTTPException(422, str(exc)) from None
             return {**rule_view(state.stores[b].get_rule(draft.id)), "confirmable": draft.confirmable}
@@ -287,7 +408,7 @@ def create_app(llm: LLM | None = None) -> FastAPI:
     def confirm_rule(rule_id: str, body: By, b: str = Depends(business)):
         with state.lock:
             try:
-                confirm(state.stores[b], rule_id, body.by)
+                confirm(state.stores[b], rule_id, state.who(body.by))
             except NotFound:
                 raise HTTPException(404, f"no rule {rule_id!r}") from None
             except ValueError as exc:
@@ -306,7 +427,7 @@ def create_app(llm: LLM | None = None) -> FastAPI:
         full: every step, and nothing goes to the Meta Model API."""
         with state.lock:
             state.profiles = {k: v for k, v in state.profiles.items() if k[0] != b}  # re-read on the new path
-            return set_private_mode(state.stores[b], by=body.by, full=body.full, guard=body.guard,
+            return set_private_mode(state.stores[b], by=state.who(body.by), full=body.full, guard=body.guard,
                                     profile=body.profile, decide=body.decide, rules=body.rules)
 
     # ---- what worked ----

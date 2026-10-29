@@ -113,12 +113,12 @@ def test_verification_numbers_offline(runner, monkeypatch, tmp_path):
     text = runner.verification_report({"rows": drafts}, {"rows": tools}, runner.middle_steps(), None)
     assert "caught by code        17/17 = 100%" in text and "3/3 discarded and logged, 0 run" in text
     # The real judge (Muse Spark Open), recorded once on 20 cases. Pinned as measured: it caught all 10 planted
-    # claims, and flagged 2 of the 10 supported drafts ("still saved" and "CSV" are in no cited fact).
+    # claims, and flagged 1 of the 10 supported drafts ("still saved" is in no cited fact).
     judged = runner.verify_drafts(llm, runner.judge_llm())["rows"]
     real = [r for r in judged if r["judge_ran"]]
-    assert len(real) == 20 and all(r["judge_recorded"] for r in real)
+    assert all(r["judge_recorded"] for r in real)  # every judge call replays, the soft-failing B rows' too
     planted = [r for r in judged if r["expect"] == ["judge"]]
     supported = [r for r in judged if r["judge_ran"] and not r["expect"]]
     assert len(planted) == len(supported) == 10 and all(r["ok"] for r in planted)
-    assert sorted(r["id"] for r in supported if not r["ok"]) == ["G01", "S04"]
+    assert sorted(r["id"] for r in supported if not r["ok"]) == ["S04"]
     assert all(r["ok"] for r in judged if r["expect"] and r["expect"] != ["judge"])  # code rows

@@ -139,6 +139,18 @@ def test_a_rejected_headline_goes_back_to_wonder_and_the_next_attempt_can_pass(r
     assert sent[1][-2]["role"] == "assistant"  # with Wonder's own first answer before it
 
 
+def test_the_wonder_rule_in_claude_md_is_the_code(results, llm):
+    """CLAUDE.md: never per customer; at most 3 calls per report. write_report takes no customer at all."""
+    import inspect
+
+    from pheri.config import REPO_ROOT
+
+    assert "Never use `muse-wonder-1.0` per customer; at most 3 calls per report." in (
+        REPO_ROOT / "CLAUDE.md").read_text(encoding="utf-8")
+    assert 1 + learn.WONDER_MAX_RETRIES == 3
+    assert list(inspect.signature(learn.write_report).parameters)[:2] == ["results", "llm"]
+
+
 def test_wonder_gets_at_most_two_retries(results, llm, monkeypatch):
     calls = []
     monkeypatch.setitem(llm_module._mock_responders, learn.PURPOSE, lambda m, s: calls.append(1) or json.dumps(

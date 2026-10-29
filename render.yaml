@@ -21,6 +21,8 @@ services:
         value: 3.14.0
       - key: PHERI_LLM_MODE
         value: replay
+      - key: PHERI_PUBLIC_DEMO      # a sandbox per visitor, and the audit log names no owner
+        value: "1"
       - key: PHERI_LEDGER_PATH
         value: /tmp/pheri-ledger.sqlite
 

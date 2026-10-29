@@ -38,7 +38,7 @@ export function ApproveReject({ business, approvalId, check }: { business: strin
         </button>
       ) : check?.overridable ? (
         <>
-          <p className="text-[0.85rem] leading-snug text-amber">Failed soft checks: {softSummary(check)}.</p>
+          <p className="text-[0.85rem] leading-snug text-amber">Failed soft checks: {check.summary ?? softSummary(check)}.</p>
           <button
             onClick={() => decide("approve", true)}
             disabled={pending}

@@ -63,6 +63,13 @@ Read this before every task. These rules are not optional.
   not (kept in the test docstring). Brightdesk keeps its one outcome; its results file is pinned byte-for-byte
   (test_brightdesk_keeps_its_one_outcome_and_its_recorded_results). Proof: "Learns from replies today, corrects
   with orders later" + corrections per stage. Wonder may cite milestone facts (learn.catalogue).
+- D4 done: docs/LESSONS.md maps each Agents 101/102 lesson to file/function and test (gaps marked: per-action
+  autonomy defaults wait for Step 3; builder/reviewer split is a habit, not enforced). test_docs checks every
+  test it names exists. New: test_the_system_prompt_is_behaviour_and_the_task_is_the_brief.
+- D3 in progress: evals/gen.py (labels by code from templates; Contributor paraphrases, checked by code),
+  evals/judge_cases.py (25 supported + 25 planted, all pass code), evals/scale.py (guard on both providers,
+  per-language Wilson 95% CIs; Bhojpuri scored as Hindi family since ISO 639-1 has no code). Templates: 449
+  messages, 100 attacks, 50 judge cases. Paraphrase run stopped by low memory at 112 calls (recorded, reused).
 - Waiting on Aditi: Modal card check (no Modal deploy until then), Nepali + Hindi clips, OK to push for Render.
   Servers for screenshots: uvicorn :8000 (replay, no --reload: restart after API changes), next dev :3000.
 - Live spend: Meta $1.5019 of $130, Baseten $0.6544 of $90, Modal $0 of $25. Tests: 353 (15 skip without

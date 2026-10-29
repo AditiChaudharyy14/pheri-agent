@@ -174,9 +174,9 @@ def judge_llm(live_budget: float | None = None):
     return LLM(Settings(llm_mode="live", record_path=str(JUDGE_RECORDING), baseten_cap_usd=spent + live_budget))
 
 
-def verify_drafts(llm, judge=None) -> dict:
+def verify_drafts(llm, judge=None, cases: list[dict] | None = None) -> dict:
     """Every labelled draft through verify_draft: the expected check must fail; a clean draft must pass.
-    Profiles come from `llm` (offline); the judge is `judge` when given."""
+    Profiles come from `llm` (offline); the judge is `judge` when given. `cases`: drafts.jsonl when None."""
     from pheri.actions import ProposedAction
     from pheri.journey import stage
     from pheri.profile import build_profile, load as load_data
@@ -186,7 +186,7 @@ def verify_drafts(llm, judge=None) -> dict:
     from pheri.verify import Draft, context, verify_draft
 
     data, stores, profiles, rows = {}, {}, {}, []
-    for r in load("drafts.jsonl"):
+    for r in cases if cases is not None else load("drafts.jsonl"):
         b = r["business"]
         if b not in stores:
             data[b], stores[b] = load_data(b), MemoryStore(b)

@@ -159,6 +159,30 @@ def test_money_needs_a_stage_code_is_sure_of_so_an_unhappy_quiet_customer_gets_a
 
 
 # ---- the loop -------------------------------------------------------------------------
+def test_the_system_prompt_is_behaviour_and_the_task_is_the_brief(brightdesk, store, llm, monkeypatch):
+    """Agents 101: the system prompt says how Pheri works, the same for every customer and every business; the
+    objective (this customer, this business, today) comes only in the first user turn."""
+    firsts = []
+    real = llm.complete
+
+    def spy(items, **kw):
+        if kw["purpose"] == PURPOSE and len(items) == 2:  # a decision's first turn: system + task
+            firsts.append(list(items))
+        return real(items, **kw)
+    monkeypatch.setattr(llm, "complete", spy)
+    birgunj = load("birgunj")
+    other = next(iter(birgunj.customers))
+    decide(build_profile(brightdesk, MAYA, llm), store, llm)
+    decide(build_profile(birgunj, other, llm), MemoryStore("birgunj"), llm)
+    assert len(firsts) == 2
+    (sys_a, task_a), (sys_b, task_b) = firsts
+    assert sys_a == sys_b and sys_a["role"] == "system"  # one behaviour for everyone
+    for prompt in (sys_a["content"],):
+        assert MAYA not in prompt and other not in prompt and "Brightdesk" not in prompt and "Birgunj" not in prompt
+    a, b = json.loads(task_a["content"]), json.loads(task_b["content"])
+    assert (a["customer"], a["business"]) == (MAYA, "brightdesk") and (b["customer"], b["business"]) == (other, "birgunj")
+
+
 def test_tool_loop_replays_the_whole_conversation_statelessly(maya, store, llm, monkeypatch):
     calls = []
     real = llm.complete

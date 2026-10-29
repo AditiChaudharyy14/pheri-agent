@@ -52,6 +52,7 @@ import math
 import os
 import random
 import re
+import threading
 import time
 import uuid
 from datetime import datetime, timezone
@@ -136,6 +137,7 @@ class LLMResult:
 # A responder returns text, or {"function_calls": [{"name": ..., "arguments": {...}}]} to call tools.
 # In a tool loop it receives the whole conversation so far, as the real server sees it.
 MockFn = Callable[[list[dict], dict | None], "str | dict"]
+_RECORD_LOCK = threading.Lock()
 _mock_responders: dict[str, MockFn] = {}
 
 
@@ -575,7 +577,7 @@ class LLM:
                "reasoning_tokens": reasoning_tokens}
         path = Path(self.settings.record_path)
         path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("a", encoding="utf-8") as f:
+        with _RECORD_LOCK, path.open("a", encoding="utf-8") as f:  # whole lines, even from parallel workers
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
     def _mock_call(self, messages, purpose, schema, tools=None, previous_response_id=None, stateless=False):

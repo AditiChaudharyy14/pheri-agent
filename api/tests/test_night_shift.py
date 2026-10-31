@@ -164,3 +164,66 @@ def test_money_talk_or_a_very_late_order_waits_for_the_owner(facts, waits):
 
     reason = owner_reason(facts)
     assert (reason is None) if waits is None else (waits in reason)
+
+
+def test_a_refused_check_on_a_money_question_names_the_nudge_that_fits_and_hands_money_to_the_owner():
+    """Live, Sita Karna (wholesale, asked for a lower rate) walked the action list one refusal per turn and ran out
+    of turns. Now the first refusal says the owner decides money and which nudge fits the stage."""
+    from pheri.decide import money_hint
+
+    assert "using offer_reorder" in money_hint("birgunj", "wholesale")
+    gone_quiet = money_hint("birgunj", "gone_quiet")
+    assert "using send_checkin" in gone_quiet and "offer_discount" not in gone_quiet  # never a money action
+    assert "Promise no price, discount, refund or date" in gone_quiet
+
+
+@pytest.mark.parametrize("text,kind", [
+    ("अगले लॉट के लिए बीस कॉटन साड़ियाँ चाहिए। इस बार रेट थोड़ा कम कर दीजिए।", "rate"),
+    ("tihar ko lagi tinwata banarasi saree linchhu, 25% chhut dinus na.", "discount"),
+    ("I'll order again if you give me 30% off.", "discount"),
+    ("आएको साडीको रङ फोटोमा जस्तो छैन। पैसा फिर्ता गरिदिनुहोस्।", "refund"),
+    ("पिछली बार वाली साड़ी बहुत अच्छी थी।", None)])
+def test_code_reads_what_a_money_question_is_about(text, kind):
+    from pheri.profile import money_ask
+
+    assert money_ask(text) == kind
+
+
+def test_the_owners_two_choices_are_written_by_code_and_respect_the_discount_rule():
+    from pheri.autonomy import YOU_DECIDE, owner_options
+    from pheri.rules import MaxDiscountPct
+
+    limit = [Rule("d", "No discounts above 10%.", [MaxDiscountPct(pct=10)])]
+    assert owner_options("rate", limit) == ["Same rate as their last order", YOU_DECIDE]
+    assert owner_options("discount", limit) == ["Offer up to 10% off (your limit)", YOU_DECIDE]
+    assert owner_options("refund", []) == ["Refund once you have seen their photo", YOU_DECIDE]
+    assert owner_options(None, limit) == []
+
+
+def test_sita_karnas_rate_question_ends_in_a_holding_reply_with_two_choices_and_the_pick_is_kept(monkeypatch, tmp_path):
+    """The recorded night (replay): Sita Karna asked for a lower wholesale rate. Pheri's holding reply waits for the
+    owner with code's two choices; approving with one schedules the reply and keeps the pick; a made-up pick is
+    refused."""
+    from fastapi.testclient import TestClient
+
+    from pheri.app import create_app
+    from pheri.config import REPO_ROOT
+
+    monkeypatch.setenv("PHERI_LLM_MODE", "replay")
+    monkeypatch.setenv("PHERI_LLM_REPLAY", str(REPO_ROOT / "data" / "recorded" / "llm.jsonl"))
+    monkeypatch.setenv("PHERI_LEDGER_PATH", str(tmp_path / "ledger.sqlite"))
+    monkeypatch.delenv("PHERI_LLM_RECORD", raising=False)
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    api = TestClient(create_app(LLM(Settings())))
+    sita = next(c for c in api.get("/businesses/birgunj/next-steps").json() if c["customer"]["name"] == "Sita Karna")
+    assert sita["decision"]["action"] == "offer_reorder" and sita["verification"]["passed"]
+    assert sita["turns"] <= 5 and sita["approval"]["decision"] == "pending"
+    assert sita["owner_options"] == ["Same rate as their last order", "You decide, and reply to them yourself"]
+    pid = sita["approval"]["id"]
+    bad = api.post(f"/businesses/birgunj/approvals/{pid}/approve", json={"by": "owner:test", "choice": "50% off"})
+    assert bad.status_code == 409
+    ok = api.post(f"/businesses/birgunj/approvals/{pid}/approve",
+                  json={"by": "owner:test", "choice": "Same rate as their last order"})
+    assert ok.status_code == 200 and ok.json()["status"] == "scheduled"
+    again = api.get(f"/businesses/birgunj/customers/{sita['customer']['key']}/decision").json()
+    assert again["owner_choice"] == "Same rate as their last order"

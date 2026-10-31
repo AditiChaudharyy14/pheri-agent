@@ -401,6 +401,19 @@ def mentions_money(text: str) -> bool:
     return any(w in low for w in MONEY_TALK)
 
 
+MONEY_KINDS = (("refund", ("refund", "return", "firta", "फिर्ता", "वापस", "लौटा")),
+               ("discount", ("discount", "% off", "%", "chhut", "छूट", "छुट")),
+               ("rate", ("rate", "रेट", "पइसा", "price", "दाम")))
+
+
+def money_ask(text: str) -> str | None:
+    """What a money question is about, for the owner's choices: refund, discount or rate (None: not money)."""
+    if not mentions_money(text):
+        return None
+    low = text.casefold()
+    return next((kind for kind, words in MONEY_KINDS if any(w in low for w in words)), "rate")
+
+
 def mentions_price(text: str) -> bool:
     low = text.casefold()
     return any(w in low for w in PRICE_WORDS)
@@ -543,6 +556,7 @@ class Profile:
     provenance: dict
     model: str | None = None  # None when there was nothing to read
     pronouns: str | None = None  # as the customer gave them, e.g. "she/her"; None: use their name
+    money_ask: str | None = None  # refund | discount | rate: for the owner's choices; never shown to the model
 
     def as_dict(self) -> dict:
         return dataclasses.asdict(self)
@@ -575,7 +589,9 @@ def build_profile(ds: Dataset, key: str, llm: LLM, today: date = TODAY, private:
                   "facts": fact_prov, "sources": [s.id for s in sources], "dropped": dropped}
     if unread:
         provenance["unread"] = unread
-    return Profile(ds.business, c.key, c.name, c.company, facts, insights, provenance, model, c.pronouns)
+    newest = next((s for s in c.sources if s.id in (fact_prov.get("asks_about_money") or [])), None)
+    money = money_ask(newest.text) if facts.get("asks_about_money") and newest and newest.text else None
+    return Profile(ds.business, c.key, c.name, c.company, facts, insights, provenance, model, c.pronouns, money)
 
 
 def build_profiles(ds: Dataset, llm: LLM, keys: list[str] | None = None, limit: int = 20,

@@ -276,7 +276,8 @@ function NeedYou({ business, step }: { business: string; step: NextStepWithTime 
         </div>
         {step.approval?.decision === "pending" && !task && (
           <div className="sm:w-48">
-            <ApproveReject business={business} approvalId={step.approval.id} check={step.action?.payload.verification} />
+            <ApproveReject business={business} approvalId={step.approval.id} check={step.action?.payload.verification}
+                           options={step.owner_options ?? []} />
           </div>
         )}
       </div>
@@ -294,7 +295,7 @@ function Ready({ business, step, sent = false }: { business: string; step: NextS
           <span className="text-[0.92rem] text-ink-2">· {actionLabel(d.action)}</span>
         </span>
         <span className="shrink-0 text-[0.85rem] text-teal-ink">
-          {step.approval?.decision === "approved" ? "✓ approved by you, " : ""}
+          {step.approval?.decision === "approved" ? `✓ approved by you${step.owner_choice ? ` (${step.owner_choice.toLowerCase()})` : ""}, ` : ""}
           {sent ? (step.approval?.decision === "approved" ? "sent" : "✓ sent") : `${step.sends_at_local ?? "8:00"} their time`}
         </span>
       </summary>

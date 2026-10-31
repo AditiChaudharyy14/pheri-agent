@@ -35,7 +35,7 @@ from typing import Literal
 from pydantic import BaseModel, ValidationError, create_model, field_validator
 
 from .actions import ALL_CHANNELS, BUSINESS_ACTIONS, CATALOG, CHANNELS, ESCALATE, ProposedAction
-from .autonomy import escalate, modes, open_escalation, sent_messages, submit, owner_reason
+from .autonomy import escalate, modes, open_escalation, owner_options, owner_reason, sent_messages, submit
 from .verify import (FEEDBACK_HEAD, NO_QUOTES, Draft, attach_evidence, fact_names, feedback,  # noqa: F401
                      message_problems, middle_step, quote_index, unsupported_numbers, verify_draft)
 from .verify import context as verify_context
@@ -206,6 +206,20 @@ def _allowed_view(store) -> dict:
             "owner_rules": [describe(c) for r in active_rules(store) for c in r.checks]}
 
 
+def money_hint(business: str, stage: str) -> str:
+    """For a customer who asked about money, after a refused check: the owner decides the money; reply with a
+    nudge that fits the stage (never a money action), and promise nothing."""
+    from .verify import THRESHOLDS, action_class, middle_step_scores
+
+    row = middle_step_scores(business).get(stage, {"plan_scores": {}})
+    need = THRESHOLDS[business]["nudge"]
+    fits = [a for a, s in row["plan_scores"].items() if action_class(a) == "nudge" and s + 1e-9 >= need]
+    use = f"using {' or '.join(fits)}" if fits else "using task_for_owner"
+    return ("They asked about money (a rate, a refund or money off): the owner decides that, not you, so stop "
+            f"trying actions. Answer now with a short holding reply {use}: say their request is noted and the owner "
+            "replies this morning. Promise no price, discount, refund or date.")
+
+
 @dataclass
 class _Run:
     profile: Profile
@@ -260,6 +274,10 @@ class _Run:
             if ms["applies"]:
                 out["middle_step"] = {"stage": ms["stage"], "stage_score": round(ms["stage_score"], 2),
                                       "plan_score": round(ms["plan_score"], 2), "needs": ms["threshold"]}
+            if not out["allowed"] and self.profile.facts.get("asks_about_money"):
+                # Seen live: a money question with no fitting plan, so the model walked the action list one refusal
+                # per turn and ran out of turns. Money is the owner's: say so, and name the nudges that fit.
+                out["owner_decides"] = money_hint(self.store.business, self.journey.stage)
             self.prechecks.append(out)
             self.store.audit("pheri", "rule_precheck", "customer", self.profile.customer_key,
                              {**out, "channel": args.channel, "discount_pct": args.discount_pct})
@@ -367,8 +385,9 @@ def decide(p: Profile, store, llm: LLM, now: datetime = NOW, data_class: str = "
     action = None
     if decision.action != "no_action":
         why_owner = owner_reason(p.facts)  # money talk or a very late order: the owner signs off, whatever the dial
+        options = owner_options(p.money_ask, active_rules(store)) if why_owner else []  # code's, not the model's
         action = submit(store, p.customer_key, draft, verify=vc, cap="ask_owner" if why_owner else None,
-                        cap_reason=why_owner)  # verifies again, itself, before anything happens
+                        cap_reason=why_owner, options=options)  # verifies again, itself, before anything happens
     judge_cost = sum(a["verification"]["judge_cost_usd"] for a in run.attempts)
     return Outcome(p.customer_key, _as_sent(decision, draft), action, v.evidence, v.dropped, turns, fallback,
                    run.prechecks,

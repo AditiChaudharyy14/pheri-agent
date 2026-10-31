@@ -134,6 +134,7 @@ export const factValue = (fact: string, v: unknown) => {
   if (fact === "usage_change_pct" && typeof v === "number") return `${v > 0 ? "+" : ""}${v}%`;
   if (fact === "journey_stage") return stageLabel(String(v));
   if (typeof v === "boolean") return v ? "yes" : "no";
+  if (v === "True" || v === "False") return v === "True" ? "yes" : "no"; // evidence values arrive as Python's text
   return String(v);
 };
 

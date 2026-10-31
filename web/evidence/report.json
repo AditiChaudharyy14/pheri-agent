@@ -31,7 +31,7 @@
     },
     "success": {
       "status": "pass",
-      "evidence": "success-*.png: on Birgunj, Approve on the first card that needs the owner (taken last, after every other page, because approving changes the server's state). It is 07:30 and quiet hours end at 08:00, so the reply moves to 'Ready at 8:00' marked '✓ approved by you, 08:00 their time', and 'need you' drops from 5 to 4."
+      "evidence": "success-*.png: on Birgunj, the first card is Sita Karna's wholesale rate question: Pheri's holding reply waits with code's two choices ('Same rate as their last order' / 'You decide, and reply to them yourself'). Picking the first (taken last, after every other page, because approving changes the server's state) moves the reply to 'Ready at 8:00' marked '✓ approved by you (same rate as their last order), 08:00 their time'; need you drops from 5 to 4."
     },
     "permission": {
       "status": "pass",
@@ -42,7 +42,7 @@
     {
       "viewport": "390x844",
       "artifact": "morning-390x844.png",
-      "observation": "Morning brief on a phone: 22 messages and 1 voice note read, 16 ready at 8:00, 5 need you, 1 stopped by a rule (do-not-contact), 3 attacks stopped; partial banner; owner tasks from the turn limit say 'No message drafted: handed to you'."
+      "observation": "Morning brief on a phone: 22 messages and 1 voice note read, 16 ready at 8:00, 5 need you (money questions carry a holding reply and two choices written by code), 1 stopped by a rule (do-not-contact), 3 attacks stopped; partial banner."
     },
     {
       "viewport": "1440x900",
@@ -132,12 +132,12 @@
     {
       "viewport": "390x844",
       "artifact": "success-390x844.png",
-      "observation": "After Approve on Birgunj: the card moves to Ready at 8:00, '✓ approved by you, 08:00 their time'."
+      "observation": "After picking 'Same rate as their last order' on Sita Karna's card: Ready at 8:00, '✓ approved by you (same rate as their last order)'."
     },
     {
       "viewport": "1440x900",
       "artifact": "success-1440x900.png",
-      "observation": "After Approve on Birgunj: the card moves to Ready at 8:00, '✓ approved by you, 08:00 their time'."
+      "observation": "After picking 'Same rate as their last order' on Sita Karna's card: Ready at 8:00, '✓ approved by you (same rate as their last order)'."
     }
   ]
 }

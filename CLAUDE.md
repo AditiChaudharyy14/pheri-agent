@@ -98,13 +98,22 @@ Read this before every task. These rules are not optional.
   (payload waits_for_owner). Recorded live (Meta ~$0.83, Baseten ~$0.20): 16 ready at 08:00, 5 need you (2 are
   turn-limit owner tasks, footer "No message drafted"), 3 attacks stopped, 1 rule moment (do-not-contact; the model
   never tried > 10%, so no discount block, not faked), 10 customers with real caught-and-rewritten drafts on the
-  Night shift timeline. Recorder: same request twice in a run reuses its reply; refusals recorded; the pruned file
-  is re-checked in a fresh process and restored if anything misses. Recording 225 replies.
+  Night shift timeline.
+- Money hand-offs fixed (31 Oct): root cause was check_rules refusing a plan with no hint of what fits, so the
+  model walked the action list one refusal per turn and ran out (Sita Karna, Kiran Chaudhary). Now a refused check
+  for a customer who asked about money carries owner_decides (decide.money_hint: the owner decides money; reply
+  with a nudge that fits the stage; promise nothing). Only those 2 conversations changed (re-recorded, Meta
+  $0.07): Sita offer_reorder in 4 turns, Kiran send_checkin (3 drafts), both verified holding replies. Money
+  questions carry two owner choices written by code (autonomy.owner_options from profile.money_ask: rate /
+  discount, capped by the rule / refund, plus 'You decide'); approve(choice=...) checks the pick and audits it;
+  the card shows it. The general fix (a hint on every refused plan) would change 7 more recordings: not done.
+  Recorder: same request twice in a run reuses its reply; refusals recorded; the pruned file
+  is re-checked in a fresh process and restored if anything misses. Recording 228 replies.
 - Waiting on Aditi: Nepali + Hindi clips; native review of Birgunj strings; Render clicks.
   Screenshots: uvicorn :8000 (replay), then `npm run build && npm start` (not the dev server), then
   `node scripts/evidence.mjs evidence [state]`; one heavy process at a time; restart the API before retaking
   (approving changes its state; the script approves last).
-- Live spend: Meta $5.6666 of $130, Baseten $3.2073 of $90, Modal $0 of $25. Tests: 386 (Postgres tests run when
+- Live spend: Meta $5.7159 of $130, Baseten $3.2292 of $90, Modal $0 of $25. Tests: 394 (Postgres tests run when
   PHERI_TEST_DATABASE_URL is set).
 
 ## What we are building

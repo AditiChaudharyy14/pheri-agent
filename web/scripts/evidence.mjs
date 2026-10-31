@@ -51,7 +51,8 @@ if (state === "main") {
   for (const [i, [vp, size]] of Object.entries(VIEWPORTS).entries()) {
     const page = await browser.newPage({ viewport: size, deviceScaleFactor: 1 });
     await page.goto(BASE + "/birgunj", { waitUntil: "networkidle" });
-    const approve = page.getByRole("button", { name: /^(Approve|Send anyway)$/ }).first();
+    // the first card (Sita Karna's rate question) is approved with one of code's two choices
+    const approve = page.getByRole("button", { name: /^(Same rate as their last order|Approve|Send anyway)$/ }).first();
     if (i === 0 && await approve.count()) {
       await approve.click();
       await page.waitForLoadState("networkidle");

@@ -50,6 +50,24 @@ def owner_reason(facts: dict) -> str | None:
     return None
 
 
+YOU_DECIDE = "You decide, and reply to them yourself"
+
+
+def owner_options(money_ask: str | None, rules: list) -> list[str]:
+    """The owner's two choices for a money question, written by code (never by a model). Pheri's holding reply
+    promises nothing; the owner picks what follows, and the pick is kept in the audit log."""
+    from .rules import MaxDiscountPct
+
+    if money_ask == "rate":
+        return ["Same rate as their last order", YOU_DECIDE]
+    if money_ask == "discount":
+        cap = min((c.pct for r in rules for c in r.checks if isinstance(c, MaxDiscountPct)), default=None)
+        return [f"Offer up to {cap:g}% off (your limit)" if cap else "Offer a small discount", YOU_DECIDE]
+    if money_ask == "refund":
+        return ["Refund once you have seen their photo", YOU_DECIDE]
+    return []
+
+
 def mode_for(store, kind: str, saved: dict[str, str] | None = None) -> str:
     saved = store.autonomy_modes() if saved is None else saved
     return saved.get(kind, BUSINESS_MODES.get(store.business, {}).get(kind, DEFAULT_MODES.get(kind, DEFAULT_MODE)))
@@ -81,7 +99,7 @@ def _payload(a: ProposedAction) -> dict:
 
 
 def submit(store, customer_key: str, draft: Draft, *, verify: VerifyContext, cap: str | None = None,
-           actor: str = "pheri", cap_reason: str | None = None) -> dict:
+           actor: str = "pheri", cap_reason: str | None = None, options: list[str] | None = None) -> dict:
     """Verify the draft, check the rules in code, then the dial. Returns the stored action. `cap` limits the mode.
     verify_draft runs here, whoever calls: the model has no way to skip it or to call it."""
     action, ctx = draft.action, verify.ctx
@@ -91,6 +109,8 @@ def submit(store, customer_key: str, draft: Draft, *, verify: VerifyContext, cap
     payload = {**_payload(action), "verification": v.record()}
     if cap_reason:
         payload["waits_for_owner"] = cap_reason
+    if options:
+        payload["owner_options"] = list(options)
     with store.tx():  # rules, dial and writes from one consistent view
         result = check(active_rules(store), action, ctx)
         mode = at_most(mode_for(store, action.kind), cap if t and t.customer_facing else None)
@@ -179,7 +199,7 @@ def _execute(store, action_id: str, now: datetime, actor: str, override: dict | 
 
 
 def approve(store, approval_id: str, by: str, context_for: Callable[[str], CheckContext],
-            override: bool = False) -> dict:
+            override: bool = False, choice: str | None = None) -> dict:
     """The owner says yes. The rules are checked again now, in code, before anything happens.
     A draft that failed verification: refused if any hard check failed; sent only with override=True if every
     failed check is soft, and then logged as an owner override."""
@@ -197,10 +217,14 @@ def approve(store, approval_id: str, by: str, context_for: Callable[[str], Check
             if not override:
                 raise ValueError(f"This draft failed soft checks ({', '.join(v['soft_failed'])}). Read it, then send "
                                  "it anyway with an owner override, or reject it.")
+        if choice is not None and choice not in (p.get("owner_options") or []):
+            raise ValueError(f"{choice!r} is not one of the choices for this step: "
+                             + (", ".join(p.get("owner_options") or []) or "it has none"))
         proposed = ProposedAction(kind=action["kind"], channel=p.get("channel"), discount_pct=p.get("discount_pct"),
                                   message=p.get("message", ""))  # from now, not from the time first planned
         store.decide_approval(approval_id, "approved", by)
-        store.audit(by, "approved", "action", action["id"], {"approval_id": approval_id})
+        store.audit(by, "approved", "action", action["id"],
+                    {"approval_id": approval_id, **({"choice": choice} if choice else {})})
         if action["kind"] == ESCALATE:  # the owner has read it and dealt with it; nothing goes out
             store.set_action(action["id"], "executed", executed_at=context_for(action["customer_key"]).now)
             store.audit(by, "escalation_closed", "action", action["id"], {})

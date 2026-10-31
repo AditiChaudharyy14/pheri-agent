@@ -84,6 +84,8 @@ class By(BaseModel):
 
 class ApproveIn(By):
     override: bool = Field(default=False, description="send a draft that failed only soft checks, as an owner override")
+    choice: str | None = Field(default=None, max_length=200,
+                               description="for a money question: which of the step's owner_options the owner picked")
 
 
 class RejectIn(By):
@@ -378,7 +380,7 @@ def create_app(llm: LLM | None = None) -> FastAPI:
             try:
                 # The re-check needs code-computed facts only: approving never costs a model call.
                 return approve(state.stores[b], approval_id, state.who(body.by), context_for=lambda k: ctx_for(b, k),
-                               override=body.override)
+                               override=body.override, choice=body.choice)
             except NotFound:
                 raise HTTPException(404, f"no approval {approval_id!r}") from None
             except ValueError as exc:
@@ -515,6 +517,8 @@ def create_app(llm: LLM | None = None) -> FastAPI:
                   for i, a in enumerate(out.get("attempts") or [])]
         return {"sends_at_local": sends_at, "drafts": drafts,
                 "waits_for_owner": (action or {}).get("payload", {}).get("waits_for_owner"),
+                "owner_options": (action or {}).get("payload", {}).get("owner_options") or [],
+                "owner_choice": owner_choice(b, action),
                 "customer": {"key": k, "name": cu.name, "company": cu.company, "town": cu.attrs.get("town"),
                              "stage": state.stages[b][k].stage},
                 "decision": out["decision"], "evidence": receipts(b, cu, out["evidence"]), "action": action,
@@ -523,6 +527,13 @@ def create_app(llm: LLM | None = None) -> FastAPI:
                 "private": out["private"], "cost_usd": out["cost_usd"], "turns": out["turns"],
                 "decided_by": decided_by(out), "verification": verification_line(out),
                 "override": override_of(b, action)}
+
+    def owner_choice(b: str, action: dict | None) -> str | None:
+        """What the owner picked when approving a money question (from the audit log), or None."""
+        if not action:
+            return None
+        return next((e["details"]["choice"] for e in reversed(state.stores[b].audit_log(action["id"]))
+                     if e["event"] == "approved" and (e["details"] or {}).get("choice")), None)
 
     def receipts(b: str, cu, evidence: list[dict]) -> list[dict]:
         """A receipt for each piece of evidence, in the owner's terms: the order numbers a fact was counted from,

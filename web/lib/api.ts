@@ -206,7 +206,8 @@ export const pct = (r: number | null | undefined, digits = 1) => (r == null ? "â
 export const pp = (v: number | null | undefined) => (v == null ? "â€”" : `${v > 0 ? "+" : ""}${v.toFixed(1)}`);
 export const usd = (v: number) => `$${v.toFixed(4)}`;
 
-export type NextStepWithTime = NextStep & { sends_at_local?: string | null; waits_for_owner?: string | null };
+export type NextStepWithTime = NextStep & { sends_at_local?: string | null; waits_for_owner?: string | null;
+  owner_options?: string[]; owner_choice?: string | null };
 export type Brief = {
   night: string; morning: string;
   read: { messages: number; by_language: Record<string, number>; voice_notes: { read: number; unreadable: number } };

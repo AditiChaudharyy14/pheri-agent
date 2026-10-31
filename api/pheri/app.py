@@ -500,13 +500,38 @@ def create_app(llm: LLM | None = None) -> FastAPI:
         action = store.get_action(out["action"]["id"]) if out.get("action") else None  # live status, not cached
         approval = next((a for a in store.approvals(pending_only=False) if action and a["action_id"] == action["id"]),
                         None)
-        return {"customer": {"key": k, "name": cu.name, "company": cu.company, "stage": state.stages[b][k].stage},
-                "decision": out["decision"], "evidence": out["evidence"], "action": action,
+        return {"customer": {"key": k, "name": cu.name, "company": cu.company, "town": cu.attrs.get("town"),
+                             "stage": state.stages[b][k].stage},
+                "decision": out["decision"], "evidence": receipts(b, cu, out["evidence"]), "action": action,
                 "approval": approval, "skipped": out["skipped"], "fallback": out["fallback"],
                 "unsupported_numbers": out["unsupported_numbers"], "message_problems": out["message_problems"],
                 "private": out["private"], "cost_usd": out["cost_usd"], "turns": out["turns"],
                 "decided_by": decided_by(out), "verification": verification_line(out),
                 "override": override_of(b, action)}
+
+    def receipts(b: str, cu, evidence: list[dict]) -> list[dict]:
+        """A receipt for each piece of evidence, in the owner's terms: the order numbers a fact was counted from,
+        or where and when the customer wrote a quote (never an internal row or message id)."""
+        _, prov = compute_facts(cu, b)
+        orders = {o["_ref"]: o["order_id"] for o in cu.orders}
+        sources = {src.id: src for src in cu.sources}
+        out = []
+        for e in evidence:
+            r = None
+            if e["kind"] == "fact":
+                refs = prov.get(e["ref"], [])
+                ids = [orders[x] for x in refs if x in orders]
+                if ids:
+                    r = {"kind": "order", "ids": ids[-3:], "more": max(0, len(ids) - 3)}
+                elif cal := next((x for x in refs if x.startswith("calendar:")), None):
+                    r = {"kind": "calendar", "name": cal.split(":", 1)[1].split("_")[0]}
+                elif any(x.startswith("events.jsonl") for x in refs):
+                    r = {"kind": "activity"}
+            elif e["kind"] == "quote" and (src := sources.get(e.get("ref"))):
+                r = {"kind": "message", "channel": src.channel or ("email" if src.kind == "ticket" else None),
+                     "at": src.at, "lang": src.lang, "from_staff": src.kind == "sales_note"}
+            out.append({**e, "receipt": r})
+        return out
 
     def override_of(b: str, action: dict | None) -> dict | None:
         """An owner's override of soft checks, from the audit log: who, when, what, and the text sent."""

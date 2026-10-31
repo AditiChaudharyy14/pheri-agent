@@ -72,7 +72,16 @@ Read this before every task. These rules are not optional.
   Bhojpuri 55% vs 90%, Roman Nepali 80% vs 90%; false alarms 0/591 vs 2/591. Judge: 24/25 planted caught (JP10
   missed), 25/25 supported passed. Pinned in test_evals; table in README. Cost: Meta $1.91 + $0.05 paraphrase,
   Baseten $1.75 (guard + judge).
-- Waiting on Aditi: Modal card check (no Modal deploy until then), Nepali + Hindi clips, OK to push for Render.
+- Guard v2 (dev-only tuning; 140 attacks, 40 each bho/ne-Latn, seeded dev/test split): code screen test 14/71 -> 68/71,
+  full guard test 62 -> 70 (Spark 1.3), 69 -> 70 (Spark Open), false alarms unchanged. Defence in depth
+  (evals/pipeline.py, code screen off, everything act_alone): Spark Open 140/140, 6 past the guard, 0 sent, 0 harmful;
+  Spark 1.3 stopped at 74/140 (partial, by choice): 7 past, 3 sent (ordinary), 0 harmful. Bug found and fixed: a
+  cut-off profile reading no longer crashes a decision.
+- Sat A done: Birgunj first; nav Morning / Night shift / Rules / Proof (Safety -> Night shift); receipt chips
+  (order numbers, or the customer's words with channel and date; no internal ids); status palette teal / marigold /
+  vermilion; phone layout (390 px) for the shell, cards and customer page.
+- Modal: its billing docs say a payment method is required for all usage (no Modal deploy).
+- Waiting on Aditi: Nepali + Hindi clips, OK to push for Render.
   Servers for screenshots: uvicorn :8000 (replay, no --reload: restart after API changes), next dev :3000.
 - Live spend: Meta $3.4748 of $130, Baseten $2.4014 of $90, Modal $0 of $25. Tests: 356 (15 skip without
   Postgres, 1 strict xfail: Birgunj's night not recorded yet).

@@ -36,14 +36,14 @@ async function ModePill() {
 function Frame({ business, right, nav }: { business?: string; right?: React.ReactNode; nav?: React.ReactNode }) {
   return (
     <header className="sticky top-0 z-10 border-b border-line bg-paper/95 backdrop-blur">
-      <div className="mx-auto flex max-w-[1240px] items-center justify-between gap-6 px-10 pt-4 pb-3">
+      <div className="mx-auto flex max-w-[1240px] flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 pt-3 pb-2 lg:px-10 lg:pt-4 lg:pb-3">
         <Link href={business ? `/${business}` : "/"} className="flex items-baseline gap-3">
           <span className="font-serif text-[1.7rem] font-semibold text-ink">Pheri</span>
           <span className="hidden text-[0.85rem] text-muted xl:inline">the next step for every customer, inside your rules</span>
         </Link>
         {right}
       </div>
-      <div className="mx-auto h-[3.25rem] max-w-[1240px] px-9 pb-3">{nav}</div>
+      <div className="mx-auto max-w-[1240px] px-3 pb-2 lg:px-9 lg:pb-3">{nav}</div>
     </header>
   );
 }
@@ -53,7 +53,7 @@ async function Footer({ params }: { params: LayoutProps<"/[business]">["params"]
   const { business } = await params;
   if (!isBusiness(business)) return null;
   return (
-    <footer className="mx-auto max-w-[1240px] border-t border-line px-10 py-6 text-[0.88rem] text-muted">
+    <footer className="mx-auto max-w-[1240px] border-t border-line px-4 py-6 text-[0.88rem] text-muted lg:px-10">
       <Link href={`/${business}/spend`} className="hover:text-teal-ink">
         Built on free credits: what every model call cost →
       </Link>
@@ -69,7 +69,7 @@ async function Header({ params }: { params: LayoutProps<"/[business]">["params"]
     <Frame
       business={business}
       right={
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-2 lg:gap-4">
           <Suspense fallback={null}>
             <ModePill />
           </Suspense>
@@ -87,7 +87,7 @@ export default function BusinessLayout({ children, params }: LayoutProps<"/[busi
       <Suspense fallback={<Frame />}>
         <Header params={params} />
       </Suspense>
-      <main className="mx-auto max-w-[1240px] px-10 py-10">{children}</main>
+      <main className="mx-auto max-w-[1240px] px-4 py-6 lg:px-10 lg:py-10">{children}</main>
       <Suspense fallback={null}>
         <Footer params={params} />
       </Suspense>

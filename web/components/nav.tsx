@@ -4,11 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BUSINESSES, type Business } from "@/lib/api";
 
-// The agent's work first; Journey is reached from a customer, Spend from the footer.
+// The owner's morning first, then what happened overnight. Journey is reached from a customer, Spend from the footer.
 const LINKS = [
-  { href: "", label: "Next steps" },
+  { href: "", label: "Morning" },
+  { href: "/night", label: "Night shift" },
   { href: "/rules", label: "Rules" },
-  { href: "/safety", label: "Safety" },
   { href: "/proof", label: "Proof" },
 ];
 
@@ -16,7 +16,7 @@ export function Nav({ business }: { business: Business }) {
   const path = usePathname();
   const base = `/${business}`;
   return (
-    <nav className="flex items-center gap-1" aria-label="Sections">
+    <nav className="-mx-1 flex items-center gap-1 overflow-x-auto" aria-label="Sections">
       {LINKS.map((l) => {
         const href = base + l.href;
         const active = l.href === "" ? path === base || path.startsWith(`${base}/customers`) : path.startsWith(href);
@@ -25,7 +25,7 @@ export function Nav({ business }: { business: Business }) {
             key={l.label}
             href={href}
             aria-current={active ? "page" : undefined}
-            className={`rounded-full px-4 py-2 text-[0.95rem] transition-colors ${
+            className={`shrink-0 rounded-full px-4 py-2 text-[0.95rem] whitespace-nowrap transition-colors ${
               active ? "bg-teal-soft text-teal-ink font-medium" : "text-ink-2 hover:bg-sunk"
             }`}
           >
@@ -43,13 +43,13 @@ export function BusinessSwitch({ business }: { business: Business }) {
   const rest = path.replace(`/${business}`, "");
   const target = (b: Business) => `/${b}${rest.startsWith("/customers") ? "" : rest}`;
   return (
-    <div className="flex rounded-full border border-line bg-surface p-1" role="group" aria-label="Business">
+    <div className="flex shrink-0 rounded-full border border-line bg-surface p-1" role="group" aria-label="Business">
       {(Object.keys(BUSINESSES) as Business[]).map((b) => (
         <Link
           key={b}
           href={target(b)}
           aria-current={b === business ? "true" : undefined}
-          className={`rounded-full px-4 py-1.5 text-[0.95rem] ${
+          className={`rounded-full px-3 py-1.5 text-[0.85rem] whitespace-nowrap sm:px-4 sm:text-[0.95rem] ${
             b === business ? "bg-ink text-paper font-medium" : "text-ink-2 hover:bg-sunk"
           }`}
         >

@@ -8,7 +8,6 @@ import { api, customerPath, type CustomerDetail, type Insight, type NextStep, ty
 import { actionLabel, CHANNEL_LABEL, factLabel, factValue, STATUS_LABEL } from "@/lib/labels";
 
 type Params = PageProps<"/[business]/customers/[key]">["params"];
-const SHOWN_REFS = 2;
 
 export default function CustomerPage({ params }: PageProps<"/[business]/customers/[key]">) {
   return (
@@ -30,13 +29,13 @@ async function Customer({ params }: { params: Params }) {
   const first = c.name.split(" ")[0];
   return (
     <>
-      <header className="mb-8 flex items-end justify-between gap-6">
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-4 lg:mb-8">
         <div>
           <Link href={`/${business}`} className="text-[0.92rem] text-muted hover:text-teal-ink">
             ← Next steps
           </Link>
           <div className="mt-2 flex flex-wrap items-baseline gap-4">
-            <h1 className="text-[2.6rem] leading-tight font-medium">{c.name}</h1>
+            <h1 className="text-[2rem] leading-tight font-medium lg:text-[2.6rem]">{c.name}</h1>
             {c.company && <span className="text-[1.15rem] text-ink-2">{c.company}</span>}
             <StageBadge stage={c.journey.stage} />
             {c.do_not_contact && <Badge tone="rose">Asked not to be contacted</Badge>}
@@ -50,7 +49,7 @@ async function Customer({ params }: { params: Params }) {
         </Link>
       </header>
 
-      <div className="grid grid-cols-[1fr_420px] items-start gap-8">
+      <div className="grid items-start gap-6 lg:grid-cols-[1fr_420px] lg:gap-8">
         <div className="space-y-6">
           <Card>
             <div className="flex items-baseline justify-between gap-4">
@@ -79,23 +78,11 @@ async function Customer({ params }: { params: Params }) {
             <table className="mt-4 w-full text-[0.95rem]">
               <tbody>
                 {Object.entries(c.facts).map(([f, v]) => {
-                  const refs = p.provenance.facts[f] ?? [];
                   return (
                     <tr key={f} className="border-t border-line align-top">
                       <td className="py-2.5 pr-4 text-ink-2">{factLabel(f)}</td>
                       <td className="py-2.5 pr-4 font-medium text-ink">{factValue(f, v)}</td>
-                      <td className="py-2.5 text-right">
-                        <span className="inline-flex flex-wrap justify-end gap-1.5">
-                          {refs.slice(0, SHOWN_REFS).map((r) => (
-                            <span key={r} className="rounded-md bg-sunk px-2 py-0.5 font-mono text-[0.76rem] text-muted">
-                              {r}
-                            </span>
-                          ))}
-                          {refs.length > SHOWN_REFS && (
-                            <span className="px-1 text-[0.8rem] text-muted">+{refs.length - SHOWN_REFS} more</span>
-                          )}
-                        </span>
-                      </td>
+
                     </tr>
                   );
                 })}
@@ -198,7 +185,7 @@ function Quotes({ profile }: { profile: Profile }) {
   return (
     <ul className="mt-4 space-y-3">
       {rows.map(({ title, i, n }) => (
-        <li key={`${title}-${i.source_id}-${n}`} className="grid grid-cols-[7rem_1fr_auto] items-baseline gap-4 border-t border-line pt-3">
+        <li key={`${title}-${i.source_id}-${n}`} className="grid grid-cols-[6rem_1fr] items-baseline gap-4 border-t border-line pt-3">
           <span className="text-[0.85rem] text-muted">
             {title}
             {i.label && title !== "Language" && i.label.length <= 40 && !i.quote.startsWith(i.label) ? (
@@ -207,7 +194,6 @@ function Quotes({ profile }: { profile: Profile }) {
             {title === "Language" && i.code ? <span className="block text-ink-2">{i.code}</span> : null}
           </span>
           <span className="font-serif text-[1.08rem] leading-snug text-ink">&ldquo;{i.quote}&rdquo;</span>
-          <span className="font-mono text-[0.78rem] text-muted">{i.source_id}</span>
         </li>
       ))}
     </ul>

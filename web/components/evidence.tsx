@@ -1,36 +1,45 @@
-import type { Evidence } from "@/lib/api";
-import { factLabel, factValue } from "@/lib/labels";
-import { Chip } from "./ui";
+import type { Evidence, Receipt } from "@/lib/api";
+import { CHANNEL_NAME, factLabel, factValue, langOf } from "@/lib/labels";
 
-/** The facts and verified quotes code attached to a decision. The model picked them by id; code filled them in. */
+/** Every claim carries its receipt: the customer's own words (in their script) with where and when they wrote it,
+ * or the shop's order numbers a fact was counted from. The model picked the evidence by id; code filled it in. */
 export function EvidenceChips({ evidence }: { evidence: Evidence[] }) {
-  if (!evidence.length) return <p className="text-[0.92rem] text-muted">No evidence attached.</p>;
-  const facts = evidence.filter((e) => e.kind === "fact");
-  const quotes = evidence.filter((e) => e.kind === "quote");
+  const shown = evidence.filter((e) => e.ref !== "journey_stage");
+  if (!shown.length) return <p className="text-[0.92rem] text-muted">No receipts attached.</p>;
+  const facts = shown.filter((e) => e.kind === "fact");
+  const quotes = shown.filter((e) => e.kind === "quote");
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-2">
+      {quotes.map((e) => (
+        <figure key={e.quote_id ?? e.value} className="rounded-lg border border-line bg-paper px-3 py-2">
+          <blockquote lang={e.receipt?.kind === "message" ? langOf(e.receipt.lang) : undefined}
+                      className="font-serif text-[1.05rem] leading-snug text-ink">
+            &ldquo;{e.value}&rdquo;
+          </blockquote>
+          <figcaption className="mt-1 text-[0.8rem] text-muted">{receiptText(e.receipt)}</figcaption>
+        </figure>
+      ))}
       {facts.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        <ul className="flex flex-wrap gap-2">
           {facts.map((e) => (
-            <Chip key={e.ref} title="A fact counted in code">
+            <li key={e.ref} className="inline-flex max-w-full flex-wrap items-baseline gap-x-1.5 rounded-lg border border-line bg-paper px-2.5 py-1 text-[0.85rem]">
               <span className="text-muted">{factLabel(e.ref)}</span>
               <span className="font-medium text-ink">{factValue(e.ref, e.ref === "usage_change_pct" ? Number(e.value) : e.value)}</span>
-            </Chip>
-          ))}
-        </div>
-      )}
-      {quotes.length > 0 && (
-        <ul className="space-y-1.5">
-          {quotes.map((e) => (
-            <li key={e.quote_id ?? e.value} className="flex items-baseline gap-2 text-[0.95rem] text-ink-2">
-              <span className="font-serif text-[1.05rem] text-ink">&ldquo;{e.value}&rdquo;</span>
-              <span className="shrink-0 font-mono text-[0.78rem] text-muted" title="The message it is quoted from">
-                {e.ref}
-              </span>
+              {e.receipt && <span className="text-[0.78rem] text-muted">· {receiptText(e.receipt)}</span>}
             </li>
           ))}
         </ul>
       )}
     </div>
   );
+}
+
+function receiptText(r: Receipt | null | undefined): string {
+  if (!r) return "counted from the shop's records";
+  if (r.kind === "order") return `order ${r.ids.join(", ")}${r.more ? ` +${r.more} more` : ""}`;
+  if (r.kind === "calendar") return "festival calendar";
+  if (r.kind === "activity") return "catalogue activity";
+  if (r.from_staff) return "a note by the team";
+  const when = r.at ? new Date(r.at).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "Asia/Kathmandu" }) : "";
+  return [r.channel ? `on ${CHANNEL_NAME[r.channel] ?? r.channel}` : "their message", when].filter(Boolean).join(", ");
 }

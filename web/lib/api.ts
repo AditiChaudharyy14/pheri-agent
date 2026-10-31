@@ -35,7 +35,12 @@ export async function call<T>(path: string, init?: { method?: string; body?: unk
 export const customerPath = (b: string, key: string) => `/businesses/${b}/customers/${encodeURIComponent(key)}`;
 
 // ---- shapes ---------------------------------------------------------------------------
-export type Evidence = { kind: "fact" | "quote"; ref: string; value: string; quote_id?: string };
+export type Receipt =
+  | { kind: "order"; ids: string[]; more: number }
+  | { kind: "message"; channel: string | null; at: string | null; lang: string | null; from_staff: boolean }
+  | { kind: "calendar"; name: string }
+  | { kind: "activity" };
+export type Evidence = { kind: "fact" | "quote"; ref: string; value: string; quote_id?: string; receipt?: Receipt | null };
 
 export type Action = {
   id: string;
@@ -102,7 +107,7 @@ export type MiddleStep = { thresholds: { money: number; nudge: number }; actions
 export type DecidedBy = { provider: string; model: string; source: "live" | "recorded" | "stand-in" };
 
 export type NextStep = {
-  customer: { key: string; name: string; company: string | null; stage: string };
+  customer: { key: string; name: string; company: string | null; town?: string | null; stage: string };
   decision: Decision;
   evidence: Evidence[];
   action: Action | null;

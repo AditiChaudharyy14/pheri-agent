@@ -1,7 +1,8 @@
 @import "tailwindcss";
 
-/* Calm, premium, readable on a 1080p screen recording: warm paper, near-black ink, one teal accent.
-   Headings in Newsreader (serif), body in IBM Plex Sans. */
+/* An owner's morning check, often on a phone: warm paper, near-black ink, and three status colours only.
+   Teal = done, marigold = needs you, vermilion = blocked or stopped. Headings in Newsreader, body in IBM Plex Sans,
+   Devanagari in Noto Sans Devanagari wherever a customer's own words appear. */
 @theme static {
   --color-paper: #faf8f4;
   --color-surface: #ffffff;
@@ -14,10 +15,14 @@
   --color-teal: #0e7c74;
   --color-teal-ink: #0a5b55;
   --color-teal-soft: #e4f1ee;
-  --color-amber: #8a5a00;
-  --color-amber-soft: #faefd6;
-  --color-rose: #a2303a;
-  --color-rose-soft: #f8e5e4;
+  /* marigold: needs you (text 6.3:1 on its soft fill) */
+  --color-amber: #8a4f00;
+  --color-amber-soft: #fdeccb;
+  --color-marigold: #e8a317;
+  /* vermilion: blocked, stopped (text 6.0:1 on its soft fill) */
+  --color-rose: #ad2f14;
+  --color-rose-soft: #fbe4dc;
+  --color-vermilion: #d9431f;
   --color-slate-soft: #eceae5;
   /* The one chart series colour: validated (dataviz validate_palette.js) for lightness, chroma, contrast on white. */
   --color-chart: #0b8f86;
@@ -29,7 +34,28 @@
 }
 
 html {
-  font-size: 17px;
+  font-size: 16px;
+}
+
+@media (min-width: 1024px) {
+  html {
+    font-size: 17px;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-teal);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 body {

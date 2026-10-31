@@ -4,9 +4,9 @@ import { stageLabel } from "@/lib/labels";
 
 export function PageHead({ title, lead, right }: { title: string; lead?: ReactNode; right?: ReactNode }) {
   return (
-    <header className="mb-8 flex items-end justify-between gap-8">
+    <header className="mb-6 flex flex-wrap items-end justify-between gap-4 lg:mb-8 lg:gap-8">
       <div className="max-w-3xl">
-        <h1 className="text-[2.6rem] leading-tight font-medium text-ink">{title}</h1>
+        <h1 className="text-[2rem] leading-tight font-medium text-ink lg:text-[2.6rem]">{title}</h1>
         {lead && <p className="mt-2 text-[1.1rem] leading-relaxed text-ink-2">{lead}</p>}
       </div>
       {right}
@@ -15,7 +15,7 @@ export function PageHead({ title, lead, right }: { title: string; lead?: ReactNo
 }
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <section className={`rounded-2xl border border-line bg-surface p-7 ${className}`}>{children}</section>;
+  return <section className={`rounded-2xl border border-line bg-surface p-5 lg:p-7 ${className}`}>{children}</section>;
 }
 
 type Tone = "teal" | "amber" | "rose" | "slate" | "ink";

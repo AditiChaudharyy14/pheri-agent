@@ -22,6 +22,14 @@ export const CHANNEL_LABEL: Record<string, string> = {
   whatsapp: "on WhatsApp",
 };
 
+export const CHANNEL_NAME: Record<string, string> = {
+  email: "email", in_app: "the app", instagram_dm: "Instagram", chat: "chat", whatsapp: "WhatsApp",
+};
+
+/** The HTML lang for a customer's words, so screen readers and fonts treat Devanagari right. */
+export const langOf = (code: string | null | undefined) =>
+  ({ ne: "ne", "ne-Latn": "ne-Latn", hi: "hi", bho: "bho", en: "en" } as Record<string, string>)[code ?? ""] ?? undefined;
+
 export const STATUS_LABEL: Record<string, string> = {
   awaiting_approval: "Waiting for you",
   executed: "Done",
@@ -29,6 +37,7 @@ export const STATUS_LABEL: Record<string, string> = {
   rejected: "Rejected",
   blocked: "Blocked by a rule",
   suggested: "Suggested",
+  scheduled: "Ready at 8:00",
 };
 
 export const actionLabel = (a: string | null | undefined) => (a ? ACTION_LABEL[a] ?? a.replaceAll("_", " ") : "");

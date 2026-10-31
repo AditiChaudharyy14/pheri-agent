@@ -206,7 +206,7 @@ export const pct = (r: number | null | undefined, digits = 1) => (r == null ? "â
 export const pp = (v: number | null | undefined) => (v == null ? "â€”" : `${v > 0 ? "+" : ""}${v.toFixed(1)}`);
 export const usd = (v: number) => `$${v.toFixed(4)}`;
 
-export type NextStepWithTime = NextStep & { sends_at_local?: string | null };
+export type NextStepWithTime = NextStep & { sends_at_local?: string | null; waits_for_owner?: string | null };
 export type Brief = {
   night: string; morning: string;
   read: { messages: number; by_language: Record<string, number>; voice_notes: { read: number; unreadable: number } };
@@ -218,6 +218,14 @@ export type Brief = {
   proof: { treated: number; holdout: number; lift_pp: number; ci_pp: [number, number]; verdict: string; customers: number;
            outcome: string } | null;
   public_demo: boolean; mode: string;
+  rule_moments: { customer: { key: string; name: string }; rule: string; refused: string | null; then: string }[];
+  timeline: NightEvent[];
+};
+export type DraftStep = { attempt: number; passed: boolean; caught_by: string | null; reasons: string[] };
+export type NightEvent = {
+  at: string | null; customer: { key: string; name: string; town?: string | null; stage: string }; lang: string | null;
+  kind: string; text: string; voice: string | null; outcome: string; action: string; sends_at_local: string | null;
+  waits_for_owner: string | null; drafts: DraftStep[];
 };
 export type SlopSentence = { text: string; struck: boolean; reasons: string[] };
 export type Slop = {

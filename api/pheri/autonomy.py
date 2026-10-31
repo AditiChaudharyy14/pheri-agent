@@ -37,6 +37,19 @@ BUSINESS_MODES = {"birgunj": {"send_reminder": "act_alone", "recommend_product":
                               "send_help": "act_alone", "send_checkin": "act_alone", "offer_discount": "ask_owner"}}
 
 
+LATE_FOR_OWNER_DAYS = 7  # an order this late: the customer hears from the owner, not from Pheri alone
+
+
+def owner_reason(facts: dict) -> str | None:
+    """Why this customer waits for the owner whatever the action: money talk, or an order very late. Counted in
+    code from the facts; None when Pheri may act as the dial says."""
+    if facts.get("asks_about_money"):
+        return "They asked about money (a rate, a refund or money off): yours to decide."
+    if (facts.get("days_late") or 0) >= LATE_FOR_OWNER_DAYS:
+        return f"Their order is {facts['days_late']} days late: a word from you lands better than one from Pheri."
+    return None
+
+
 def mode_for(store, kind: str, saved: dict[str, str] | None = None) -> str:
     saved = store.autonomy_modes() if saved is None else saved
     return saved.get(kind, BUSINESS_MODES.get(store.business, {}).get(kind, DEFAULT_MODES.get(kind, DEFAULT_MODE)))
@@ -68,7 +81,7 @@ def _payload(a: ProposedAction) -> dict:
 
 
 def submit(store, customer_key: str, draft: Draft, *, verify: VerifyContext, cap: str | None = None,
-           actor: str = "pheri") -> dict:
+           actor: str = "pheri", cap_reason: str | None = None) -> dict:
     """Verify the draft, check the rules in code, then the dial. Returns the stored action. `cap` limits the mode.
     verify_draft runs here, whoever calls: the model has no way to skip it or to call it."""
     action, ctx = draft.action, verify.ctx
@@ -76,6 +89,8 @@ def submit(store, customer_key: str, draft: Draft, *, verify: VerifyContext, cap
     v = verify_draft(draft, verify)  # before the transaction: the judge is a model call
     action = action.model_copy(update={"send_at": next_send_time(active_rules(store), action, ctx)})  # after quiet hours
     payload = {**_payload(action), "verification": v.record()}
+    if cap_reason:
+        payload["waits_for_owner"] = cap_reason
     with store.tx():  # rules, dial and writes from one consistent view
         result = check(active_rules(store), action, ctx)
         mode = at_most(mode_for(store, action.kind), cap if t and t.customer_facing else None)

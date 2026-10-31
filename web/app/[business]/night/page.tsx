@@ -2,7 +2,8 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { PrivateSwitch } from "@/components/private-switch";
 import { Badge, Card, Chip, Label, PageHead, Skeleton } from "@/components/ui";
-import { api, type Reply, type RunsOn, words } from "@/lib/api";
+import { api, type Brief, type NightEvent, type Reply, type RunsOn, words } from "@/lib/api";
+import { actionLabel, clockNPT, LANGUAGE_NAME } from "@/lib/labels";
 
 const LANG: Record<string, string> = { en: "English", es: "Spanish", pt: "Portuguese", hi: "Hindi", ne: "Nepali", bh: "Bhojpuri / Hindi", bho: "Bhojpuri" };
 const STEP: Record<string, string> = { guard: "Reading replies", profile: "Profiles", decide: "Decisions", rules: "Compiling rules" };
@@ -14,10 +15,85 @@ export default function NightPage({ params }: PageProps<"/[business]/night">) {
         title="Night shift"
         lead="What came in overnight and how Pheri read it. Code reads every message before and after the model; an attack never becomes an action, it comes to you."
       />
+      <Suspense fallback={<Skeleton rows={2} />}>
+        <Timeline params={params} />
+      </Suspense>
       <Suspense fallback={<Skeleton rows={3} />}>
         <Night params={params} />
       </Suspense>
     </>
+  );
+}
+
+/** Tonight, message by message: what came in, every draft Pheri wrote (caught, sent back, rewritten), and where it
+ * ended up. Only drafts that really happened: each row is the stored decision. */
+async function Timeline({ params }: { params: PageProps<"/[business]/night">["params"] }) {
+  const { business } = await params;
+  const b = await api<Brief>(`/businesses/${business}/brief`);
+  if (!b.timeline.length) return null;
+  return (
+    <section aria-labelledby="tonight" className="mb-10">
+      <h2 id="tonight" className="text-[1.45rem] font-medium lg:text-[1.7rem]">Tonight, message by message</h2>
+      <ol className="mt-3 border-l-2 border-line pl-4">
+        {b.timeline.map((e, i) => (
+          <li key={`${e.customer.key}-${i}`} className="relative pb-5">
+            <span aria-hidden className={`absolute top-1.5 -left-[1.42rem] h-3 w-3 rounded-full ${DOT[tone(e)]}`} />
+            <p className="text-[0.85rem] text-muted">
+              {e.at ? clockNPT(e.at) : ""} · {e.customer.name} · {LANGUAGE_NAME[e.lang ?? ""] ?? e.lang}
+              {e.kind === "voice_note" ? " · voice note" : ""}
+            </p>
+            {e.text ? (
+              <p lang={e.lang ?? undefined} className="mt-0.5 font-serif text-[1.05rem] leading-snug text-ink">&ldquo;{e.text}&rdquo;</p>
+            ) : (
+              <p className="mt-0.5 text-[0.95rem] text-amber">{e.voice}</p>
+            )}
+            {e.kind === "voice_note" && e.text && <p className="text-[0.8rem] text-muted">{e.voice}</p>}
+            <Drafts e={e} />
+            <p className={`mt-1 text-[0.92rem] font-medium ${TEXT[tone(e)]}`}>{outcome(e)}</p>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+const DOT = { teal: "bg-teal", marigold: "bg-marigold", vermilion: "bg-vermilion", slate: "bg-line-2" } as const;
+const TEXT = { teal: "text-teal-ink", marigold: "text-amber", vermilion: "text-rose", slate: "text-ink-2" } as const;
+
+function tone(e: NightEvent): keyof typeof DOT {
+  if (e.outcome === "stopped" || e.outcome === "blocked") return "vermilion";
+  if (e.outcome === "awaiting_approval" || e.action === "task_for_owner") return "marigold";
+  if (e.outcome === "scheduled" || e.outcome === "executed") return "teal";
+  return "slate";
+}
+
+function outcome(e: NightEvent): string {
+  if (e.outcome === "stopped") return "Stopped: it tried to trick Pheri. Nothing was done; it waits for you.";
+  if (e.outcome === "blocked") return "Blocked by your rule: they asked not to be contacted. Nothing sent.";
+  if (e.outcome === "awaiting_approval") return `Waits for you: ${actionLabel(e.action).toLowerCase()}. ${e.waits_for_owner ?? ""}`;
+  if (e.outcome === "scheduled") return `${actionLabel(e.action)}, checked, goes out at ${e.sends_at_local ?? "08:00"} their time.`;
+  if (e.action === "task_for_owner") return "A task for you.";
+  return actionLabel(e.action) || "Nothing to do.";
+}
+
+function Drafts({ e }: { e: NightEvent }) {
+  const caught = e.drafts.filter((d) => !d.passed);
+  if (!caught.length) return null;
+  return (
+    <ul className="mt-1.5 space-y-0.5 text-[0.85rem] text-ink-2">
+      {e.drafts.map((d) => (
+        <li key={d.attempt}>
+          {d.passed ? (
+            <span className="text-teal-ink">Draft {d.attempt}: passed every check.</span>
+          ) : (
+            <span>
+              <span className="text-rose">Draft {d.attempt} caught by {d.caught_by === "judge" ? "the judge" : "code"}</span>
+              {d.reasons[0] ? `: ${d.reasons[0]}` : ""} {d.attempt < e.drafts.length ? "→ sent back, rewritten." : ""}
+            </span>
+          )}
+        </li>
+      ))}
+    </ul>
   );
 }
 

@@ -364,6 +364,10 @@ def compute_facts(c: Customer, business: str, today: date = TODAY) -> tuple[dict
         carts = sorted((e for e in c.events if e["type"] == "whatsapp_cart_sent"), key=lambda e: e["ts"])
         facts["days_since_enquiry"] = (today - _ts_date(carts[-1]["ts"])).days if carts else None
         prov["days_since_enquiry"] = [carts[-1]["_ref"]] if carts else []
+        said = sorted((src for src in c.sources if src.kind in CUSTOMER_WRITTEN and src.text), key=lambda x: x.at or "")
+        newest = said[-1] if said else None
+        facts["asks_about_money"] = bool(newest and mentions_money(newest.text))
+        prov["asks_about_money"] = [newest.id] if newest else []
         upcoming = sorted((d, k) for k, d in FESTIVALS.items() if d >= today)
         if upcoming:
             d, k = upcoming[0]
@@ -384,6 +388,17 @@ def _festival_order(day: date) -> bool:
 # discount is not on the list: asking is not the same as being ready to leave.
 PRICE_WORDS = ("price", "pricing", "expensive", "renewal", "smaller plan", "cancel", "comparing other tools",
                "precio", "preço", "renovação", "कीमत", "नवीनीकरण", "मूल्य", "महँगो")
+
+
+# A customer asking about money: a rate, a refund or return, money off. The owner decides those (autonomy.owner_reason).
+# A plain price question is not on the list: Pheri may answer what the facts hold.
+MONEY_TALK = ("rate", "refund", "return", "discount", "% off", "chhut", "firta", "रेट", "छूट", "छुट", "फिर्ता", "वापस",
+              "लौटा", "पैसा फिर्ता", "पइसा")
+
+
+def mentions_money(text: str) -> bool:
+    low = text.casefold()
+    return any(w in low for w in MONEY_TALK)
 
 
 def mentions_price(text: str) -> bool:

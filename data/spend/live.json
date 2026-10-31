@@ -1,17 +1,17 @@
 {
- "as_of": "2026-10-31T15:45:50",
+ "as_of": "2026-10-31T16:09:39",
  "providers": {
   "meta": {
-   "settled_usd": 4.850585,
+   "settled_usd": 5.508999,
    "offset_usd": 0.0,
    "cap_usd": 130.0,
-   "remaining_usd": 125.118276
+   "remaining_usd": 124.459862
   },
   "baseten": {
-   "settled_usd": 3.009792,
+   "settled_usd": 3.171236,
    "offset_usd": 0.0,
    "cap_usd": 90.0,
-   "remaining_usd": 86.990208
+   "remaining_usd": 86.828764
   }
  },
  "calls": [
@@ -19,11 +19,21 @@
    "provider": "meta",
    "model": "muse-spark-1.3",
    "purpose": "guard",
-   "calls": 1238,
-   "usd": 2.282278,
-   "input_tokens": 673763,
-   "cached_tokens": 531165,
-   "output_tokens": 720335
+   "calls": 1330,
+   "usd": 2.360096,
+   "input_tokens": 726846,
+   "cached_tokens": 548063,
+   "output_tokens": 747394
+  },
+  {
+   "provider": "meta",
+   "model": "muse-spark-1.3",
+   "purpose": "decide",
+   "calls": 2163,
+   "usd": 2.106441,
+   "input_tokens": 5558904,
+   "cached_tokens": 2916547,
+   "output_tokens": 1161022
   },
   {
    "provider": "baseten",
@@ -36,44 +46,34 @@
    "output_tokens": 383943
   },
   {
-   "provider": "meta",
-   "model": "muse-spark-1.3",
-   "purpose": "decide",
-   "calls": 1881,
-   "usd": 1.681968,
-   "input_tokens": 4875910,
-   "cached_tokens": 2690711,
-   "output_tokens": 1056399
-  },
-  {
    "provider": "baseten",
    "model": "meta-models/muse-spark-open-1026",
    "purpose": "judge",
-   "calls": 791,
-   "usd": 0.971023,
-   "input_tokens": 464904,
-   "cached_tokens": 147328,
-   "output_tokens": 644313
+   "calls": 871,
+   "usd": 1.132467,
+   "input_tokens": 511072,
+   "cached_tokens": 158080,
+   "output_tokens": 691834
   },
   {
    "provider": "meta",
    "model": "muse-spark-1.3",
    "purpose": "profile_insights",
-   "calls": 473,
-   "usd": 0.397529,
-   "input_tokens": 358653,
-   "cached_tokens": 131986,
-   "output_tokens": 310685
+   "calls": 543,
+   "usd": 0.538109,
+   "input_tokens": 411811,
+   "cached_tokens": 151195,
+   "output_tokens": 351634
   },
   {
    "provider": "meta",
    "model": "muse-spark-1.3",
    "purpose": "compile_rule",
-   "calls": 268,
-   "usd": 0.231813,
-   "input_tokens": 171063,
-   "cached_tokens": 143125,
-   "output_tokens": 181776
+   "calls": 282,
+   "usd": 0.237717,
+   "input_tokens": 178380,
+   "cached_tokens": 145000,
+   "output_tokens": 185389
   },
   {
    "provider": "baseten",
@@ -119,11 +119,11 @@
    "provider": "meta",
    "model": "muse-spark-1.3",
    "purpose": "plain_draft",
-   "calls": 27,
-   "usd": 0.012253,
-   "input_tokens": 3036,
+   "calls": 30,
+   "usd": 0.021891,
+   "input_tokens": 3406,
    "cached_tokens": 0,
-   "output_tokens": 15020
+   "output_tokens": 17179
   },
   {
    "provider": "baseten",

@@ -68,6 +68,8 @@ function VerifiedPart({ v }: { v: VerificationLine }) {
         {v.attempts > 1 ? ` (draft ${v.attempts})` : ""}
       </span>
     );
+  if (v.attempts === 0)  // no draft was written (e.g. the turn limit handed the step to the owner): nothing to check
+    return <span className="text-amber">No message drafted: handed to you</span>;
   return (
     <span className="text-amber" title={v.reasons.join("\n")}>
       ✗ Not verified after {v.attempts} {v.attempts === 1 ? "draft" : "drafts"}: caught by {v.caught_by}, sent to you

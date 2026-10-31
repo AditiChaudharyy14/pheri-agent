@@ -127,3 +127,18 @@ def test_a_refusal_is_recorded_and_replayed_as_the_same_refusal(monkeypatch, tmp
     with pytest.raises(_HTTPError) as e:
         replay.complete(msgs, purpose="replay_test")
     assert e.value.status_code == 400
+
+
+def test_the_same_conversation_asked_twice_in_a_run_gets_one_reply(monkeypatch, tmp_path):
+    """Live, a customer's profile was read twice in one recording run (the decision, then Slop vs Pheri): two live
+    calls, two different replies, and replay kept the second, so the decision built on the first no longer matched.
+    Now the second ask reuses the reply recorded a moment before: one conversation, one reply."""
+    rec = tmp_path / "recorded.jsonl"
+    live = _llm(monkeypatch, tmp_path, "live", PHERI_LLM_RECORD=str(rec), MODEL_API_KEY="k")
+    replies = iter(['{"answer": "first"}', '{"answer": "second"}'])
+    monkeypatch.setattr(live, "_responses", lambda req: (next(replies), (10, 0, 5), None, "r1", [], []))
+    msgs = [{"role": "user", "content": "same question"}]
+    a = live.complete(msgs, purpose="replay_test", schema=Answer)
+    b = live.complete(msgs, purpose="replay_test", schema=Answer)
+    assert a.parsed.answer == b.parsed.answer == "first" and b.recorded
+    assert len(rec.read_text(encoding="utf-8").splitlines()) == 1

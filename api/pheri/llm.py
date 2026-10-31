@@ -585,6 +585,8 @@ class LLM:
         path.parent.mkdir(parents=True, exist_ok=True)
         with _RECORD_LOCK, path.open("a", encoding="utf-8") as f:  # whole lines, even from parallel workers
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
+        if self._recordings is not None:  # the same conversation, asked again in this run, reuses this reply
+            self._recordings[key] = row
 
     def _record_error(self, key, purpose, provider, model, status: int, message: str) -> None:
         row = {"key": key, "purpose": purpose, "provider": provider, "model": model,
@@ -595,6 +597,8 @@ class LLM:
         path.parent.mkdir(parents=True, exist_ok=True)
         with _RECORD_LOCK, path.open("a", encoding="utf-8") as f:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
+        if self._recordings is not None:
+            self._recordings[key] = row
 
     def _mock_call(self, messages, purpose, schema, tools=None, previous_response_id=None, stateless=False):
         fn = _mock_responders.get(purpose)

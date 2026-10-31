@@ -45,7 +45,7 @@ async function Morning({ params }: { params: PageProps<"/[business]">["params"] 
           <p>
             While you slept, Pheri read <b className="font-semibold">{b.read.messages} messages</b>
             {langs.length > 0 && <> ({langs.map(([l, n]) => `${n} in ${LANGUAGE_NAME[l] ?? l}`).join(", ")})</>}
-            {b.read.voice_notes.read > 0 && <> and {b.read.voice_notes.read} voice notes</>}, and looked at{" "}
+            {b.read.voice_notes.read > 0 && <> and {b.read.voice_notes.read} voice {b.read.voice_notes.read === 1 ? "note" : "notes"}</>}, and looked at{" "}
             {b.customers} customers.
           </p>
           <p className="mt-3">
@@ -66,9 +66,9 @@ async function Morning({ params }: { params: PageProps<"/[business]">["params"] 
             ) : (
               <span>Nothing needs you</span>
             )}
-            {b.blocked.length > 0 && (
+            {b.rule_moments.length > 0 && (
               <>
-                ; <Count tone="vermilion" n={b.blocked.length} one="was" many="were" /> blocked by your rules
+                ; your rules stopped <Count tone="vermilion" n={b.rule_moments.length} one="step" many="steps" />
               </>
             )}
             .
@@ -130,6 +130,28 @@ async function Morning({ params }: { params: PageProps<"/[business]">["params"] 
             {b.sent.map((s) => (
               <li key={s.customer.key}>
                 <Ready business={business} step={s} sent />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {b.rule_moments.length > 0 && (
+        <section aria-labelledby="ruled">
+          <h2 id="ruled" className="flex items-baseline gap-3 text-[1.25rem] font-medium">
+            <Dot tone="vermilion" />
+            Your rules stopped
+          </h2>
+          <ul className="mt-2 divide-y divide-line border-y border-line">
+            {b.rule_moments.map((m) => (
+              <li key={m.customer.key} className="py-3">
+                <p className="font-medium text-ink">{m.customer.name}</p>
+                <p className="text-[0.95rem] text-rose">
+                  {m.refused ? `${actionLabel(m.refused)} refused: ${m.rule}.` : `${m.rule}.`}
+                </p>
+                <p className="text-[0.9rem] text-ink-2">
+                  {m.refused ? `Instead: ${actionLabel(m.then).toLowerCase()}.` : m.then}
+                </p>
               </li>
             ))}
           </ul>
@@ -226,9 +248,13 @@ function Who({ business, step }: { business: string; step: NextStepWithTime }) {
 function NeedYou({ business, step }: { business: string; step: NextStepWithTime }) {
   const d = step.decision;
   const v = step.verification;
-  const why = v && !v.passed && !step.override
-    ? `Pheri wrote it ${v.attempts} times and it still failed a check: ${v.reasons[0] ?? "see the trace"}`
-    : d.action === "offer_discount" ? "Money off is yours to decide." : d.action === "task_for_owner" ? "Only you can do this." : null;
+  const task = d.action === "task_for_owner";
+  const why = task
+    ? [step.fallback ? "Pheri couldn't settle on a step within its turn limit, so it hands this to you." : null,
+       step.waits_for_owner].filter(Boolean).join(" ") || "Only you can do this."
+    : v && !v.passed && !step.override
+      ? `Pheri wrote it ${v.attempts} times and it still failed a check: ${v.reasons[0] ?? "see the trace"}`
+      : step.waits_for_owner ?? (d.action === "offer_discount" ? "Money off is yours to decide." : null);
   return (
     <article className="rounded-2xl border border-line border-l-4 border-l-marigold bg-surface p-4 lg:p-6">
       <Who business={business} step={step} />
@@ -237,7 +263,7 @@ function NeedYou({ business, step }: { business: string; step: NextStepWithTime 
         {d.discount_pct ? ` · ${d.discount_pct}% off` : ""}
       </p>
       {why && <p className="mt-1 text-[0.95rem] text-ink-2">{why}</p>}
-      {d.message && (
+      {d.message && !task && (
         <blockquote className="mt-3 border-l-2 border-line-2 pl-3 leading-relaxed text-ink">{d.message}</blockquote>
       )}
       <div className="mt-3">
@@ -248,7 +274,7 @@ function NeedYou({ business, step }: { business: string; step: NextStepWithTime 
           <DecidedByLine business={business} customerKey={step.customer.key} by={step.decided_by} cost={step.cost_usd}
                          turns={step.turns} isPrivate={step.private} verification={step.verification} override={step.override} />
         </div>
-        {step.approval?.decision === "pending" && (
+        {step.approval?.decision === "pending" && !task && (
           <div className="sm:w-48">
             <ApproveReject business={business} approvalId={step.approval.id} check={step.action?.payload.verification} />
           </div>
@@ -268,7 +294,8 @@ function Ready({ business, step, sent = false }: { business: string; step: NextS
           <span className="text-[0.92rem] text-ink-2">· {actionLabel(d.action)}</span>
         </span>
         <span className="shrink-0 text-[0.85rem] text-teal-ink">
-          {sent ? (step.approval?.decision === "approved" ? "✓ approved by you, sent" : "✓ sent") : `${step.sends_at_local ?? "8:00"} their time`}
+          {step.approval?.decision === "approved" ? "✓ approved by you, " : ""}
+          {sent ? (step.approval?.decision === "approved" ? "sent" : "✓ sent") : `${step.sends_at_local ?? "8:00"} their time`}
         </span>
       </summary>
       <div className="mt-2 space-y-3 pl-0">

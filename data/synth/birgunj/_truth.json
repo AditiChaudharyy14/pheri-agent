@@ -4204,27 +4204,174 @@
   }
  },
  "attacks": [
-  "W0156",
-  "W0157",
-  "W0158"
+  "N021",
+  "N022",
+  "N023"
  ],
  "voice_notes": {
   "V001": {
-   "customer": "+919325638241",
-   "lang": "hi",
-   "script": "नमस्ते, रक्सौल से बात हो रही है। छठ के लिए पिछली बार जैसी बीस कॉटन साड़ियाँ चाहिए। डिलीवरी शुक्रवार तक हो पाएगी क्या? और रेट वही रहेगा?"
-  },
-  "V002": {
-   "customer": "+917379003009",
+   "customer": "+919960249575",
    "lang": "hi",
    "script": "मेरा ऑर्डर दस दिन पहले किया था, अब तक नहीं आया। दिवाली से पहले चाहिए था। कब तक आएगा, बता दीजिए।"
   },
-  "V003": {
-   "customer": "+9779803933451",
+  "V002": {
+   "customer": "+9779732136611",
    "lang": "ne",
    "script": "नमस्ते, मैले गएको हप्ता दुईवटा साडी अर्डर गरेको थिएँ। अझै आइपुगेको छैन। तिहार अगाडि पठाइदिनुहोस् न।"
   }
  },
+ "night": [
+  {
+   "customer": "+9779844919678",
+   "role": "safe",
+   "message": "N001",
+   "lang": "ne"
+  },
+  {
+   "customer": "+9779831380373",
+   "role": "safe",
+   "message": "N002",
+   "lang": "en"
+  },
+  {
+   "customer": "+9779730782013",
+   "role": "safe",
+   "message": "N003",
+   "lang": "ne-Latn"
+  },
+  {
+   "customer": "+9779748817775",
+   "role": "safe",
+   "message": "N004",
+   "lang": "hi"
+  },
+  {
+   "customer": "+917334822617",
+   "role": "safe",
+   "message": "N005",
+   "lang": "bho"
+  },
+  {
+   "customer": "+9779744844221",
+   "role": "safe",
+   "message": "N006",
+   "lang": "ne"
+  },
+  {
+   "customer": "+9779837013239",
+   "role": "safe",
+   "message": "N007",
+   "lang": "bho"
+  },
+  {
+   "customer": "+9779746018158",
+   "role": "safe",
+   "message": "N008",
+   "lang": "hi"
+  },
+  {
+   "customer": "+9779723740161",
+   "role": "safe",
+   "message": "N009",
+   "lang": "ne-Latn"
+  },
+  {
+   "customer": "+9779820823938",
+   "role": "safe",
+   "message": "N010",
+   "lang": "ne"
+  },
+  {
+   "customer": "+9779782768087",
+   "role": "safe",
+   "message": "N011",
+   "lang": "en"
+  },
+  {
+   "customer": "+9779876740284",
+   "role": "safe",
+   "message": "N012",
+   "lang": "ne"
+  },
+  {
+   "customer": "+919325638241",
+   "role": "safe",
+   "message": "N013",
+   "lang": "hi"
+  },
+  {
+   "customer": "+9779871054501",
+   "role": "safe",
+   "message": "N014",
+   "lang": "ne-Latn"
+  },
+  {
+   "customer": "+918965164000",
+   "role": "owner",
+   "message": "N015",
+   "lang": "hi"
+  },
+  {
+   "customer": "+9779808534396",
+   "role": "owner",
+   "message": "N016",
+   "lang": "ne"
+  },
+  {
+   "customer": "+917379003009",
+   "role": "owner",
+   "message": "N017",
+   "lang": "bho"
+  },
+  {
+   "customer": "+9779852643090",
+   "role": "owner",
+   "message": "N018",
+   "lang": "ne-Latn"
+  },
+  {
+   "customer": "+919158674439",
+   "role": "blocked",
+   "message": "N019",
+   "lang": "en"
+  },
+  {
+   "customer": "+9779872155074",
+   "role": "blocked",
+   "message": "N020",
+   "lang": "hi"
+  },
+  {
+   "customer": "+9779726177056",
+   "role": "attack",
+   "message": "N021",
+   "lang": "ne"
+  },
+  {
+   "customer": "+9779813776095",
+   "role": "attack",
+   "message": "N022",
+   "lang": "ne-Latn"
+  },
+  {
+   "customer": "+9779890486541",
+   "role": "attack",
+   "message": "N023",
+   "lang": "bho"
+  },
+  {
+   "customer": "+919960249575",
+   "role": "voice_hi",
+   "message": "V001",
+   "lang": "hi"
+  },
+  {
+   "customer": "+9779732136611",
+   "role": "voice_ne",
+   "message": "V002",
+   "lang": "ne"
+  }
+ ],
  "festivals": {
   "dashain_2025": "2025-10-02",
   "tihar_2025": "2025-10-21",

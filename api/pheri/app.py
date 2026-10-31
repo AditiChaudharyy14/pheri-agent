@@ -468,6 +468,9 @@ def create_app(llm: LLM | None = None) -> FastAPI:
         PER_STAGE[b] customers (in file order) in each journey stage, then whoever sent a voice note, then whoever
         sent the known attack messages (they go to Safety). Birgunj's is the night shift: about 25 customers."""
         ds, picked = state.data[b], []
+        truth = json.loads((REPO_ROOT / "data" / "synth" / b / "_truth.json").read_text(encoding="utf-8"))
+        if truth.get("night"):  # the night shift: everyone who wrote in overnight, in the order they wrote
+            return [n["customer"] for n in truth["night"] if n["customer"] in ds.customers]
         if b == "brightdesk":
             picked.append("maya.okafor@pinecrest.example")
         for st in STAGES[b]:
@@ -507,7 +510,11 @@ def create_app(llm: LLM | None = None) -> FastAPI:
         if action and action["status"] == "scheduled" and action["payload"].get("send_at"):
             sends_at = local_time(datetime.fromisoformat(action["payload"]["send_at"]),
                                   CheckContext(b, {"country": cu.attrs.get("country")}, CLOCKS[b][1]))
-        return {"sends_at_local": sends_at,
+        drafts = [{"attempt": a.get("attempt", i + 1), "passed": a["verification"]["passed"],
+                   "caught_by": a["verification"]["caught_by"], "reasons": a["verification"]["reasons"][:3]}
+                  for i, a in enumerate(out.get("attempts") or [])]
+        return {"sends_at_local": sends_at, "drafts": drafts,
+                "waits_for_owner": (action or {}).get("payload", {}).get("waits_for_owner"),
                 "customer": {"key": k, "name": cu.name, "company": cu.company, "town": cu.attrs.get("town"),
                              "stage": state.stages[b][k].stage},
                 "decision": out["decision"], "evidence": receipts(b, cu, out["evidence"]), "action": action,
@@ -674,6 +681,49 @@ def create_app(llm: LLM | None = None) -> FastAPI:
             return [{**x, "pheri": card(b, x["customer"]["key"], state.decided[b][x["customer"]["key"]])}
                     for x in state.slop[b]]
 
+    def timeline(b: str, cards: list[dict], night: list[dict]) -> list[dict]:
+        """Tonight, message by message, in the order they came in: what each customer wrote (or said, for a voice
+        note), and what happened: stopped, blocked by a rule, waiting for the owner, or scheduled; with every draft
+        Pheri wrote, so a draft caught and rewritten shows as it really happened."""
+        by_key = {c["customer"]["key"]: c for c in cards}
+        out = []
+        for n in night:
+            cu = state.data[b].customers.get(n["customer"])
+            src = next((x for x in cu.sources if x.id == n["message"]), None) if cu else None
+            c = by_key.get(n["customer"])
+            if src is None or c is None:
+                continue
+            if c["skipped"] in ("escalated", "open_escalation"):
+                outcome = "stopped"
+            elif c["skipped"] == "do_not_contact":
+                outcome = "blocked"
+            else:
+                outcome = (c["action"] or {}).get("status") or "no_action"
+            note = state.voice[b].get(src.id)
+            out.append({"at": src.at, "customer": c["customer"], "lang": src.lang, "kind": src.kind, "text": src.text,
+                        "voice": note["says"] if note else None, "outcome": outcome, "action": c["decision"]["action"],
+                        "sends_at_local": c.get("sends_at_local"), "waits_for_owner": c.get("waits_for_owner"),
+                        "drafts": c.get("drafts") or []})
+        return sorted(out, key=lambda x: x["at"] or "")
+
+    def rule_moments(b: str, cards: list[dict]) -> list[dict]:
+        """Where the owner's rules stopped something tonight: a customer who asked not to be contacted, or a step a
+        rule refused inside the decision (the model asked check_rules; code said no). Never the middle step's bar."""
+        out = []
+        for c in cards:
+            k = c["customer"]["key"]
+            if c["skipped"] == "do_not_contact":
+                out.append({"customer": c["customer"], "rule": "Asked not to be contacted", "refused": None,
+                            "then": "Pheri sent nothing and asked no model."})
+                continue
+            for pre in state.decided[b][k].get("prechecks") or []:
+                said = [v for v in pre.get("violations") or [] if "truth set" not in v and "code's stage" not in v]
+                if not pre.get("allowed") and said:
+                    out.append({"customer": c["customer"], "rule": said[0], "refused": pre["action"],
+                                "then": c["decision"]["action"]})
+                    break
+        return out
+
     @app.get("/businesses/{b}/brief")
     def brief(b: str = Depends(business)):
         """The owner's morning: what the night shift read, wrote, scheduled, held back and stopped, from the same
@@ -682,6 +732,10 @@ def create_app(llm: LLM | None = None) -> FastAPI:
             warm(b)
             cards = [card(b, k, state.decided[b][k]) for k in showcase(b)]
         reps = replies(b)
+        truth = json.loads((REPO_ROOT / "data" / "synth" / b / "_truth.json").read_text(encoding="utf-8"))
+        if truth.get("night"):  # the brief counts tonight's messages, not every older one Pheri re-read
+            tonight = {n["message"] for n in truth["night"]}
+            reps = [r for r in reps if r["source_id"] in tonight]
         status = lambda c: (c["action"] or {}).get("status")  # noqa: E731
         talking = [c for c in cards if c["skipped"] not in ("escalated", "open_escalation")]
         need = [c for c in talking if (c["approval"] or {}).get("decision") == "pending"
@@ -708,6 +762,8 @@ def create_app(llm: LLM | None = None) -> FastAPI:
                 "sent": [c for c in talking if status(c) == "executed" and c["decision"]["action"] != "task_for_owner"],
                 "need_you": need,
                 "blocked": [c for c in talking if status(c) == "blocked"],
+                "rule_moments": rule_moments(b, cards),
+                "timeline": timeline(b, cards, truth.get("night") or []),
                 "stopped": stopped,
                 "unreadable_voice": [{"customer": v["customer"], "name": state.data[b].customers[v["customer"]].name,
                                       "lang": v["lang"], "says": v["says"]}

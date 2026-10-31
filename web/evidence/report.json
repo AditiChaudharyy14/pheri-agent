@@ -1,6 +1,9 @@
 {
   "contract": "Purpose: the owner's morning check of what Pheri did overnight. Audience: a shop owner in Birgunj, often on a phone. Primary action: approve or reject what needs them; everything else is reading. Hierarchy: the night in sentences (not tiles) > needs you (marigold) > stopped (vermilion) > ready at 8:00 (teal) > one proof sentence. Memorable detail: every claim carries a receipt chip (the customer's own words in their script, with channel and date, or the shop's order number). Palette: teal = done, marigold = needs you, vermilion = blocked or stopped, on warm paper; no cards inside cards. Viewports: 390x844 and 1440x900. Reference: the repo's own tokens (web/app/globals.css) and components (web/components/ui.tsx), adapted to a phone-first layout.",
-  "targetViewports": ["390x844", "1440x900"],
+  "targetViewports": [
+    "390x844",
+    "1440x900"
+  ],
   "accessibility": {
     "status": "pass",
     "evidence": "Rendered on next start (production build). The first Tab lands on the 'Pheri' home link, and focus shows a 2px teal outline (:focus-visible in globals.css). Customer quotes carry a lang attribute (ne, hi, bho, ne-Latn), and Devanagari renders in Noto Sans Devanagari. Approve and Reject are real buttons, and the Approve tap target is at least 40px tall on 390px. The status section carries role=status, and the error screen carries role=alert. Reduced motion collapses transitions. Status colours are never the only signal: each has a word (needs you, stopped, ready at 8:00, sent). The text colours on their soft fills were set at about 6:1 (amber #8a4f00 on #fdeccb, rose #ad2f14 on #fbe4dc). Not done: a screen-reader pass with a real reader."
@@ -10,33 +13,131 @@
     "evidence": "scripts/evidence.mjs measures document width minus viewport width for each page, at each viewport. Morning, Night shift, Slop vs Pheri, Proof and Rules all report 0 overflow at 390x844 and 1440x900, after fixing Rules: its 2-column grid and the rule input's default min-width overflowed by 504px, then 12px. At 390px the header wraps to three rows, the nav scrolls sideways when needed, and plain-vs-Pheri stacks into one column. Long Devanagari and Roman Nepali quotes wrap inside their receipts."
   },
   "contentStates": {
-    "loading": {"status": "pass", "evidence": "loading-*.png: the stand-in API (scripts/empty_api.py, STANDIN_DELAY_S=10) answers the brief 10 s late. Meanwhile the header and nav are usable and three skeleton blocks (aria-busy) hold the layout, so nothing jumps when the brief arrives."},
-    "empty": {"status": "pass", "evidence": "empty-*.png: a night with nothing in it (stand-in API) reads 'Nothing came in overnight, so Pheri had nothing to do.' with a link to set a rule for tonight."},
-    "error": {"status": "pass", "evidence": "error-*.png: with the API stopped, the header and nav still render (the mode pill hides itself). The body shows 'Pheri's server didn't answer.', says nothing was sent to any customer, gives a reference and a Try again button (app/[business]/error.tsx; app/error.tsx catches layout errors)."},
-    "partial": {"status": "pass", "evidence": "morning-*.png: one voice note is in Nepali, which Muse Voice cannot read. A marigold banner says 'Listen yourself: Sita Mahato sent a voice note in Nepali. Muse Voice can't read Nepali yet, so Pheri didn't guess.' The rest of the night shows in full."},
-    "success": {"status": "pass", "evidence": "success-*.png: on Brightdesk (Birgunj's recorded night left nothing waiting for the owner), Approve on the first card moves it to a 'Sent' list marked '✓ approved by you, sent', and the brief now says '1 message went out'."},
-    "permission": {"status": "pass", "evidence": "permission-*.png: with PHERI_PUBLIC_DEMO=1, the brief shows 'Public demo: you're seeing a night recorded from a live run. Live runs are off here; what you approve stays in your own copy.' Approvals still work in the visitor's own sandbox."}
+    "loading": {
+      "status": "pass",
+      "evidence": "loading-*.png: the stand-in API (scripts/empty_api.py, STANDIN_DELAY_S=10) answers the brief 10 s late. Meanwhile the header and nav are usable and three skeleton blocks (aria-busy) hold the layout, so nothing jumps when the brief arrives."
+    },
+    "empty": {
+      "status": "pass",
+      "evidence": "empty-*.png: a night with nothing in it (stand-in API) reads 'Nothing came in overnight, so Pheri had nothing to do.' with a link to set a rule for tonight."
+    },
+    "error": {
+      "status": "pass",
+      "evidence": "error-*.png: with the API stopped, the header and nav still render (the mode pill hides itself). The body shows 'Pheri's server didn't answer.', says nothing was sent to any customer, gives a reference and a Try again button (app/[business]/error.tsx; app/error.tsx catches layout errors)."
+    },
+    "partial": {
+      "status": "pass",
+      "evidence": "morning-*.png: one voice note is in Nepali, which Muse Voice cannot read. A marigold banner says 'Listen yourself: Rohit Ansari sent a voice note in Nepali. Muse Voice can't read Nepali yet, so Pheri didn't guess.' The rest of the night shows in full."
+    },
+    "success": {
+      "status": "pass",
+      "evidence": "success-*.png: on Birgunj, Approve on the first card that needs the owner (taken last, after every other page, because approving changes the server's state). It is 07:30 and quiet hours end at 08:00, so the reply moves to 'Ready at 8:00' marked '✓ approved by you, 08:00 their time', and 'need you' drops from 5 to 4."
+    },
+    "permission": {
+      "status": "pass",
+      "evidence": "permission-*.png: with PHERI_PUBLIC_DEMO=1, the brief shows 'Public demo: you're seeing a night recorded from a live run. Live runs are off here; what you approve stays in your own copy.' Approvals still work in the visitor's own sandbox."
+    }
   },
   "renderedEvidence": [
-    {"viewport": "390x844", "artifact": "morning-390x844.png", "observation": "Morning brief on a phone: three sentences, partial banner, Stopped (3, with Devanagari and Roman Nepali quotes), Ready at 8:00 (23), proof sentence."},
-    {"viewport": "1440x900", "artifact": "morning-1440x900.png", "observation": "Morning brief on desktop, a 56rem reading column: same content, numbers in status colours, no tiles."},
-    {"viewport": "390x844", "artifact": "slop-390x844.png", "observation": "Slop vs Pheri stacked: struck sentences with reasons in vermilion, whole-draft failures, then Pheri's draft with receipts and 'Goes out at 08:00'."},
-    {"viewport": "1440x900", "artifact": "slop-1440x900.png", "observation": "Slop vs Pheri side by side for three customers (complaint, festival buyer, wholesale)."},
-    {"viewport": "390x844", "artifact": "night-390x844.png", "observation": "Night shift: messages that came in, attacks stopped first, who reads the messages."},
-    {"viewport": "1440x900", "artifact": "night-1440x900.png", "observation": "Night shift with the private-mode panel beside the list."},
-    {"viewport": "390x844", "artifact": "rules-390x844.png", "observation": "Rules after the overflow fix: composer, rules in force, plan checks, one column."},
-    {"viewport": "1440x900", "artifact": "rules-1440x900.png", "observation": "Rules in two columns."},
-    {"viewport": "390x844", "artifact": "proof-390x844.png", "observation": "Proof: one sentence, milestones, what Pheri learned, lift chart folded."},
-    {"viewport": "1440x900", "artifact": "proof-1440x900.png", "observation": "Proof on desktop."},
-    {"viewport": "390x844", "artifact": "loading-390x844.png", "observation": "Loading: skeleton blocks under a usable header."},
-    {"viewport": "1440x900", "artifact": "loading-1440x900.png", "observation": "Loading on desktop."},
-    {"viewport": "390x844", "artifact": "empty-390x844.png", "observation": "Empty night message with a next action."},
-    {"viewport": "1440x900", "artifact": "empty-1440x900.png", "observation": "Empty night on desktop."},
-    {"viewport": "390x844", "artifact": "error-390x844.png", "observation": "Server down: plain error, nothing sent, Try again."},
-    {"viewport": "1440x900", "artifact": "error-1440x900.png", "observation": "Server down on desktop."},
-    {"viewport": "390x844", "artifact": "permission-390x844.png", "observation": "Public demo banner in the brief."},
-    {"viewport": "1440x900", "artifact": "permission-1440x900.png", "observation": "Public demo banner on desktop."},
-    {"viewport": "390x844", "artifact": "success-390x844.png", "observation": "After Approve: the card is under Sent, '✓ approved by you, sent'."},
-    {"viewport": "1440x900", "artifact": "success-1440x900.png", "observation": "After Approve on desktop."}
+    {
+      "viewport": "390x844",
+      "artifact": "morning-390x844.png",
+      "observation": "Morning brief on a phone: 22 messages and 1 voice note read, 16 ready at 8:00, 5 need you, 1 stopped by a rule (do-not-contact), 3 attacks stopped; partial banner; owner tasks from the turn limit say 'No message drafted: handed to you'."
+    },
+    {
+      "viewport": "1440x900",
+      "artifact": "morning-1440x900.png",
+      "observation": "Morning brief on desktop, a 56rem reading column: need-you cards with receipts and Approve/Reject, 'Your rules stopped', Stopped (Devanagari, Roman Nepali, Hindi), Ready at 8:00 (16), proof sentence."
+    },
+    {
+      "viewport": "390x844",
+      "artifact": "slop-390x844.png",
+      "observation": "Slop vs Pheri stacked: struck sentences with reasons in vermilion, whole-draft failures, then Pheri's draft with receipts and 'Goes out at 08:00'."
+    },
+    {
+      "viewport": "1440x900",
+      "artifact": "slop-1440x900.png",
+      "observation": "Slop vs Pheri side by side for three customers (complaint, festival buyer, wholesale)."
+    },
+    {
+      "viewport": "390x844",
+      "artifact": "night-390x844.png",
+      "observation": "Night shift on a phone: 25 events 21:07 to 05:30, each with the customer's words, any caught drafts ('Draft 1 caught by code/the judge: reason, sent back, rewritten') and the outcome in its status colour."
+    },
+    {
+      "viewport": "1440x900",
+      "artifact": "night-1440x900.png",
+      "observation": "Night shift on desktop: the timeline (10 customers with real caught-and-rewritten drafts), then messages that came in and the private-mode panel."
+    },
+    {
+      "viewport": "390x844",
+      "artifact": "rules-390x844.png",
+      "observation": "Rules after the overflow fix: composer, rules in force, plan checks, one column."
+    },
+    {
+      "viewport": "1440x900",
+      "artifact": "rules-1440x900.png",
+      "observation": "Rules in two columns."
+    },
+    {
+      "viewport": "390x844",
+      "artifact": "proof-390x844.png",
+      "observation": "Proof: one sentence, milestones, what Pheri learned, lift chart folded."
+    },
+    {
+      "viewport": "1440x900",
+      "artifact": "proof-1440x900.png",
+      "observation": "Proof on desktop."
+    },
+    {
+      "viewport": "390x844",
+      "artifact": "loading-390x844.png",
+      "observation": "Loading: skeleton blocks under a usable header."
+    },
+    {
+      "viewport": "1440x900",
+      "artifact": "loading-1440x900.png",
+      "observation": "Loading on desktop."
+    },
+    {
+      "viewport": "390x844",
+      "artifact": "empty-390x844.png",
+      "observation": "Empty night message with a next action."
+    },
+    {
+      "viewport": "1440x900",
+      "artifact": "empty-1440x900.png",
+      "observation": "Empty night on desktop."
+    },
+    {
+      "viewport": "390x844",
+      "artifact": "error-390x844.png",
+      "observation": "Server down: plain error, nothing sent, Try again."
+    },
+    {
+      "viewport": "1440x900",
+      "artifact": "error-1440x900.png",
+      "observation": "Server down on desktop."
+    },
+    {
+      "viewport": "390x844",
+      "artifact": "permission-390x844.png",
+      "observation": "Public demo banner in the brief."
+    },
+    {
+      "viewport": "1440x900",
+      "artifact": "permission-1440x900.png",
+      "observation": "Public demo banner on desktop."
+    },
+    {
+      "viewport": "390x844",
+      "artifact": "success-390x844.png",
+      "observation": "After Approve on Birgunj: the card moves to Ready at 8:00, '✓ approved by you, 08:00 their time'."
+    },
+    {
+      "viewport": "1440x900",
+      "artifact": "success-1440x900.png",
+      "observation": "After Approve on Birgunj: the card moves to Ready at 8:00, '✓ approved by you, 08:00 their time'."
+    }
   ]
 }

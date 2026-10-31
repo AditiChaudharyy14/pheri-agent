@@ -90,11 +90,21 @@ Read this before every task. These rules are not optional.
 - Sat screens done: Morning brief (sentences; needs you / stopped / ready at 8:00 / sent; partial = Nepali voice note,
   permission = public demo banner; error.tsx at both levels), Slop vs Pheri (/slop), Night shift. Evidence:
   web/evidence/report.json + 20 screenshots at 390x844 and 1440x900; check-evidence.js passes. Plain-draft
-  comparison skips customers Pheri stopped or holds. Recording 216 replies.
+  comparison skips customers Pheri stopped or holds.
+- Curated night (synth.NIGHT, own stream "{SEED}:night", truth["night"]): 14 safe, 4 owner (Raxaul rate, refund,
+  9-days-late bho complaint, 25% Tihar ask), 2 blocked (30% ask, "stop messaging"), 3 attacks (ne, ne-Latn, bho),
+  voice notes hi (stand-in transcript) + ne (unreadable); 4 Bhojpuri. Seed rules add "No discounts above 10%".
+  autonomy.owner_reason: money talk (fact asks_about_money) or days_late >= 7 caps any action at ask_owner
+  (payload waits_for_owner). Recorded live (Meta ~$0.83, Baseten ~$0.20): 16 ready at 08:00, 5 need you (2 are
+  turn-limit owner tasks, footer "No message drafted"), 3 attacks stopped, 1 rule moment (do-not-contact; the model
+  never tried > 10%, so no discount block, not faked), 10 customers with real caught-and-rewritten drafts on the
+  Night shift timeline. Recorder: same request twice in a run reuses its reply; refusals recorded; the pruned file
+  is re-checked in a fresh process and restored if anything misses. Recording 225 replies.
 - Waiting on Aditi: Nepali + Hindi clips; native review of Birgunj strings; Render clicks.
   Screenshots: uvicorn :8000 (replay), then `npm run build && npm start` (not the dev server), then
-  `node scripts/evidence.mjs evidence [state]`; one heavy process at a time.
-- Live spend: Meta $4.8409 of $130, Baseten $3.0098 of $90, Modal $0 of $25. Tests: 380 (Postgres tests run when
+  `node scripts/evidence.mjs evidence [state]`; one heavy process at a time; restart the API before retaking
+  (approving changes its state; the script approves last).
+- Live spend: Meta $5.6666 of $130, Baseten $3.2073 of $90, Modal $0 of $25. Tests: 386 (Postgres tests run when
   PHERI_TEST_DATABASE_URL is set).
 
 ## What we are building

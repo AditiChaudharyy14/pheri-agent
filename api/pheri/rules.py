@@ -32,7 +32,7 @@ MAX_RULE_CHARS = 500
 PRIVATE_MAX_OUTPUT_TOKENS = 8000  # Muse Spark Open always reasons
 
 SEED_RULES = {"brightdesk": ["Never offer discounts in a customer's first month."],
-              "birgunj": ["Don't message customers between 9pm and 8am."]}
+              "birgunj": ["Don't message customers between 9pm and 8am.", "No discounts above 10%."]}
 
 
 # ---- typed checks ---------------------------------------------------------------

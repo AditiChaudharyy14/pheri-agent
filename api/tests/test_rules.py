@@ -89,9 +89,9 @@ def test_seed_is_idempotent(llm):
     assert len(seed(store, llm)) == 1
     assert seed(store, llm) == []
     assert [r.source_text for r in active_rules(store)] == [SEED]
-    bg = MemoryStore("birgunj")  # Birgunj starts with quiet hours: the night shift works, the customers sleep
-    assert len(seed(bg, llm)) == 1 and seed(bg, llm) == []
-    assert [c for r in active_rules(bg) for c in r.checks] == [QuietHours(start_hour=21, end_hour=8)]
+    bg = MemoryStore("birgunj")  # Birgunj starts with quiet hours (the night shift works, the customers sleep) and a
+    assert len(seed(bg, llm)) == 2 and seed(bg, llm) == []  # discount limit (the owner's own, from day one)
+    assert [c for r in active_rules(bg) for c in r.checks] == [QuietHours(start_hour=21, end_hour=8), MaxDiscountPct(pct=10)]
 
 
 def test_model_output_out_of_range_is_a_problem_not_a_rule(llm, monkeypatch):

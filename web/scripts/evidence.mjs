@@ -42,19 +42,25 @@ for (const [vp, size] of Object.entries(VIEWPORTS)) {
     await page.keyboard.press("Tab");
     const focused = await page.evaluate(() => document.activeElement?.tagName + " " + (document.activeElement?.textContent ?? "").trim().slice(0, 30));
     console.log(`${vp} first Tab: ${focused}`);
-    // success: approve the first item that needs the owner, then show where it went. Birgunj's recorded night left
-    // nothing for the owner, so this is Brightdesk's morning, where approvals wait.
-    await page.goto(BASE + "/brightdesk", { waitUntil: "networkidle" });
+  }
+  await page.close();
+}
+if (state === "main") {
+  // success, last: approving changes the server's state (one shared store outside the public demo), so every other
+  // page is taken first. Approve once on the phone, then show where the item went at both viewports.
+  for (const [i, [vp, size]] of Object.entries(VIEWPORTS).entries()) {
+    const page = await browser.newPage({ viewport: size, deviceScaleFactor: 1 });
+    await page.goto(BASE + "/birgunj", { waitUntil: "networkidle" });
     const approve = page.getByRole("button", { name: /^(Approve|Send anyway)$/ }).first();
-    if (await approve.count()) {
+    if (i === 0 && await approve.count()) {
       await approve.click();
       await page.waitForLoadState("networkidle");
       await page.waitForTimeout(500);
-      await page.screenshot({ path: `${out}/success-${vp}.png`, fullPage: true });
-      console.log(`${out}/success-${vp}.png`);
     }
+    await page.screenshot({ path: `${out}/success-${vp}.png`, fullPage: true });
+    console.log(`${out}/success-${vp}.png`);
+    await page.close();
   }
-  await page.close();
 }
 await browser.close();
 if (problems.length) {

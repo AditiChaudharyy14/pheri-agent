@@ -146,7 +146,16 @@ def main() -> None:
     lines = RECORDING.read_text(encoding="utf-8").splitlines()
     keep = [x for x in lines if (row := json.loads(x))["key"] in used or row["purpose"] in KEPT_PURPOSES_NOT_ASKED_HERE]
     RECORDING.write_text("\n".join(keep) + "\n", encoding="utf-8")
-    print(f"Recording: {len(keep)} replies kept, {len(lines) - len(keep)} no longer asked for dropped.")
+    # The pruned file must still cover a clean start: check it again, and put the full file back if it does not.
+    again = subprocess.run([sys.executable, __file__, "--replay-check"], capture_output=True, text=True, encoding="utf-8",
+                           env={**os.environ, "PHERI_LLM_MODE": "replay", "PHERI_LLM_REPLAY": str(RECORDING),
+                                "PHERI_LLM_RECORD": "", "PHERI_LEDGER_PATH": str(REPO / ".pheri" / "mock-ledger.sqlite")})
+    after = json.loads(again.stdout.strip().splitlines()[-1]) if again.returncode == 0 else {"misses": ["crashed"]}
+    if after["misses"]:
+        RECORDING.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        print(f"Pruning would lose replies a clean start needs ({', '.join(after['misses'][:6])}); kept all {len(lines)}.")
+        return
+    print(f"Recording: {len(keep)} replies kept, {len(lines) - len(keep)} no longer asked for dropped; checked again.")
 
 
 if __name__ == "__main__":

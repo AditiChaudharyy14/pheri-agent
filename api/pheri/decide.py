@@ -35,7 +35,7 @@ from typing import Literal
 from pydantic import BaseModel, ValidationError, create_model, field_validator
 
 from .actions import ALL_CHANNELS, BUSINESS_ACTIONS, CATALOG, CHANNELS, ESCALATE, ProposedAction
-from .autonomy import escalate, modes, open_escalation, sent_messages, submit
+from .autonomy import escalate, modes, open_escalation, sent_messages, submit, owner_reason
 from .verify import (FEEDBACK_HEAD, NO_QUOTES, Draft, attach_evidence, fact_names, feedback,  # noqa: F401
                      message_problems, middle_step, quote_index, unsupported_numbers, verify_draft)
 from .verify import context as verify_context
@@ -366,7 +366,9 @@ def decide(p: Profile, store, llm: LLM, now: datetime = NOW, data_class: str = "
                  "attempts": len(run.attempts), "cost_usd": cost, "private": private})
     action = None
     if decision.action != "no_action":
-        action = submit(store, p.customer_key, draft, verify=vc)  # verifies again, itself, before anything happens
+        why_owner = owner_reason(p.facts)  # money talk or a very late order: the owner signs off, whatever the dial
+        action = submit(store, p.customer_key, draft, verify=vc, cap="ask_owner" if why_owner else None,
+                        cap_reason=why_owner)  # verifies again, itself, before anything happens
     judge_cost = sum(a["verification"]["judge_cost_usd"] for a in run.attempts)
     return Outcome(p.customer_key, _as_sent(decision, draft), action, v.evidence, v.dropped, turns, fallback,
                    run.prechecks,

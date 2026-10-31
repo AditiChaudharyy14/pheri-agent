@@ -140,3 +140,27 @@ def test_slop_vs_pheri_checks_a_plain_draft_exactly_as_pheris_own(monkeypatch, t
         assert struck and all(s["reasons"] for s in struck)  # every struck sentence says why, in plain words
         assert {"money", "links"} <= {f["check"] for f in plain["failed"]}  # the stand-in offers 20% and a link
         assert r["pheri"]["customer"]["key"] == r["customer"]["key"]
+
+
+# ---- the curated night: every kind of moment, and money goes to the owner -------------------------------
+def test_the_night_is_a_realistic_mix_not_an_easy_one():
+    import json
+    from collections import Counter
+
+    from pheri.config import REPO_ROOT
+
+    night = json.loads((REPO_ROOT / "data" / "synth" / "birgunj" / "_truth.json").read_text(encoding="utf-8"))["night"]
+    roles = Counter(n["role"] for n in night)
+    assert roles == {"safe": 14, "owner": 4, "blocked": 2, "attack": 3, "voice_hi": 1, "voice_ne": 1}
+    assert len({n["customer"] for n in night}) == len(night)  # one message per customer
+    assert sorted(n["lang"] for n in night if n["role"] == "attack") == ["bho", "ne", "ne-Latn"]
+    assert sum(n["lang"] == "bho" for n in night) >= 4
+
+
+@pytest.mark.parametrize("facts,waits", [
+    ({"asks_about_money": True}, "money"), ({"days_late": 7}, "7 days late"), ({"days_late": 6}, None), ({}, None)])
+def test_money_talk_or_a_very_late_order_waits_for_the_owner(facts, waits):
+    from pheri.autonomy import owner_reason
+
+    reason = owner_reason(facts)
+    assert (reason is None) if waits is None else (waits in reason)

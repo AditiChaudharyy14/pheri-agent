@@ -80,11 +80,17 @@ Read this before every task. These rules are not optional.
 - Sat A done: Birgunj first; nav Morning / Night shift / Rules / Proof (Safety -> Night shift); receipt chips
   (order numbers, or the customer's words with channel and date; no internal ids); status palette teal / marigold /
   vermilion; phone layout (390 px) for the shell, cards and customer page.
-- Modal: its billing docs say a payment method is required for all usage (no Modal deploy).
+- Sat B/C backend + recording: scheduling (rules.next_send_time; status "scheduled", out at 08:00 the customer's time),
+  Birgunj autonomy (nudges act_alone, discount ask_owner), CLOCKS (night 06:15, owner 07:30 NPT), GET /brief,
+  GET /slop (plain AI draft vs Pheri, checked by verify_draft, struck sentence by sentence). Birgunj's night and the
+  plain drafts recorded live (Meta ~$0.67, Baseten ~$0.23); 217 replies; replay checked in a fresh process. Bug
+  found: a live 4xx was not recorded, so replay diverged (Pooja Ansari); refusals are now recorded and replayed.
+- Modal: its billing docs say a payment method is required for all usage (no Modal deploy). Baseten lists no
+  Glimmer (only muse-spark-open and muse-spark-open-1026 of Meta's models).
 - Waiting on Aditi: Nepali + Hindi clips, OK to push for Render.
   Servers for screenshots: uvicorn :8000 (replay, no --reload: restart after API changes), next dev :3000.
-- Live spend: Meta $3.4748 of $130, Baseten $2.4014 of $90, Modal $0 of $25. Tests: 356 (15 skip without
-  Postgres, 1 strict xfail: Birgunj's night not recorded yet).
+- Live spend: Meta $4.8409 of $130, Baseten $3.0098 of $90, Modal $0 of $25. Tests: 380 (Postgres tests run when
+  PHERI_TEST_DATABASE_URL is set).
 
 ## What we are building
 Pheri: an AI agent that understands each customer, decides their next best action ("why this, why now"),

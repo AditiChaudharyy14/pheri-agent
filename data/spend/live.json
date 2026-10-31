@@ -1,17 +1,17 @@
 {
- "as_of": "2026-10-31T14:37:47",
+ "as_of": "2026-10-31T15:29:25",
  "providers": {
   "meta": {
-   "settled_usd": 4.174371,
+   "settled_usd": 4.840932,
    "offset_usd": 0.0,
    "cap_usd": 130.0,
-   "remaining_usd": 125.79449
+   "remaining_usd": 125.127929
   },
   "baseten": {
-   "settled_usd": 2.776255,
+   "settled_usd": 3.009792,
    "offset_usd": 0.0,
    "cap_usd": 90.0,
-   "remaining_usd": 87.223745
+   "remaining_usd": 86.990208
   }
  },
  "calls": [
@@ -19,11 +19,11 @@
    "provider": "meta",
    "model": "muse-spark-1.3",
    "purpose": "guard",
-   "calls": 990,
-   "usd": 2.213723,
-   "input_tokens": 534749,
-   "cached_tokens": 452639,
-   "output_tokens": 609361
+   "calls": 1126,
+   "usd": 2.275772,
+   "input_tokens": 612556,
+   "cached_tokens": 483950,
+   "output_tokens": 656851
   },
   {
    "provider": "baseten",
@@ -39,41 +39,41 @@
    "provider": "meta",
    "model": "muse-spark-1.3",
    "purpose": "decide",
-   "calls": 614,
-   "usd": 1.173014,
-   "input_tokens": 1396148,
-   "cached_tokens": 664597,
-   "output_tokens": 307542
+   "calls": 1291,
+   "usd": 1.681968,
+   "input_tokens": 3053004,
+   "cached_tokens": 1428055,
+   "output_tokens": 609697
   },
   {
    "provider": "baseten",
    "model": "meta-models/muse-spark-open-1026",
    "purpose": "judge",
-   "calls": 352,
-   "usd": 0.737486,
-   "input_tokens": 193528,
-   "cached_tokens": 68480,
-   "output_tokens": 236063
+   "calls": 575,
+   "usd": 0.971023,
+   "input_tokens": 324554,
+   "cached_tokens": 97664,
+   "output_tokens": 395704
   },
   {
    "provider": "meta",
    "model": "muse-spark-1.3",
    "purpose": "profile_insights",
-   "calls": 292,
-   "usd": 0.317959,
-   "input_tokens": 205319,
-   "cached_tokens": 51882,
-   "output_tokens": 136484
+   "calls": 393,
+   "usd": 0.397529,
+   "input_tokens": 284331,
+   "cached_tokens": 84148,
+   "output_tokens": 208945
   },
   {
    "provider": "meta",
    "model": "muse-spark-1.3",
    "purpose": "compile_rule",
-   "calls": 234,
-   "usd": 0.224931,
-   "input_tokens": 151116,
-   "cached_tokens": 134375,
-   "output_tokens": 167284
+   "calls": 254,
+   "usd": 0.231813,
+   "input_tokens": 161969,
+   "cached_tokens": 137500,
+   "output_tokens": 173803
   },
   {
    "provider": "baseten",
@@ -114,6 +114,16 @@
    "input_tokens": 3738,
    "cached_tokens": 768,
    "output_tokens": 6239
+  },
+  {
+   "provider": "meta",
+   "model": "muse-spark-1.3",
+   "purpose": "plain_draft",
+   "calls": 15,
+   "usd": 0.009105,
+   "input_tokens": 1866,
+   "cached_tokens": 0,
+   "output_tokens": 6546
   },
   {
    "provider": "baseten",

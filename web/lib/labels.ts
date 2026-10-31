@@ -136,3 +136,14 @@ export const factValue = (fact: string, v: unknown) => {
   if (typeof v === "boolean") return v ? "yes" : "no";
   return String(v);
 };
+
+export const LANGUAGE_NAME: Record<string, string> = {
+  ne: "Nepali", "ne-Latn": "Roman Nepali", hi: "Hindi", bho: "Bhojpuri", bh: "Bhojpuri", en: "English",
+  es: "Spanish", pt: "Portuguese",
+};
+
+/** "07:30", in Nepal time, for the owner in Birgunj. */
+export const clockNPT = (iso: string) =>
+  new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kathmandu" });
+export const dayNPT = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "Asia/Kathmandu" });

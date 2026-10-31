@@ -104,3 +104,26 @@ def test_a_recording_run_resumes_without_paying_twice(monkeypatch, tmp_path):
     assert [r.recorded for r in _loop(again)] == [True, True]
     assert again.ledger.totals("meta").settled_usd == pytest.approx(spent)  # nothing new was billed
     assert len((tmp_path / "recorded.jsonl").read_text(encoding="utf-8").splitlines()) == 2  # nor recorded again
+
+
+def test_a_refusal_is_recorded_and_replayed_as_the_same_refusal(monkeypatch, tmp_path):
+    """Live, Meta sometimes answers 400. The guard sends such a reply to a person. Replay must take that same path,
+    not ask the stand-in, or the replayed night differs from the recorded one."""
+    from pheri.llm import _HTTPError
+
+    rec = tmp_path / "recorded.jsonl"
+    live = _llm(monkeypatch, tmp_path, "live", PHERI_LLM_RECORD=str(rec), MODEL_API_KEY="k")
+
+    def refuse(req):
+        raise _HTTPError(400, "not found")
+    monkeypatch.setattr(live, "_responses", refuse)
+    msgs = [{"role": "user", "content": "q"}]
+    with pytest.raises(_HTTPError):
+        live.complete(msgs, purpose="replay_test")
+    assert json.loads(rec.read_text(encoding="utf-8").splitlines()[0])["error"]["status"] == 400
+
+    replay = _llm(monkeypatch, tmp_path, "replay")
+    register_mock("replay_test", lambda m, s: "stand-in")
+    with pytest.raises(_HTTPError) as e:
+        replay.complete(msgs, purpose="replay_test")
+    assert e.value.status_code == 400

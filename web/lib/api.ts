@@ -205,3 +205,24 @@ export const MODE_LABEL: Record<string, string> = { suggest: "Suggest", ask_owne
 export const pct = (r: number | null | undefined, digits = 1) => (r == null ? "—" : `${(100 * r).toFixed(digits)}%`);
 export const pp = (v: number | null | undefined) => (v == null ? "—" : `${v > 0 ? "+" : ""}${v.toFixed(1)}`);
 export const usd = (v: number) => `$${v.toFixed(4)}`;
+
+export type NextStepWithTime = NextStep & { sends_at_local?: string | null };
+export type Brief = {
+  night: string; morning: string;
+  read: { messages: number; by_language: Record<string, number>; voice_notes: { read: number; unreadable: number } };
+  customers: number;
+  scheduled: NextStepWithTime[]; need_you: NextStepWithTime[]; blocked: NextStepWithTime[];
+  stopped: Reply[];
+  unreadable_voice: { customer: string; name: string; lang: string; says: string }[];
+  voice_stand_in: boolean;
+  proof: { treated: number; holdout: number; lift_pp: number; ci_pp: [number, number]; verdict: string; customers: number;
+           outcome: string } | null;
+  public_demo: boolean; mode: string;
+};
+export type SlopSentence = { text: string; struck: boolean; reasons: string[] };
+export type Slop = {
+  customer: { key: string; name: string; stage: string };
+  plain: { text: string; model: string; recorded: boolean; sentences: SlopSentence[]; whole_draft: string[];
+           failed: { check: string; hard: boolean; plain: string; detail: string }[]; passed: boolean };
+  pheri: NextStepWithTime;
+};

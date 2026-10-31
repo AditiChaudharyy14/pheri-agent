@@ -47,6 +47,9 @@ def run() -> dict:
             r = client.get(f"/businesses/{b}/next-steps")
             r.raise_for_status()
             cards.update({card["customer"]["key"]: card for card in r.json()})
+        # Slop vs Pheri: the plain drafts are model replies too, recorded with the cards (Birgunj, the hero).
+        client.get("/businesses/birgunj/slop").raise_for_status()
+        client.get("/businesses/birgunj/brief").raise_for_status()  # no model: it must not need one either
     return cards
 
 
@@ -62,7 +65,25 @@ def watch_calls(on_result) -> None:
     llm_mod.LLM.complete = complete
 
 
+def replay_check() -> None:
+    """In a fresh process: replay every request and print (as JSON) which recorded replies it used and missed."""
+    from pheri.llm import recording_key
+
+    used, misses = set(), []
+
+    def check(purpose, r, messages, kw):
+        key = recording_key(purpose, r.provider, r.model, messages, kw.get("schema"), kw.get("tools"))
+        (used.add(key) if r.recorded else misses.append(purpose))
+    watch_calls(check)
+    cards = run()
+    print(json.dumps({"used": sorted(used), "misses": misses,
+                      "decisions": {k: c["decision"] for k, c in cards.items()}}, ensure_ascii=False))
+
+
 def main() -> None:
+    if "--replay-check" in sys.argv:
+        replay_check()
+        return
     ap = argparse.ArgumentParser()
     ap.add_argument("--live", action="store_true")
     ap.add_argument("--budget", type=float, default=0.60, help="USD on the Meta Model API")
@@ -104,24 +125,23 @@ def main() -> None:
         for r in v.get("reasons") or []:
             print(f"  ! {r}")
 
-    # Replay the same requests offline: every one must be found in the recording.
-    os.environ.update(PHERI_LLM_MODE="replay", PHERI_LEDGER_PATH=str(REPO / ".pheri" / "mock-ledger.sqlite"),
-                      PHERI_LLM_REPLAY=str(RECORDING))
-    del os.environ["PHERI_LLM_RECORD"], os.environ["PHERI_META_CAP_USD"], os.environ["PHERI_BASETEN_CAP_USD"]
-    from pheri.llm import recording_key
+    # Replay the same requests offline, in a fresh process (as the server starts): every one must be found. A check in
+    # this process could pass on state the live run left behind and miss what a clean start asks for.
+    import subprocess
 
-    used, misses = set(), []
-
-    def check(purpose, r, messages, kw):
-        key = recording_key(purpose, r.provider, r.model, messages, kw.get("schema"), kw.get("tools"))
-        (used.add(key) if r.recorded else misses.append(purpose))
-    watch_calls(check)
-    replayed = run()
-    same = all(replayed[k]["decision"] == cards[k]["decision"] for k in cards)
-    print(f"\nReplay check: {'every request found' if not misses else 'NOT recorded: ' + ', '.join(misses)}; "
+    done = subprocess.run([sys.executable, __file__, "--replay-check"], capture_output=True, text=True, encoding="utf-8",
+                          env={**os.environ, "PHERI_LLM_MODE": "replay", "PHERI_LLM_REPLAY": str(RECORDING),
+                               "PHERI_LLM_RECORD": "", "PHERI_LEDGER_PATH": str(REPO / ".pheri" / "mock-ledger.sqlite")})
+    if done.returncode != 0:
+        raise SystemExit(f"Replay check crashed:\n{done.stderr[-2000:]}")
+    check = json.loads(done.stdout.strip().splitlines()[-1])
+    used, misses = set(check["used"]), check["misses"]
+    same = all(check["decisions"].get(k) == cards[k]["decision"] for k in cards) and set(check["decisions"]) == set(cards)
+    print(f"\nReplay check (fresh process): {'every request found' if not misses else 'NOT recorded: ' + ', '.join(misses)}; "
           f"decisions {'identical' if same else 'DIFFER'}.")
     if misses or not same:
-        raise SystemExit("Not pruning: the recording does not cover this run.")
+        raise SystemExit("Not pruning: the recording does not cover a clean start. Run --live again: only what is "
+                         "missing is paid for.")
 
     lines = RECORDING.read_text(encoding="utf-8").splitlines()
     keep = [x for x in lines if (row := json.loads(x))["key"] in used or row["purpose"] in KEPT_PURPOSES_NOT_ASKED_HERE]

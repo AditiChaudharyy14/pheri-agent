@@ -62,8 +62,9 @@ export function DecidedByLine({ business, customerKey, by, cost, turns, isPrivat
 function VerifiedPart({ v }: { v: VerificationLine }) {
   if (v.passed)
     return (
-      <span className="text-teal-ink" title={v.attempts > 1 ? `${v.attempts - 1} earlier draft(s) caught and sent back` : undefined}>
-        ✓ Verified: {v.code_checks} code checks{v.judge ? " + judge" : ""}
+      <span className="text-teal-ink"
+            title={`${v.code_checks} code checks${v.judge ? " and a judge model, claim by claim" : ""}${v.attempts > 1 ? `; ${v.attempts - 1} earlier draft(s) caught and sent back` : ""}`}>
+        ✓ Checked: facts, your rules, the customer&rsquo;s language{v.judge ? " · judge agreed" : ""}
         {v.attempts > 1 ? ` (draft ${v.attempts})` : ""}
       </span>
     );

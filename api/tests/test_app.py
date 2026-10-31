@@ -317,9 +317,8 @@ def test_replay_serves_mayas_recorded_live_run(monkeypatch, tmp_path):
     assert totals["decisions"] == 6 and totals["sent_to_owner"] == 1 and totals["drafts"] > totals["decisions"]
 
 
-@pytest.mark.xfail(strict=True, reason="Birgunj's night is recorded once, after the scheduling change (plan, Step 3) "
-                                       "changes what the decide tools return; strict: remove this mark when it passes")
 def test_replay_serves_birgunjs_recorded_night(monkeypatch, tmp_path):
+    """Recorded on 31 Oct after the scheduling change: every card is Muse Spark's own reply, judged for real."""
     from pheri.app import create_app
     from pheri.config import REPO_ROOT
 
@@ -332,9 +331,14 @@ def test_replay_serves_birgunjs_recorded_night(monkeypatch, tmp_path):
     cards = api.get("/businesses/birgunj/next-steps").json()
     assert len(cards) >= 20
     for card in cards:
+        if card["decided_by"] is None:  # no model asked: a customer who said stop gets no call and no action
+            assert card["decision"]["action"] == "no_action"
+            continue
         assert card["decided_by"]["source"] == "recorded", card["customer"]["name"]
         assert card["verification"]["judge_recorded"], card["customer"]["name"]
-    assert api.get("/businesses/birgunj/learned").json()["source"] == "recorded"
+    assert sum(c["action"]["status"] == "scheduled" for c in cards if c["action"]) >= 15  # out at 08:00, not at night
+    slop = api.get("/businesses/birgunj/slop").json()
+    assert len(slop) == 3 and all(x["plain"]["recorded"] and not x["plain"]["passed"] for x in slop)
 
 
 # ---- the public demo: a sandbox per visitor, and no pretend owner ------------------------------------

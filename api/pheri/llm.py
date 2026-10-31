@@ -338,6 +338,8 @@ class LLM:
         start = time.monotonic()
         try:
             calls: list[FunctionCall] = []
+            if rec is not None and rec.get("error"):  # the live run was refused here: replay refuses the same way
+                raise _HTTPError(rec["error"]["status"], rec["error"]["message"])
             if rec is not None:
                 text, usage, calls, resp_id, raw, items = _from_recording(rec)
             elif offline:
@@ -361,6 +363,10 @@ class LLM:
             else:
                 # Never sent (missing key, bad config) or refused outright (4xx): nothing was billed.
                 self.ledger.release(rid)
+                if not offline and rec is None and self.settings.record_path and status is not None and 400 <= status < 500:
+                    # A refusal is part of what happened: record it, so replay takes the same path (a guard that could
+                    # not read a reply sends it to a person) instead of asking the stand-in.
+                    self._record_error(key, purpose, provider, model, status, str(getattr(exc, "message", exc))[:300])
             raise
         latency = time.monotonic() - start
 
@@ -578,6 +584,16 @@ class LLM:
         path = Path(self.settings.record_path)
         path.parent.mkdir(parents=True, exist_ok=True)
         with _RECORD_LOCK, path.open("a", encoding="utf-8") as f:  # whole lines, even from parallel workers
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+    def _record_error(self, key, purpose, provider, model, status: int, message: str) -> None:
+        row = {"key": key, "purpose": purpose, "provider": provider, "model": model,
+               "recorded_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "text": "", "function_calls": [],
+               "items": [], "usage": [0, 0, 0], "cost_usd": 0.0, "incomplete": None, "reasoning_tokens": None,
+               "error": {"status": status, "message": message}}
+        path = Path(self.settings.record_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with _RECORD_LOCK, path.open("a", encoding="utf-8") as f:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
     def _mock_call(self, messages, purpose, schema, tools=None, previous_response_id=None, stateless=False):

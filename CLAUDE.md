@@ -111,6 +111,11 @@ Read this before every task. These rules are not optional.
   plans that pass for the stage; money ones only if the stage is sure enough). Money customers keep owner_decides.
   Re-recorded the 7 it changed (Meta+Baseten $0.16): Anita Rai 7->4 turns, Aarav 7->4 (now verified on draft 1),
   Nisha Das, Sanjay Karna 5->4; Ranju Jha/Poudel use their turns on real rewrites. One refusal each, at most.
+- Night shift replay (components/night-playback.tsx): opens finished; Play replays the recorded night at 1x/4x.
+  The clock ticks 21:00 -> 06:00 as messages arrive (24 s at 1x), then 06:15, when the night shift really runs,
+  and rows tick through their stored steps (read, every draft caught or passed, outcome; 0.7 s each at 1x).
+  Reduced motion: everything at once, no controls. Names link to the trace. Checked in scripts/evidence.mjs
+  (clock moves, rows arrive, steps tick, trace link, reduced motion); night-arriving/working screenshots.
 - Attack moment (Step 5, Glimmer cut: Modal needs a card): an attacker gets no word from any model. The owner gets
   the escalation; the customer gets a fixed holding reply written by code (pheri/holding.py, TEMPLATES ne, ne-Latn,
   hi, bho, en; native review pending, Aditi), in the language of their message, once, from decide_customer.

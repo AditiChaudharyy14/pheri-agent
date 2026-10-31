@@ -6,7 +6,7 @@
   ],
   "accessibility": {
     "status": "pass",
-    "evidence": "Rendered on next start (production build). The first Tab lands on the 'Pheri' home link, and focus shows a 2px teal outline (:focus-visible in globals.css). Customer quotes carry a lang attribute (ne, hi, bho, ne-Latn), and Devanagari renders in Noto Sans Devanagari. Approve and Reject are real buttons, and the Approve tap target is at least 40px tall on 390px. The status section carries role=status, and the error screen carries role=alert. Reduced motion collapses transitions. Status colours are never the only signal: each has a word (needs you, stopped, ready at 8:00, sent). The text colours on their soft fills were set at about 6:1 (amber #8a4f00 on #fdeccb, rose #ad2f14 on #fbe4dc). Not done: a screen-reader pass with a real reader."
+    "evidence": "Rendered on next start (production build). The first Tab lands on the 'Pheri' home link, and focus shows a 2px teal outline (:focus-visible in globals.css). Customer quotes carry a lang attribute (ne, hi, bho, ne-Latn), and Devanagari renders in Noto Sans Devanagari. Approve and Reject are real buttons, and the Approve tap target is at least 40px tall on 390px. The status section carries role=status, and the error screen carries role=alert. Reduced motion collapses transitions. Status colours are never the only signal: each has a word (needs you, stopped, ready at 8:00, sent). The text colours on their soft fills were set at about 6:1 (amber #8a4f00 on #fdeccb, rose #ad2f14 on #fbe4dc). Not done: a screen-reader pass with a real reader. Night shift replay: with prefers-reduced-motion it shows the whole night at once and offers no play controls (checked by scripts/evidence.mjs with reducedMotion: reduce); the 1x/4x buttons carry aria-pressed; the status line under the clock is aria-live polite; each customer name links to that decision's trace."
   },
   "responsive": {
     "status": "pass",
@@ -138,6 +138,26 @@
       "viewport": "1440x900",
       "artifact": "success-1440x900.png",
       "observation": "After picking 'Same rate as their last order' on Sita Karna's card: Ready at 8:00, '✓ approved by you (same rate as their last order)'."
+    },
+    {
+      "viewport": "390x844",
+      "artifact": "night-arriving-390x844.png",
+      "observation": "Night shift replay at 4x, 2.5 s in: the clock reads 00:45, 11 of 25 messages have arrived, none read yet ('the night shift runs at 06:15'), a progress bar under the clock."
+    },
+    {
+      "viewport": "390x844",
+      "artifact": "night-working-390x844.png",
+      "observation": "Night shift replay at 4x, after the arrivals: the clock reads 06:15 and rows tick through their stored steps (read, each draft caught or passed, the outcome); controls on their own row on a phone."
+    },
+    {
+      "viewport": "1440x900",
+      "artifact": "night-arriving-1440x900.png",
+      "observation": "Night shift replay at 4x, 2.5 s in: the clock reads 00:45, 11 of 25 messages have arrived, none read yet ('the night shift runs at 06:15'), a progress bar under the clock."
+    },
+    {
+      "viewport": "1440x900",
+      "artifact": "night-working-1440x900.png",
+      "observation": "Night shift replay at 4x, after the arrivals: the clock reads 06:15 and rows tick through their stored steps (read, each draft caught or passed, the outcome); controls on their own row on a phone."
     }
   ]
 }

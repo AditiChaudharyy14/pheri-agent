@@ -42,8 +42,38 @@ for (const [vp, size] of Object.entries(VIEWPORTS)) {
     await page.keyboard.press("Tab");
     const focused = await page.evaluate(() => document.activeElement?.tagName + " " + (document.activeElement?.textContent ?? "").trim().slice(0, 30));
     console.log(`${vp} first Tab: ${focused}`);
+    // Night shift playback: opens finished; at 4x the clock ticks through the arrivals, then rows tick through steps.
+    await page.goto(BASE + "/birgunj/night", { waitUntil: "networkidle" });
+    const rows = page.locator('section[aria-labelledby="tonight"] ol > li');
+    const all = await rows.count();
+    const href = await rows.first().locator("a").first().getAttribute("href");
+    if (!href || !href.endsWith("/trace")) problems.push(`${vp} night: the first row's name does not link to its trace (${href})`);
+    await page.getByRole("button", { name: "4×" }).click();
+    await page.getByRole("button", { name: /Replay the night/ }).click();
+    await page.waitForTimeout(2500);
+    const clockMid = (await page.getByLabel("Time on the night clock").textContent())?.trim();
+    const arrived = await rows.count();
+    await page.screenshot({ path: `${out}/night-arriving-${vp}.png` });
+    if (!(arrived > 0 && arrived < all)) problems.push(`${vp} night: ${arrived} of ${all} rows mid-arrivals`);
+    if (!clockMid || clockMid === "06:15" || clockMid === "21:00") problems.push(`${vp} night: the clock read ${clockMid}`);
+    await page.waitForTimeout(6000);  // arrivals end at 6 s (4x); the night shift is working through the steps
+    const working = await page.locator('section[aria-labelledby="tonight"] ol > li ul > li').count();
+    await page.screenshot({ path: `${out}/night-working-${vp}.png` });
+    if (!(working > 0)) problems.push(`${vp} night: no steps shown while the night shift works`);
+    console.log(`${vp} night playback: clock ${clockMid}, ${arrived}/${all} rows arrived, ${working} steps while working`);
   }
   await page.close();
+}
+if (state === "main") {
+  // Reduced motion: the whole night at once, no controls, nothing animates.
+  const ctx = await browser.newContext({ viewport: VIEWPORTS["390x844"], reducedMotion: "reduce" });
+  const page = await ctx.newPage();
+  await page.goto(BASE + "/birgunj/night", { waitUntil: "networkidle" });
+  const controls = await page.getByRole("button", { name: /Replay the night|Play/ }).count();
+  const steps = await page.locator('section[aria-labelledby="tonight"] ol > li ul > li').count();
+  if (controls !== 0 || steps === 0) problems.push(`reduced motion: ${controls} play buttons, ${steps} steps shown`);
+  console.log(`reduced motion: ${controls} play buttons, ${steps} steps shown at once`);
+  await ctx.close();
 }
 if (state === "main") {
   // success, last: approving changes the server's state (one shared store outside the public demo), so every other

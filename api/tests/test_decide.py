@@ -19,6 +19,9 @@ FIRST_MONTH = "the customer is 22 days in; no discounts in the first 30 days"
 # The middle-step check (verify.py): a discount fits no stuck customer in the labelled truth set.
 STUCK_DISCOUNT = "offer_discount fits 0% of 'stuck' customers in the truth set; a money action needs 100%"
 STUCK_DISCOUNT_SCORES = {"stage": "stuck", "stage_score": 1.0, "plan_score": 0.0, "needs": 1.0}
+# A refused plan names the plans that pass for the stage, so the next try is one of them (not the next guess).
+STUCK_FITS = ("Plans that pass the middle step for 'stuck' customers: send_help, book_call. Check one of them next "
+              "(the owner's rules still apply).")
 
 
 @pytest.fixture
@@ -101,7 +104,7 @@ def test_maya_discount_is_blocked_in_the_loop_and_she_gets_help(maya, store, llm
     # The model tried a goodwill discount first; check_rules refused it (the owner's rule, then the middle step:
     # the plan is checked before the message is written), so it moved on.
     assert out.prechecks[0] == {"action": "offer_discount", "allowed": False, "violations": [FIRST_MONTH, STUCK_DISCOUNT],
-                                "middle_step": STUCK_DISCOUNT_SCORES}
+                                "middle_step": STUCK_DISCOUNT_SCORES, "plans_that_fit": STUCK_FITS}
     assert out.prechecks[-1]["action"] == "send_help" and out.prechecks[-1]["allowed"]
     assert out.decision["action"] == "send_help" and out.fallback is None
     assert out.action["status"] == "awaiting_approval"  # the default dial: ask the owner
@@ -137,7 +140,7 @@ def test_maya_discount_is_blocked_in_code_even_if_the_model_ignores_check_rules(
 def test_without_the_rule_the_middle_step_still_refuses_a_discount_for_a_stuck_customer(maya, llm):
     out = decide(maya, MemoryStore("brightdesk"), llm)  # no rules confirmed
     assert out.prechecks[0] == {"action": "offer_discount", "allowed": False, "violations": [STUCK_DISCOUNT],
-                                "middle_step": STUCK_DISCOUNT_SCORES}
+                                "middle_step": STUCK_DISCOUNT_SCORES, "plans_that_fit": STUCK_FITS}
     assert out.decision["action"] == "send_help"
 
 

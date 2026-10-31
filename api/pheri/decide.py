@@ -220,6 +220,22 @@ def money_hint(business: str, stage: str) -> str:
             "replies this morning. Promise no price, discount, refund or date.")
 
 
+def plan_hint(business: str, stage: str) -> str:
+    """After the middle step refuses a plan: name the plans that do pass it for this stage, so the model's next try is
+    one of them, not the next guess down the list (live, refusals with no hint cost a turn each)."""
+    from .verify import THRESHOLDS, action_class, middle_step_scores
+
+    row = middle_step_scores(business).get(stage, {"plan_scores": {}, "stage_score": 0.0})
+    fits = [a for a, s in row["plan_scores"].items()
+            if (cls := action_class(a)) and row["stage_score"] + 1e-9 >= THRESHOLDS[business][cls]
+            and s + 1e-9 >= THRESHOLDS[business][cls]]
+    if not fits:
+        return (f"No plan that sends something passes the middle step for {stage!r} customers: answer with "
+                "task_for_owner or no_action.")
+    return (f"Plans that pass the middle step for {stage!r} customers: {', '.join(fits)}. Check one of them next "
+            "(the owner's rules still apply).")
+
+
 @dataclass
 class _Run:
     profile: Profile
@@ -278,6 +294,8 @@ class _Run:
                 # Seen live: a money question with no fitting plan, so the model walked the action list one refusal
                 # per turn and ran out of turns. Money is the owner's: say so, and name the nudges that fit.
                 out["owner_decides"] = money_hint(self.store.business, self.journey.stage)
+            elif ms["applies"] and not ms["passed"]:
+                out["plans_that_fit"] = plan_hint(self.store.business, self.journey.stage)
             self.prechecks.append(out)
             self.store.audit("pheri", "rule_precheck", "customer", self.profile.customer_key,
                              {**out, "channel": args.channel, "discount_pct": args.discount_pct})

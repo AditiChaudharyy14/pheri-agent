@@ -86,13 +86,11 @@ Wait for **pheri-web** to show "Your service is live", then open its URL.
      View trace".
 4. Click **View trace**. You should see Draft 1 with 3 turns, tokens and cost, marked "Recorded from a live
    run", and under it the 13 code checks and the judge's verdict on each claim.
-   - Aarav Silva's card (second) reads "Not verified after 3 drafts: caught by judge". That is real and
-     on purpose: his trace shows each draft, what the judge rejected, and the reasons sent back. The judge
-     is a soft check, so his card offers **Send anyway** ("Failed soft checks: judge flagged 2 claims").
-     Pressing it sends the draft as an owner override: the footer then reads "Sent by owner override:
-     judge flagged 2 claims". Press **Reset demo** to bring the card back.
-   - Open the site in a second browser (or a private window): Aarav's card is still waiting there. Each
-     visitor has their own sandbox.
+   - On Birgunj's Morning, approve Sita Karna's card with **Same rate as their last order**: it moves to
+     "Ready at 8:00", marked "approved by you (same rate as their last order)". Press **Reset demo** to
+     bring the card back.
+   - Open the site in a second browser (or a private window): Sita Karna's card is still waiting there.
+     Each visitor has their own sandbox.
 5. Back on Maya's page, click **Offer a discount**.
    - The refusal quotes the rule "Never offer discounts in a customer's first month."
    - This proves the browser's `/api` calls reach the API.

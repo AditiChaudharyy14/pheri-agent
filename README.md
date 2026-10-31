@@ -117,9 +117,10 @@ more calls on that one report. The recorded run: attempt 1's headline stated no 
 
 What you see: the Decision trace shows every draft, which layer caught it and why, and the reasons sent
 back; each card's footer reads "Verified: 13 code checks + judge"; Proof has the totals. In the recorded
-live run of the 12 showcase decisions: 22 drafts, 2 caught by code, 9 by the judge, 10 retries, 11
-verified, 1 sent to the owner (Aarav: the judge rejected unsupported claims in all three drafts; a soft
-check, so his card offers Send anyway).
+live run (re-recorded 31 Oct), Brightdesk's 6 decisions took 9 drafts: 1 caught by code, 2 by the judge,
+all 6 verified in the end; Birgunj's night took 32 drafts for 21 messages written (5 caught by code, 6 by the
+judge, each rewritten). A draft that still fails is never sent: it waits for the owner, and a soft failure
+can be sent only as a recorded owner override (tested in `test_verify` and `test_autonomy`).
 
 **How good is the judge?** `evals/drafts.jsonl` has 20 cases for it, each passing every code check: 10
 drafts that say only what they cite, and 10 with one planted claim no fact backs (an invented reason,

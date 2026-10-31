@@ -293,28 +293,17 @@ def test_replay_serves_mayas_recorded_live_run(monkeypatch, tmp_path):
     for card in cards:
         assert card["decided_by"]["source"] == "recorded", card["customer"]["name"]
         assert card["verification"]["judge_recorded"], card["customer"]["name"]  # the judge's verdicts too
-    # A real failure, kept: the judge rejected claims in all three of Aarav's drafts, so he is with the owner.
-    held = [c["customer"]["name"] for c in cards if not c["verification"]["passed"]]
-    assert held == ["Aarav Silva"]
+    # Re-recorded on 31 Oct with the plan hint: before it, Aarav's refusals named nothing that fits, the loop took 7
+    # turns and the judge rejected all three drafts. Now his one refusal names the plans that pass, and the next try
+    # (book_call) is verified on its first draft. (The owner-override path is tested in test_verify/test_autonomy.)
+    assert [c["customer"]["name"] for c in cards if not c["verification"]["passed"]] == []
     aarav = next(c for c in cards if c["customer"]["name"] == "Aarav Silva")
-    assert aarav["verification"]["caught_by"] == "judge" and aarav["verification"]["attempts"] == 3
-    assert aarav["action"]["status"] == "awaiting_approval" and not aarav["action"]["payload"]["verification"]["passed"]
-    # The judge is a soft check: the owner may send Aarav's draft anyway, on the record; a plain approve is refused.
-    v = aarav["action"]["payload"]["verification"]
-    assert v["soft_failed"] == ["judge"] and v["hard_failed"] == [] and v["judge_flagged"] == 2
-    pid = aarav["approval"]["id"]
-    refused = api.post(f"{BD}/approvals/{pid}/approve", json={"by": "owner:aditi"})
-    assert refused.status_code == 409 and "owner override" in refused.json()["detail"]
-    sent = api.post(f"{BD}/approvals/{pid}/approve", json={"by": "owner:aditi", "override": True}).json()
-    assert sent["status"] == "executed"
-    card = next(c for c in api.get(f"{BD}/next-steps").json() if c["customer"]["name"] == "Aarav Silva")
-    assert card["override"]["summary"] == "judge flagged 2 claims" and card["override"]["by"] == "owner:aditi"
-    assert card["override"]["line"] == "Sent by owner override: judge flagged 2 claims"
-    assert card["override"]["text"] == aarav["decision"]["message"] and card["override"]["overridden"] == ["judge"]
-    log = api.get(f"{BD}/audit", params={"subject_id": sent["id"]}).json()
-    assert [e["event"] for e in log][-3:] == ["approved", "owner_override", "executed"]
-    totals = api.get(f"{BD}/verification").json()
-    assert totals["decisions"] == 6 and totals["sent_to_owner"] == 1 and totals["drafts"] > totals["decisions"]
+    assert aarav["decision"]["action"] == "book_call" and aarav["turns"] <= 4 and len(aarav["drafts"]) == 1
+    trace = api.get(f"{c(aarav['customer']['key'])}/trace").json()
+    refused = [p for p in trace["prechecks"] if not p["allowed"]]
+    assert len(refused) == 1 and "send_help, book_call" in refused[0]["plans_that_fit"]
+    totals = api.get(f"{BD}/verification").json()  # 9 drafts for 6 decisions: 3 really caught and rewritten
+    assert totals["decisions"] == 6 and totals["sent_to_owner"] == 0 and totals["drafts"] == 9
 
 
 def test_replay_serves_birgunjs_recorded_night(monkeypatch, tmp_path):

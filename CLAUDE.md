@@ -25,8 +25,8 @@ Read this before every task. These rules are not optional.
 - Public demo (PHERI_PUBLIC_DEMO=1, render.yaml): a sandbox per visitor (cookie pheri_sandbox via web/proxy.ts,
   in memory, max 100, 30 min idle, idlest dropped first); "Reset demo" button; audit actor "demo visitor (public
   demo, no login)", rules by "demo setup (public demo, no login)".
-- Recorded (data/recorded/llm.jsonl, 96 replies): the 12 showcase cards through the loop (22 drafts: 2 caught by
-  code, 9 by the judge, 10 retries, 11 verified; Aarav sent to the owner after 3 drafts, soft, kept on purpose) and the
+- Recorded (data/recorded/llm.jsonl): Brightdesk's 6 cards (re-recorded 31 Oct with the plan hint: 9 drafts, 1 caught
+  by code, 2 by the judge, all verified; Aarav no longer fails, so no recorded override example is left) and the
   Brightdesk Wonder report (attempt 1 headline rejected, attempt 2 passed). Birgunj's report is the stand-in until the night is recorded.
   evals/judge_recorded.jsonl: the real judge on 20 cases in evals/drafts.jsonl: 10/10 planted claims caught,
   9/10 supported passed (S04 "sent a cart" vs the fact days_since_enquiry: strict, pinned in test_evals; the 7
@@ -106,7 +106,11 @@ Read this before every task. These rules are not optional.
   $0.07): Sita offer_reorder in 4 turns, Kiran send_checkin (3 drafts), both verified holding replies. Money
   questions carry two owner choices written by code (autonomy.owner_options from profile.money_ask: rate /
   discount, capped by the rule / refund, plus 'You decide'); approve(choice=...) checks the pick and audits it;
-  the card shows it. The general fix (a hint on every refused plan) would change 7 more recordings: not done.
+  the card shows it.
+- Plan hint (31 Oct, approved): every refusal by the middle step now carries plans_that_fit (decide.plan_hint: the
+  plans that pass for the stage; money ones only if the stage is sure enough). Money customers keep owner_decides.
+  Re-recorded the 7 it changed (Meta+Baseten $0.16): Anita Rai 7->4 turns, Aarav 7->4 (now verified on draft 1),
+  Nisha Das, Sanjay Karna 5->4; Ranju Jha/Poudel use their turns on real rewrites. One refusal each, at most.
 - Attack moment (Step 5, Glimmer cut: Modal needs a card): an attacker gets no word from any model. The owner gets
   the escalation; the customer gets a fixed holding reply written by code (pheri/holding.py, TEMPLATES ne, ne-Latn,
   hi, bho, en; native review pending, Aditi), in the language of their message, once, from decide_customer.
@@ -115,12 +119,12 @@ Read this before every task. These rules are not optional.
   length, links, money); no judge (the text claims nothing about the customer), stated in the stored verification;
   sent only through the sha gate, at 08:00 their time. Shown under Stopped (brief) and on the Night shift timeline.
   Recorder: same request twice in a run reuses its reply; refusals recorded; the pruned file
-  is re-checked in a fresh process and restored if anything misses. Recording 228 replies.
+  is re-checked in a fresh process and restored if anything misses. Recording 218 replies.
 - Waiting on Aditi: Nepali + Hindi clips; native review of Birgunj strings; Render clicks.
   Screenshots: uvicorn :8000 (replay), then `npm run build && npm start` (not the dev server), then
   `node scripts/evidence.mjs evidence [state]`; one heavy process at a time; restart the API before retaking
   (approving changes its state; the script approves last).
-- Live spend: Meta $5.7159 of $130, Baseten $3.2292 of $90, Modal $0 of $25. Tests: 401 (Postgres tests run when
+- Live spend: Meta $5.8318 of $130, Baseten $3.2721 of $90, Modal $0 of $25. Tests: 402 (Postgres tests run when
   PHERI_TEST_DATABASE_URL is set).
 
 ## What we are building

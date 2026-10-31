@@ -274,3 +274,15 @@ def test_the_recorded_attackers_each_get_a_fixed_reply_in_their_own_language(mon
         first = s["customer"]["name"].split()[0]
         assert h["status"] == "scheduled" and h["sends_at_local"] == "08:00"
         assert h["message"] == TEMPLATES[h["language"]].format(first=first, shop="Birgunj Saree Ghar")
+
+
+def test_every_refused_plan_names_the_plans_that_pass_for_the_stage():
+    """Live, refusals that said only "X fits 0%" cost a turn per guess (7 recorded decisions). A refusal from the
+    middle step now names the plans that pass it, money ones only when the stage is sure enough for money."""
+    from pheri.decide import plan_hint
+
+    assert "send_reminder, offer_discount" in plan_hint("birgunj", "asked_no_order")
+    assert plan_hint("birgunj", "wholesale").startswith("Plans that pass the middle step for 'wholesale' customers: "
+                                                         "offer_reorder.")
+    gone_quiet = plan_hint("birgunj", "gone_quiet")  # code's stage is right 97%: a nudge passes, money (100%) doesn't
+    assert "send_checkin" in gone_quiet and "offer_discount" not in gone_quiet

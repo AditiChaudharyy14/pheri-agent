@@ -211,7 +211,7 @@ export type Brief = {
   night: string; morning: string;
   read: { messages: number; by_language: Record<string, number>; voice_notes: { read: number; unreadable: number } };
   customers: number;
-  scheduled: NextStepWithTime[]; need_you: NextStepWithTime[]; blocked: NextStepWithTime[];
+  scheduled: NextStepWithTime[]; sent: NextStepWithTime[]; need_you: NextStepWithTime[]; blocked: NextStepWithTime[];
   stopped: Reply[];
   unreadable_voice: { customer: string; name: string; lang: string; says: string }[];
   voice_stand_in: boolean;

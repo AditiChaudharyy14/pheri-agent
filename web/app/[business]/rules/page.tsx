@@ -28,11 +28,11 @@ async function Rules({ params }: { params: PageProps<"/[business]/rules">["param
   const drafts = rules.filter((r) => !r.active);
   return (
     <div className="space-y-8">
-      <div className="grid grid-cols-[1fr_460px] items-start gap-8">
-        <Card>
+      <div className="grid items-start gap-6 lg:grid-cols-[1fr_460px] lg:gap-8">
+        <Card className="min-w-0">
           <RuleComposer business={business} />
         </Card>
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <Card>
             <h2 className="text-[1.45rem] font-medium">
               In force at {BUSINESSES[business as Business]} <span className="text-muted">({active.length})</span>
@@ -96,7 +96,7 @@ function MiddleStepCard({ m }: { m: MiddleStep }) {
       </p>
       <ul className="mt-5 divide-y divide-line">
         {m.stages.map((st) => (
-          <li key={st.stage} className="grid grid-cols-[14rem_1fr] gap-4 py-3">
+          <li key={st.stage} className="grid gap-2 py-3 sm:grid-cols-[14rem_1fr] sm:gap-4">
             <div>
               <span className="font-medium text-ink">{stageLabel(st.stage)}</span>
               <span className="block text-[0.85rem] text-muted">

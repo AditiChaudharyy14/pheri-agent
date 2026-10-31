@@ -19,9 +19,13 @@ const problems = [];
 for (const [vp, size] of Object.entries(VIEWPORTS)) {
   const page = await browser.newPage({ viewport: size, deviceScaleFactor: 1 });
   page.on("pageerror", (e) => problems.push(`${vp} page error: ${e.message}`));
-  if (state === "main") {  // loading: the first paint, before the brief streams in
+  if (state === "loading") {  // the stand-in answers the brief 10 s late: what the owner sees while waiting
     await page.goto(BASE + "/birgunj", { waitUntil: "commit" });
+    await page.waitForTimeout(2500);
     await page.screenshot({ path: `${out}/loading-${vp}.png` });
+    console.log(`${out}/loading-${vp}.png`);
+    await page.close();
+    continue;
   }
   for (const [name, path] of Object.entries(PAGES)) {
     await page.goto(BASE + path, { waitUntil: "networkidle", timeout: 120_000 });
@@ -38,7 +42,9 @@ for (const [vp, size] of Object.entries(VIEWPORTS)) {
     await page.keyboard.press("Tab");
     const focused = await page.evaluate(() => document.activeElement?.tagName + " " + (document.activeElement?.textContent ?? "").trim().slice(0, 30));
     console.log(`${vp} first Tab: ${focused}`);
-    // success: approve the first item that needs the owner, then show where it went
+    // success: approve the first item that needs the owner, then show where it went. Birgunj's recorded night left
+    // nothing for the owner, so this is Brightdesk's morning, where approvals wait.
+    await page.goto(BASE + "/brightdesk", { waitUntil: "networkidle" });
     const approve = page.getByRole("button", { name: /^(Approve|Send anyway)$/ }).first();
     if (await approve.count()) {
       await approve.click();

@@ -20,13 +20,14 @@ async function Morning({ params }: { params: PageProps<"/[business]">["params"] 
   const { business } = await params;
   const b = await api<Brief>(`/businesses/${business}/brief`);
   const langs = Object.entries(b.read.by_language).sort((x, y) => y[1] - x[1]);
-  const night = b.scheduled.length + b.need_you.length + b.blocked.length + b.stopped.length > 0;
+  const night = b.scheduled.length + b.sent.length + b.need_you.length + b.blocked.length + b.stopped.length > 0;
+  const nightShift = b.night !== b.morning; // a business whose Pheri works while the owner sleeps
   return (
     <div className="mx-auto max-w-[56rem] space-y-8">
       <header>
         <p className="text-[0.9rem] text-muted">
           {dayNPT(b.morning)} · {clockNPT(b.morning)}
-          {night && <> · the night shift finished at {clockNPT(b.night)}</>}
+          {night && nightShift && <> · the night shift finished at {clockNPT(b.night)}</>}
         </p>
         <h1 className="mt-1 text-[2rem] leading-tight font-medium lg:text-[2.6rem]">Good morning.</h1>
       </header>
@@ -48,9 +49,23 @@ async function Morning({ params }: { params: PageProps<"/[business]">["params"] 
             {b.customers} customers.
           </p>
           <p className="mt-3">
-            <Count tone="teal" n={b.scheduled.length} one="reply" many="replies" /> passed every check and{" "}
-            {b.scheduled.length === 1 ? "goes" : "go"} out at <b className="font-semibold">8:00</b>, when your quiet hours
-            end. <Count tone="marigold" n={b.need_you.length} one="needs you" many="need you" />
+            {b.scheduled.length > 0 && (
+              <>
+                <Count tone="teal" n={b.scheduled.length} one="reply" many="replies" /> passed every check and{" "}
+                {b.scheduled.length === 1 ? "goes" : "go"} out at <b className="font-semibold">8:00</b>, when your quiet
+                hours end.{" "}
+              </>
+            )}
+            {b.sent.length > 0 && (
+              <>
+                <Count tone="teal" n={b.sent.length} one="message" many="messages" /> went out.{" "}
+              </>
+            )}
+            {b.need_you.length ? (
+              <Count tone="marigold" n={b.need_you.length} one="needs you" many="need you" />
+            ) : (
+              <span>Nothing needs you</span>
+            )}
             {b.blocked.length > 0 && (
               <>
                 ; <Count tone="vermilion" n={b.blocked.length} one="was" many="were" /> blocked by your rules
@@ -105,6 +120,22 @@ async function Morning({ params }: { params: PageProps<"/[business]">["params"] 
         </section>
       )}
 
+      {b.sent.length > 0 && (
+        <section aria-labelledby="sent" role="status">
+          <h2 id="sent" className="flex items-baseline gap-3 text-[1.25rem] font-medium">
+            <Dot tone="teal" />
+            Sent
+          </h2>
+          <ul className="mt-2 divide-y divide-line border-y border-line">
+            {b.sent.map((s) => (
+              <li key={s.customer.key}>
+                <Ready business={business} step={s} sent />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {b.stopped.length > 0 && (
         <section aria-labelledby="stopped">
           <h2 id="stopped" className="flex items-baseline gap-3 text-[1.25rem] font-medium">
@@ -150,9 +181,9 @@ async function Morning({ params }: { params: PageProps<"/[business]">["params"] 
 
       {b.proof && (
         <p className="border-t border-line pt-5 text-[1.02rem] text-ink-2">
-          Does it work? In a simulation of {b.proof.customers.toLocaleString()} customers, those Pheri followed up with{" "}
-          {b.proof.outcome} {pct(b.proof.treated)} of the time, against {pct(b.proof.holdout)} for those it left
-          alone. <Link href={`/${business}/proof`} className="text-teal-ink underline">How we know</Link> ·{" "}
+          Does it work? In a simulation of {b.proof.customers.toLocaleString()} customers, the ones Pheri followed up
+          with {b.proof.outcome === "ordered" ? "placed an order" : "responded"} {pct(b.proof.treated)} of the time,
+          against {pct(b.proof.holdout)} for the ones it left alone. <Link href={`/${business}/proof`} className="text-teal-ink underline">How we know</Link> ·{" "}
           <Link href={`/${business}/slop`} className="text-teal-ink underline">What a plain AI would have sent</Link>
         </p>
       )}
@@ -227,7 +258,7 @@ function NeedYou({ business, step }: { business: string; step: NextStepWithTime 
   );
 }
 
-function Ready({ business, step }: { business: string; step: NextStepWithTime }) {
+function Ready({ business, step, sent = false }: { business: string; step: NextStepWithTime; sent?: boolean }) {
   const d = step.decision;
   return (
     <details className="group py-3">
@@ -236,7 +267,9 @@ function Ready({ business, step }: { business: string; step: NextStepWithTime })
           <span className="font-medium text-ink">{step.customer.name}</span>{" "}
           <span className="text-[0.92rem] text-ink-2">· {actionLabel(d.action)}</span>
         </span>
-        <span className="shrink-0 text-[0.85rem] text-teal-ink">{step.sends_at_local ?? "8:00"} their time</span>
+        <span className="shrink-0 text-[0.85rem] text-teal-ink">
+          {sent ? (step.approval?.decision === "approved" ? "✓ approved by you, sent" : "✓ sent") : `${step.sends_at_local ?? "8:00"} their time`}
+        </span>
       </summary>
       <div className="mt-2 space-y-3 pl-0">
         <p className="leading-relaxed text-ink">{d.message}</p>

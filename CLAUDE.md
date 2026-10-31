@@ -87,8 +87,13 @@ Read this before every task. These rules are not optional.
   found: a live 4xx was not recorded, so replay diverged (Pooja Ansari); refusals are now recorded and replayed.
 - Modal: its billing docs say a payment method is required for all usage (no Modal deploy). Baseten lists no
   Glimmer (only muse-spark-open and muse-spark-open-1026 of Meta's models).
-- Waiting on Aditi: Nepali + Hindi clips, OK to push for Render.
-  Servers for screenshots: uvicorn :8000 (replay, no --reload: restart after API changes), next dev :3000.
+- Sat screens done: Morning brief (sentences; needs you / stopped / ready at 8:00 / sent; partial = Nepali voice note,
+  permission = public demo banner; error.tsx at both levels), Slop vs Pheri (/slop), Night shift. Evidence:
+  web/evidence/report.json + 20 screenshots at 390x844 and 1440x900; check-evidence.js passes. Plain-draft
+  comparison skips customers Pheri stopped or holds. Recording 216 replies.
+- Waiting on Aditi: Nepali + Hindi clips; native review of Birgunj strings; Render clicks.
+  Screenshots: uvicorn :8000 (replay), then `npm run build && npm start` (not the dev server), then
+  `node scripts/evidence.mjs evidence [state]`; one heavy process at a time.
 - Live spend: Meta $4.8409 of $130, Baseten $3.0098 of $90, Modal $0 of $25. Tests: 380 (Postgres tests run when
   PHERI_TEST_DATABASE_URL is set).
 

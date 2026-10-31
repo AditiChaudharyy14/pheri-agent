@@ -61,7 +61,7 @@ export function RuleComposer({ business }: { business: string }) {
           }}
           onKeyDown={(e) => e.key === "Enter" && text.trim() && preview()}
           placeholder="e.g. No discounts above 15%"
-          className="flex-1 rounded-xl border border-line-2 bg-paper px-4 py-3 text-[1.05rem] text-ink placeholder:text-muted"
+          className="min-w-0 flex-1 rounded-xl border border-line-2 bg-paper px-4 py-3 text-[1.05rem] text-ink placeholder:text-muted"
         />
         <button
           onClick={preview}

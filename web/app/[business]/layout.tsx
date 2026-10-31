@@ -10,7 +10,12 @@ export function generateStaticParams() {
 }
 
 async function ModePill() {
-  const h = await api<{ mode: string; public_demo: boolean }>("/health");
+  let h: { mode: string; public_demo: boolean };
+  try {
+    h = await api<{ mode: string; public_demo: boolean }>("/health");
+  } catch {
+    return null; // the page itself says the server didn't answer (error.tsx); the header stays usable
+  }
   if (h.mode === "replay") {
     return (
       <>

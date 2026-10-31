@@ -661,7 +661,8 @@ def create_app(llm: LLM | None = None) -> FastAPI:
             if b not in state.slop:
                 keys = []
                 for st in SLOP_STAGES[b]:
-                    in_stage = [k for k in showcase(b) if state.stages[b][k].stage == st]
+                    in_stage = [k for k in showcase(b) if state.stages[b][k].stage == st
+                                and not state.decided[b][k].get("skipped")]  # not a customer Pheri stopped or holds
                     wrote = [k for k in in_stage if any(src.kind in ("message", "ticket") and src.text
                                                         for src in state.data[b].customers[k].sources)]
                     k = (wrote or in_stage or [None])[0]  # someone who wrote, if the stage has one
@@ -704,6 +705,7 @@ def create_app(llm: LLM | None = None) -> FastAPI:
                                          "unreadable": sum(v["status"] == voice_module.UNREADABLE for v in voice)}},
                 "customers": len(talking),
                 "scheduled": [c for c in talking if status(c) == "scheduled"],
+                "sent": [c for c in talking if status(c) == "executed" and c["decision"]["action"] != "task_for_owner"],
                 "need_you": need,
                 "blocked": [c for c in talking if status(c) == "blocked"],
                 "stopped": stopped,

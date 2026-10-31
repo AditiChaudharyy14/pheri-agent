@@ -4,7 +4,11 @@
 """
 
 import json
-from http.server import BaseHTTPRequestHandler, HTTPServer
+import os
+import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+DELAY_S = float(os.environ.get("STANDIN_DELAY_S", "0"))  # > 0: the brief answers late, to show the loading state
 
 EMPTY_BRIEF = {"night": "2026-10-30T00:30:00+00:00", "morning": "2026-10-30T01:45:00+00:00",
                "read": {"messages": 0, "by_language": {}, "voice_notes": {"read": 0, "unreadable": 0}},
@@ -15,6 +19,8 @@ EMPTY_BRIEF = {"night": "2026-10-30T00:30:00+00:00", "morning": "2026-10-30T01:4
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):  # noqa: N802
         body = {"mode": "replay", "public_demo": False} if self.path.startswith("/health") else EMPTY_BRIEF
+        if DELAY_S and not self.path.startswith("/health"):
+            time.sleep(DELAY_S)
         data = json.dumps(body).encode()
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
@@ -24,4 +30,4 @@ class Handler(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    HTTPServer(("127.0.0.1", 8000), Handler).serve_forever()
+    ThreadingHTTPServer(("127.0.0.1", 8000), Handler).serve_forever()

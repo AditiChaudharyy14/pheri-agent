@@ -63,10 +63,11 @@ from .learn import write_report
 from .llm import LLM
 from .privacy import private_mode, set_private_mode
 from .profile import Profile, build_profile, compute_facts, load, norm_email
-from .rules import CheckContext, active_rules, check, confirm, describe, propose, seed
+from .rules import CheckContext, active_rules, check, confirm, describe, local_time, propose, seed
 from .store import MemoryStore, NotFound, PgStore
-from .synth import BUSINESS_NAMES, NOW
+from .synth import BUSINESS_NAMES, CLOCKS
 from . import voice
+from . import voice as voice_module
 from .verify import CODE_CHECKS, THRESHOLDS, middle_step_scores, override_line, override_summary
 
 BUSINESSES = tuple(BUSINESS_NAMES)
@@ -253,7 +254,7 @@ def create_app(llm: LLM | None = None) -> FastAPI:
         c = customer(b, key)
         facts, _ = compute_facts(c, b)
         store = state.stores[b]
-        return CheckContext(b, facts, NOW, sent_messages(store, c.key),
+        return CheckContext(b, facts, CLOCKS[b][1], sent_messages(store, c.key),  # the owner's clock
                             do_not_contact=store.do_not_contact(c.key) is not None)
 
     def rule_view(row: dict) -> dict:
@@ -315,7 +316,7 @@ def create_app(llm: LLM | None = None) -> FastAPI:
         """Decide again now (guard, profile, decide). The result replaces the stored one."""
         c = customer(b, key)
         with state.lock:
-            out = dataclasses.asdict(decide_customer(state.data[b], key, state.stores[b], state.llm))
+            out = dataclasses.asdict(decide_customer(state.data[b], key, state.stores[b], state.llm, CLOCKS[b][1]))
             state.decided[b][c.key] = out
         return out
 
@@ -323,7 +324,7 @@ def create_app(llm: LLM | None = None) -> FastAPI:
         c = customer(b, key)
         if c.key not in state.decided[b]:
             state.decided[b][c.key] = dataclasses.asdict(decide_customer(state.data[b], c.key, state.stores[b],
-                                                                         state.llm))
+                                                                         state.llm, CLOCKS[b][0]))
         return state.decided[b][c.key]
 
     @app.get("/businesses/{b}/customers/{key}/decision")
@@ -484,7 +485,8 @@ def create_app(llm: LLM | None = None) -> FastAPI:
     def warm(b: str) -> None:
         for k in showcase(b):
             if k not in state.decided[b]:
-                state.decided[b][k] = dataclasses.asdict(decide_customer(state.data[b], k, state.stores[b], state.llm))
+                state.decided[b][k] = dataclasses.asdict(decide_customer(state.data[b], k, state.stores[b], state.llm,
+                                                                        CLOCKS[b][0]))  # the night shift's clock
         # The Safety screen reads replies in every language the data has: the first one in each other language.
         seen_langs = {"en"}
         for cu in state.data[b].customers.values():
@@ -500,7 +502,12 @@ def create_app(llm: LLM | None = None) -> FastAPI:
         action = store.get_action(out["action"]["id"]) if out.get("action") else None  # live status, not cached
         approval = next((a for a in store.approvals(pending_only=False) if action and a["action_id"] == action["id"]),
                         None)
-        return {"customer": {"key": k, "name": cu.name, "company": cu.company, "town": cu.attrs.get("town"),
+        sends_at = None
+        if action and action["status"] == "scheduled" and action["payload"].get("send_at"):
+            sends_at = local_time(datetime.fromisoformat(action["payload"]["send_at"]),
+                                  CheckContext(b, {"country": cu.attrs.get("country")}, CLOCKS[b][1]))
+        return {"sends_at_local": sends_at,
+                "customer": {"key": k, "name": cu.name, "company": cu.company, "town": cu.attrs.get("town"),
                              "stage": state.stages[b][k].stage},
                 "decision": out["decision"], "evidence": receipts(b, cu, out["evidence"]), "action": action,
                 "approval": approval, "skipped": out["skipped"], "fallback": out["fallback"],
@@ -639,6 +646,46 @@ def create_app(llm: LLM | None = None) -> FastAPI:
                             "screen_after": g["screen_after"], "provider": g["provider"], "model": g["model"],
                             "escalation": {"id": esc["id"], "status": esc["status"]} if esc else None})
             return out
+
+    @app.get("/businesses/{b}/brief")
+    def brief(b: str = Depends(business)):
+        """The owner's morning: what the night shift read, wrote, scheduled, held back and stopped, from the same
+        cards, replies and audit log the other pages show. Counted in code; no model is asked."""
+        with state.lock:
+            warm(b)
+            cards = [card(b, k, state.decided[b][k]) for k in showcase(b)]
+        reps = replies(b)
+        status = lambda c: (c["action"] or {}).get("status")  # noqa: E731
+        talking = [c for c in cards if c["skipped"] not in ("escalated", "open_escalation")]
+        need = [c for c in talking if (c["approval"] or {}).get("decision") == "pending"
+                or c["decision"]["action"] == "task_for_owner"]
+        voice = list(state.voice[b].values())
+        stopped = [r for r in reps if r["attack"]]
+        langs: dict[str, int] = {}
+        for r in reps:
+            langs[r["language"]] = langs.get(r["language"], 0) + 1
+        twin_file = TWIN_DIR / f"{b}-n5000-seed7.json"
+        proof = None
+        if twin_file.exists():
+            o = json.loads(twin_file.read_text(encoding="utf-8"))["overall"]
+            proof = {"treated": o["treated"]["rate"], "holdout": o["holdout"]["rate"], "lift_pp": o["lift_pp"],
+                     "ci_pp": o["ci_pp"], "verdict": o["verdict"], "customers": 5000,
+                     "outcome": "ordered" if b == "birgunj" else "responded"}
+        clock = CLOCKS[b]
+        return {"night": clock[0].isoformat(), "morning": clock[1].isoformat(),
+                "read": {"messages": len(reps), "by_language": langs,
+                         "voice_notes": {"read": sum(v["status"] != voice_module.UNREADABLE for v in voice),
+                                         "unreadable": sum(v["status"] == voice_module.UNREADABLE for v in voice)}},
+                "customers": len(talking),
+                "scheduled": [c for c in talking if status(c) == "scheduled"],
+                "need_you": need,
+                "blocked": [c for c in talking if status(c) == "blocked"],
+                "stopped": stopped,
+                "unreadable_voice": [{"customer": v["customer"], "name": state.data[b].customers[v["customer"]].name,
+                                      "lang": v["lang"], "says": v["says"]}
+                                     for v in voice if v["status"] == voice_module.UNREADABLE],
+                "voice_stand_in": any(v["status"] == voice_module.STAND_IN for v in voice),
+                "proof": proof, "public_demo": state.public_demo, "mode": state.settings.llm_mode}
 
     @app.get("/businesses/{b}/private-mode/runs-on")
     def runs_on(b: str = Depends(business)):

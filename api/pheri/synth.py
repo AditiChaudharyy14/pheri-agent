@@ -25,6 +25,11 @@ from .config import REPO_ROOT
 
 TODAY = date(2026, 10, 30)
 NOW = datetime(2026, 10, 30, 10, 0, tzinfo=timezone.utc)  # the demo clock: 10:00 UTC on TODAY
+# Birgunj's night shift runs at 06:15 Nepal time (00:30 UTC; 06:00 in India), inside every customer's quiet hours,
+# so its messages wait for 08:00; the owner reads the morning brief at 07:30 (01:45 UTC). Same date as TODAY.
+NIGHT_RUN = datetime(2026, 10, 30, 0, 30, tzinfo=timezone.utc)
+MORNING = datetime(2026, 10, 30, 1, 45, tzinfo=timezone.utc)
+CLOCKS = {"brightdesk": (NOW, NOW), "birgunj": (NIGHT_RUN, MORNING)}  # business -> (when Pheri decides, when the owner acts)
 SEED = 20261027
 OUT = REPO_ROOT / "data" / "synth"
 # Fixed tenant ids, seeded in db/schema.sql, so every demo run is identical.

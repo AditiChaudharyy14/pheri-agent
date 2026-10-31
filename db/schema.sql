@@ -136,8 +136,8 @@ CREATE TABLE actions (
     mode         text CHECK (mode IN ('suggest', 'ask_owner', 'act_alone')),  -- autonomy dial when decided
     rule_check   jsonb,                         -- result of the code check, rule by rule
     status       text NOT NULL DEFAULT 'proposed' CHECK (status IN
-                     ('proposed', 'blocked', 'suggested', 'awaiting_approval', 'approved', 'rejected', 'executed',
-                      'failed')),
+                     ('proposed', 'blocked', 'suggested', 'awaiting_approval', 'approved', 'rejected', 'scheduled',
+                      'executed', 'failed')),
     created_at   timestamptz NOT NULL DEFAULT now(),
     executed_at  timestamptz,
     UNIQUE (business_id, id),

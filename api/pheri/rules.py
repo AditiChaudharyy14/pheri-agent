@@ -169,6 +169,38 @@ def _violation(c: Check, a: ProposedAction, ctx: CheckContext) -> str | None:
     return None
 
 
+def next_send_time(rules: list[Rule], action: ProposedAction, ctx: CheckContext) -> datetime:
+    """The first moment, at or after the planned time, when no quiet-hours rule stops this message: a message Pheri
+    drafts at night waits for the morning instead of being refused, and the quiet-hours check (still a hard rule,
+    run again at the send step) then passes because nothing goes out before it. Other rules do not move with time."""
+    at = action.send_at or ctx.now
+    t = action.type
+    if not (t and t.customer_facing):
+        return at
+    quiet = [c for r in rules for c in r.checks if isinstance(c, QuietHours)]
+    for _ in range(4):  # a few quiet windows can push each other along; four passes is plenty
+        moved = False
+        for c in quiet:
+            offsets = ((c.utc_offset_hours,) if c.utc_offset_hours is not None
+                       else COUNTRY_UTC_OFFSETS.get(ctx.facts.get("country") or "", ()))
+            for o in offsets:
+                local = at + timedelta(hours=o)
+                if _in_window(local.hour + local.minute / 60, c.start_hour, c.end_hour):
+                    end = local.replace(hour=c.end_hour, minute=0, second=0, microsecond=0)
+                    if end <= local:
+                        end += timedelta(days=1)
+                    at, moved = end - timedelta(hours=o), True
+        if not moved:
+            break
+    return at
+
+
+def local_time(at: datetime, ctx: CheckContext) -> str:
+    """When `at` is for the customer, as "08:00" (their country's first UTC offset), for the owner to read."""
+    offsets = COUNTRY_UTC_OFFSETS.get(ctx.facts.get("country") or "", (0,))
+    return f"{at + timedelta(hours=offsets[0]):%H:%M}"
+
+
 def check(rules: list[Rule], action: ProposedAction, ctx: CheckContext) -> CheckResult:
     results = [{"rule_id": "catalog", "check": "catalog", "passed": not (p := problems(ctx.business, action)),
                 "reason": "; ".join(p) or None}]

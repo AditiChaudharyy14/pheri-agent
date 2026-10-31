@@ -1,0 +1,123 @@
+"""The night shift: Birgunj's decisions run at 06:15, inside every customer's quiet hours. Safe nudges go out on
+their own, but only at 08:00 the customer's time; money waits for the owner; nothing is sent in the night."""
+
+from datetime import datetime, timedelta, timezone
+
+import pytest
+
+from pheri.actions import ProposedAction
+from pheri.autonomy import approve, modes
+from pheri.config import Settings
+from pheri.decide import decide_customer
+from pheri.journey import stages
+from pheri.llm import LLM
+from pheri.profile import compute_facts, load
+from pheri.rules import COUNTRY_UTC_OFFSETS, CheckContext, QuietHours, Rule, check, local_time, next_send_time, seed
+from pheri.store import MemoryStore
+from pheri.synth import MORNING, NIGHT_RUN
+
+
+@pytest.fixture(scope="module")
+def birgunj():
+    return load("birgunj")
+
+
+@pytest.fixture
+def llm(tmp_path):
+    return LLM(Settings(llm_mode="mock", record_path=None, database_url=None, ledger_path=str(tmp_path / "l.sqlite")))
+
+
+QUIET = [Rule("q", "Don't message customers between 9pm and 8am.", [QuietHours(start_hour=21, end_hour=8)])]
+
+
+@pytest.mark.parametrize("country,local", [("NP", "08:00"), ("IN", "08:00")])
+def test_a_night_message_waits_for_eight_in_the_morning_the_customers_time(country, local):
+    ctx = CheckContext("birgunj", {"country": country}, NIGHT_RUN)
+    a = ProposedAction(kind="send_checkin", channel="whatsapp", message="Hi")
+    assert not check(QUIET, a, ctx).allowed  # now: inside quiet hours
+    at = next_send_time(QUIET, a, ctx)
+    assert at > NIGHT_RUN and local_time(at, ctx) == local
+    assert check(QUIET, a.model_copy(update={"send_at": at}), ctx).allowed
+    assert next_send_time(QUIET, a, CheckContext("birgunj", {"country": country}, NIGHT_RUN + timedelta(hours=3))) \
+        == NIGHT_RUN + timedelta(hours=3)  # in the day: no wait
+    owner_task = ProposedAction(kind="task_for_owner", message="Call them")
+    assert next_send_time(QUIET, owner_task, ctx) == NIGHT_RUN  # only messages to customers wait
+
+
+def test_birgunj_sends_safe_nudges_alone_and_asks_for_money():
+    dial = modes(MemoryStore("birgunj"))
+    assert dial["offer_discount"] == "ask_owner"
+    assert all(dial[k] == "act_alone" for k in ("send_reminder", "recommend_product", "offer_reorder", "send_help",
+                                                 "send_checkin"))
+    assert modes(MemoryStore("brightdesk"))["send_help"] == "ask_owner"  # Brightdesk is unchanged
+
+
+def test_the_night_shift_schedules_and_never_sends_in_the_night(birgunj, llm):
+    store = MemoryStore("birgunj")
+    seed(store, llm, by="test")
+    st = stages(birgunj)
+    keys = [next(k for k, j in st.items() if j.stage == s) for s in ("loyal", "wholesale", "complaint", "asked_no_order")]
+    for k in keys:
+        decide_customer(birgunj, k, store, llm, NIGHT_RUN)
+    acts = [a for a in store.actions() if a["kind"] not in ("task_for_owner", "escalate_to_human")]
+    assert acts
+    assert not [a for a in acts if a["status"] == "executed"]  # nothing went out at 06:15
+    scheduled = [a for a in acts if a["status"] == "scheduled"]
+    assert scheduled, [(a["kind"], a["status"]) for a in acts]
+    for a in scheduled:
+        at = datetime.fromisoformat(a["payload"]["send_at"])
+        country = compute_facts(birgunj.customers[a["customer_key"]], "birgunj")[0]["country"]
+        assert f"{at + timedelta(hours=COUNTRY_UTC_OFFSETS[country][0]):%H:%M}" == "08:00"
+        assert any(e["event"] == "scheduled" for e in store.audit_log(a["id"]))
+
+
+def test_an_owner_approving_at_half_past_seven_schedules_it_for_eight(birgunj, llm):
+    """A discount waits for the owner; approved at 07:30 (inside quiet hours) it goes out at 08:00, not now."""
+    from pheri.autonomy import submit
+    from pheri.verify import Draft, context
+
+    store = MemoryStore("birgunj")
+    seed(store, llm, by="test")
+    st = stages(birgunj)
+    k = next(k for k, j in st.items() if j.stage == "gone_quiet")
+    c = birgunj.customers[k]
+    facts, prov = compute_facts(c, "birgunj")
+    ctx = CheckContext("birgunj", facts, NIGHT_RUN)
+    from pheri.profile import Profile
+
+    prof = Profile("birgunj", k, c.name, None, facts, {}, {"facts": prov, "identity": {}, "sources": [], "dropped": []})
+    d = Draft(ProposedAction(kind="offer_discount", channel="whatsapp", discount_pct=10,
+                             message=f"Hi {c.name.split()[0]}, here is 10% off your next order. - The Birgunj Saree Ghar team"),
+              f"{c.name.split()[0]} has stopped ordering.", "Last ordered a while ago.",
+              ["journey_stage", "days_since_last_order"], [])
+    from pheri.journey import stage as journey_stage
+
+    a = submit(store, k, d, verify=context(prof, journey_stage("birgunj", facts, prov), ctx, store, llm))
+    if a["status"] != "awaiting_approval":
+        pytest.skip(f"the draft did not reach the owner here ({a['status']}): nothing to approve")
+    pid = next(p["id"] for p in store.approvals() if p["action_id"] == a["id"])
+    morning = CheckContext("birgunj", facts, MORNING)
+    out = approve(store, pid, by="owner:test", context_for=lambda key: morning,
+                  override=bool(a["payload"]["verification"].get("soft_failed")))
+    assert out["status"] == "scheduled" and MORNING < datetime(2026, 10, 30, 2, 30, tzinfo=timezone.utc)
+
+
+def test_the_morning_brief_counts_what_the_night_did(monkeypatch, tmp_path):
+    from fastapi.testclient import TestClient
+
+    from pheri.app import create_app
+
+    monkeypatch.setenv("PHERI_LLM_MODE", "mock")
+    monkeypatch.setenv("PHERI_LEDGER_PATH", str(tmp_path / "l.sqlite"))
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    api = TestClient(create_app())
+    b = api.get("/businesses/birgunj/brief").json()
+    assert b["night"] < b["morning"] and b["customers"] >= 20
+    assert b["scheduled"] and all(c["sends_at_local"] == "08:00" for c in b["scheduled"])
+    for c in b["scheduled"] + b["need_you"] + b["blocked"]:
+        assert (c["action"] or {}).get("status") != "executed" or c["decision"]["action"] == "task_for_owner"
+    assert all(c["decision"]["action"] != "offer_discount" for c in b["scheduled"])  # money waits for the owner
+    assert len(b["stopped"]) == 3 and all(r["attack"] for r in b["stopped"])
+    assert [v["lang"] for v in b["unreadable_voice"]] == ["ne"]  # Muse Voice reads Hindi, not Nepali
+    assert b["proof"]["outcome"] == "ordered" and b["proof"]["lift_pp"] == 14.0
+    assert api.get("/businesses/brightdesk/brief").json()["scheduled"] == []  # no night shift there

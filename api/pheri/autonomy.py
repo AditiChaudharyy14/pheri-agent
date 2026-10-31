@@ -25,17 +25,21 @@ from datetime import datetime
 from typing import Callable
 
 from .actions import BUSINESS_ACTIONS, CATALOG, ESCALATE, ProposedAction
-from .rules import CheckContext, active_rules, check
+from .rules import CheckContext, active_rules, check, next_send_time
 from .verify import Draft, VerifyContext, override_line, payload_sha, verify_draft
 
 MODES = ("suggest", "ask_owner", "act_alone")  # from least to most autonomous
 DEFAULT_MODE = "ask_owner"
 DEFAULT_MODES = {"task_for_owner": "act_alone"}  # internal: it only puts a task on the owner's list
+# Human sign-off by stakes, per business: the night shift sends safe nudges on its own (still verified, still inside
+# the rules, still after quiet hours), and anything that changes what a customer pays waits for the owner.
+BUSINESS_MODES = {"birgunj": {"send_reminder": "act_alone", "recommend_product": "act_alone", "offer_reorder": "act_alone",
+                              "send_help": "act_alone", "send_checkin": "act_alone", "offer_discount": "ask_owner"}}
 
 
 def mode_for(store, kind: str, saved: dict[str, str] | None = None) -> str:
     saved = store.autonomy_modes() if saved is None else saved
-    return saved.get(kind, DEFAULT_MODES.get(kind, DEFAULT_MODE))
+    return saved.get(kind, BUSINESS_MODES.get(store.business, {}).get(kind, DEFAULT_MODES.get(kind, DEFAULT_MODE)))
 
 
 def modes(store) -> dict[str, str]:
@@ -70,6 +74,7 @@ def submit(store, customer_key: str, draft: Draft, *, verify: VerifyContext, cap
     action, ctx = draft.action, verify.ctx
     t = CATALOG.get(action.kind)
     v = verify_draft(draft, verify)  # before the transaction: the judge is a model call
+    action = action.model_copy(update={"send_at": next_send_time(active_rules(store), action, ctx)})  # after quiet hours
     payload = {**_payload(action), "verification": v.record()}
     with store.tx():  # rules, dial and writes from one consistent view
         result = check(active_rules(store), action, ctx)
@@ -138,7 +143,9 @@ def verified_to_send(action: dict, override: dict | None = None) -> bool:
             and set(v.get("soft_failed") or ["?"]) <= set(override.get("overridden") or []))
 
 
-def _execute(store, action_id: str, now: datetime, actor: str, override: dict | None = None) -> bool:
+def _execute(store, action_id: str, now: datetime, actor: str, override: dict | None = None,
+             send_at: datetime | None = None) -> bool:
+    """`send_at`: when it may go out (the end of quiet hours); by default, the time stored with the action."""
     action = store.get_action(action_id)
     if not verified_to_send(action, override):
         store.set_action(action_id, "blocked")
@@ -146,6 +153,11 @@ def _execute(store, action_id: str, now: datetime, actor: str, override: dict | 
                     {"customer": action["customer_key"], "reason": "not verified: Pheri never sends an unverified draft",
                      "verification": (action["payload"].get("verification") or {}).get("reasons", [])})
         return False
+    when = send_at or (datetime.fromisoformat(action["payload"]["send_at"]) if action["payload"].get("send_at") else None)
+    if when and when > now:  # verified and allowed, waiting for the customer's quiet hours to end
+        store.set_action(action_id, "scheduled")
+        store.audit(actor, "scheduled", "action", action_id, {"send_at": when.isoformat()})
+        return True
     store.set_action(action_id, "executed", executed_at=now)
     store.audit(actor, "executed", "action", action_id, {"delivery": "simulated"})
     return True
@@ -171,7 +183,7 @@ def approve(store, approval_id: str, by: str, context_for: Callable[[str], Check
                 raise ValueError(f"This draft failed soft checks ({', '.join(v['soft_failed'])}). Read it, then send "
                                  "it anyway with an owner override, or reject it.")
         proposed = ProposedAction(kind=action["kind"], channel=p.get("channel"), discount_pct=p.get("discount_pct"),
-                                  message=p.get("message", ""))  # sent now, not at the time first planned
+                                  message=p.get("message", ""))  # from now, not from the time first planned
         store.decide_approval(approval_id, "approved", by)
         store.audit(by, "approved", "action", action["id"], {"approval_id": approval_id})
         if action["kind"] == ESCALATE:  # the owner has read it and dealt with it; nothing goes out
@@ -179,6 +191,7 @@ def approve(store, approval_id: str, by: str, context_for: Callable[[str], Check
             store.audit(by, "escalation_closed", "action", action["id"], {})
             return store.get_action(action["id"])
         ctx = context_for(action["customer_key"])
+        proposed.send_at = next_send_time(active_rules(store), proposed, ctx)  # approved at 07:30: out at 08:00
         result = check(active_rules(store), proposed, ctx)  # do-not-contact and quiet hours too: never overridden
         if result.allowed:
             store.set_action(action["id"], "approved", rule_check=result.as_dict())
@@ -189,7 +202,7 @@ def approve(store, approval_id: str, by: str, context_for: Callable[[str], Check
                                "reasons": v.get("reasons", []), "text": p.get("message", ""),
                                "channel": p.get("channel"), "sha": v.get("sha")}
                 store.audit(by, "owner_override", "action", action["id"], sent_anyway)
-            _execute(store, action["id"], ctx.now, by, override=sent_anyway)
+            _execute(store, action["id"], ctx.now, by, override=sent_anyway, send_at=proposed.send_at)
         else:
             store.set_action(action["id"], "blocked", rule_check=result.as_dict())
             store.audit("pheri", "rule_blocked", "action", action["id"],

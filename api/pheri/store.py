@@ -25,8 +25,8 @@ from typing import Callable
 
 from .synth import BUSINESS_IDS, NOW
 
-ACTION_STATUSES = ("proposed", "blocked", "suggested", "awaiting_approval", "approved", "rejected", "executed",
-                   "failed")
+ACTION_STATUSES = ("proposed", "blocked", "suggested", "awaiting_approval", "approved", "rejected", "scheduled",
+                   "executed", "failed")  # scheduled: verified and allowed, going out when the customer's quiet hours end
 
 
 class NotFound(KeyError):

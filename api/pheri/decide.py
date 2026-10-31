@@ -45,7 +45,7 @@ from .privacy import private_fence, private_mode
 from .journey import Journey, stage
 from .llm import LLM, LLMResult, ModelOutputError, register_mock, strict_schema
 from .profile import Profile
-from .rules import CheckContext, active_rules, check, describe
+from .rules import CheckContext, active_rules, check, describe, local_time, next_send_time
 from .synth import BUSINESS_NAMES, NOW
 
 PURPOSE = "decide"
@@ -250,9 +250,13 @@ class _Run:
             except ValidationError as exc:
                 return {"error": f"bad arguments: {exc.errors()[0]['msg']}"}
             a = ProposedAction(kind=args.action, channel=args.channel, discount_pct=args.discount_pct)
-            r = check(active_rules(self.store), a, self.ctx)
+            rules = active_rules(self.store)
+            a.send_at = next_send_time(rules, a, self.ctx)  # at night: the end of the customer's quiet hours
+            r = check(rules, a, self.ctx)
             ms = middle_step(self.store.business, self.journey.stage, args.action)
             out = {"action": args.action, "allowed": r.allowed and ms["passed"], "violations": r.violations + ms["reasons"]}
+            if a.send_at > self.ctx.now:  # only then: an answer that would go out now reads exactly as before
+                out["sends_at"] = f"{local_time(a.send_at, self.ctx)} the customer's time, when quiet hours end"
             if ms["applies"]:
                 out["middle_step"] = {"stage": ms["stage"], "stage_score": round(ms["stage_score"], 2),
                                       "plan_score": round(ms["plan_score"], 2), "needs": ms["threshold"]}
@@ -514,6 +518,7 @@ class _PrivateLoop:
                 continue
             a = ProposedAction(kind=k, channel=CHANNELS[business][0] if t.customer_facing else None,
                                discount_pct=10.0 if t.discount else None)
+            a.send_at = next_send_time(active_rules(store), a, run.ctx)  # at night: when quiet hours end
             r = check(active_rules(store), a, run.ctx)
             ms = middle_step(business, run.journey.stage, k)
             dry.append({"action": k, "allowed": r.allowed and ms["passed"], "violations": r.violations + ms["reasons"]})

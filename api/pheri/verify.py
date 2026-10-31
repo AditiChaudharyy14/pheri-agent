@@ -56,7 +56,7 @@ from pydantic import BaseModel, create_model
 from .actions import BUSINESS_ACTIONS, CATALOG, CHANNELS, ProposedAction
 from .journey import Journey
 from .llm import LLM, ModelOutputError, register_mock
-from .rules import CheckContext, active_rules, check
+from .rules import CheckContext, active_rules, check, next_send_time
 
 # ---- settings ---------------------------------------------------------------------
 MAX_MESSAGE_CHARS = 420  # two or three short sentences and a sign-off
@@ -572,7 +572,9 @@ def verify_draft(d: Draft, vc: VerifyContext) -> Verification:
     p, j, business = vc.profile, vc.journey, vc.ctx.business
     t = CATALOG.get(d.action.kind)
     facing = bool(t and t.customer_facing)
-    rule = check(active_rules(vc.store), d.action, vc.ctx)
+    rules = active_rules(vc.store)
+    # Checked at the time it would really go out: a night draft waits for the end of quiet hours (rules.next_send_time).
+    rule = check(rules, d.action.model_copy(update={"send_at": next_send_time(rules, d.action, vc.ctx)}), vc.ctx)
     kept, dropped = attach_evidence(d, p, j)
     backed = " ".join(e["value"] for e in kept).casefold()
     text = _texts(d)

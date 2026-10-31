@@ -153,6 +153,8 @@ export type Reply = {
   source_id: string; kind: string; at: string | null; text: string;
   customer: { key: string; name: string; company: string | null };
   label: string; language: string; summary: string; attack: boolean; stop: boolean;
+  /** The message's own language (its tag, else code's reading): Bhojpuri stays Bhojpuri. */
+  written_in?: string;
   screen_before: string[]; screen_after: string[]; provider: string | null; model: string | null;
   escalation: { id: string; status: string } | null;
 };
@@ -235,6 +237,7 @@ export type SlopSentence = { text: string; struck: boolean; reasons: string[] };
 export type Slop = {
   customer: { key: string; name: string; stage: string };
   plain: { text: string; model: string; recorded: boolean; sentences: SlopSentence[]; whole_draft: string[];
+    structural?: string[]; judged?: number;
            failed: { check: string; hard: boolean; plain: string; detail: string }[]; passed: boolean };
   pheri: NextStepWithTime;
 };

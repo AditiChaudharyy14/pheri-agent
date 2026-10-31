@@ -66,6 +66,16 @@ def _dt(day: date, rng: random.Random) -> datetime:
     return datetime(day.year, day.month, day.day, rng.randint(6, 21), rng.randint(0, 59), rng.randint(0, 59))
 
 
+def _before_night(d: datetime) -> datetime:
+    """An older message is never dated after the night it came before: one drawn later than 21:00 on 29 October
+    (Nepal time) moves back a day. Drawn first, moved after, so the random stream (and every other row) stays the
+    same. Without this, the 06:15 night run would read messages from its own future."""
+    start = NIGHT_START.replace(tzinfo=None)
+    while d >= start:
+        d -= timedelta(days=1)
+    return d
+
+
 def _name(rng: random.Random, used: set[str], firsts: list[str] = FIRST, lasts: list[str] = LAST) -> tuple[str, str]:
     while True:
         first, last = rng.choice(firsts), rng.choice(lasts)
@@ -503,7 +513,7 @@ def birgunj(rng: random.Random) -> dict:
         via_ig = c["instagram"] and rng.random() < 0.4
         messages.append({"id": mid, "channel": "instagram_dm" if via_ig else "whatsapp",
                          "from": c["instagram"] if via_ig else _messy_phone(c["phone"], rng), "kind": "text",
-                         "text": text, "lang": lang, "received_at": _iso(_dt(TODAY - timedelta(days=days_ago), rng))})
+                         "text": text, "lang": lang, "received_at": _iso(_before_night(_dt(TODAY - timedelta(days=days_ago), rng)))})
         return mid
 
     for i in range(300):

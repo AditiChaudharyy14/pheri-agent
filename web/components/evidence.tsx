@@ -11,7 +11,7 @@ export function EvidenceChips({ evidence }: { evidence: Evidence[] }) {
   return (
     <div className="space-y-2">
       {quotes.map((e) => (
-        <figure key={e.quote_id ?? e.value} className="rounded-lg border border-line bg-paper px-3 py-2">
+        <figure key={e.quote_id ?? e.value} className="border-l-2 border-line-2 py-0.5 pl-3">
           <blockquote lang={e.receipt?.kind === "message" ? langOf(e.receipt.lang) : undefined}
                       className="font-serif text-[1.05rem] leading-snug text-ink">
             &ldquo;{e.value}&rdquo;

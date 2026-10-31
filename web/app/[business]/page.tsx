@@ -168,9 +168,9 @@ async function Morning({ params }: { params: PageProps<"/[business]">["params"] 
             {b.stopped.map((r) => (
               <li key={r.source_id} className="py-3">
                 <p className="text-[0.92rem] text-muted">
-                  {r.customer.name} · {LANGUAGE_NAME[r.holding_reply?.language ?? r.language] ?? r.language}
+                  {r.customer.name} · {LANGUAGE_NAME[r.written_in ?? r.language] ?? r.language}
                 </p>
-                <p lang={r.language} className="mt-1 font-serif text-[1.05rem] leading-snug text-ink">
+                <p lang={r.written_in ?? r.language} className="mt-1 font-serif text-[1.05rem] leading-snug text-ink">
                   &ldquo;{r.text}&rdquo;
                 </p>
                 {r.holding_reply && <HoldingLine h={r.holding_reply} />}

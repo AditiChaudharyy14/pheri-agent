@@ -33,7 +33,7 @@ DEFAULT_MODE = "ask_owner"
 DEFAULT_MODES = {"task_for_owner": "act_alone"}  # internal: it only puts a task on the owner's list
 # Human sign-off by stakes, per business: the night shift sends safe nudges on its own (still verified, still inside
 # the rules, still after quiet hours), and anything that changes what a customer pays waits for the owner.
-BUSINESS_MODES = {"birgunj": {"send_reminder": "act_alone", "recommend_product": "act_alone", "offer_reorder": "act_alone",
+BUSINESS_MODES = {"birgunj": {"answer_question": "act_alone", "send_reminder": "act_alone", "recommend_product": "act_alone", "offer_reorder": "act_alone",
                               "send_help": "act_alone", "send_checkin": "act_alone", "offer_discount": "ask_owner"}}
 
 

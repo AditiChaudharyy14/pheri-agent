@@ -82,10 +82,10 @@ Wait for **pheri-web** to show "Your service is live", then open its URL.
    - the message names the CSV export failing at 90% and her weekly client reports;
    - WHY NOW says "renews in 8 days";
    - the message starts "Hi Maya, your weekly report export";
-   - the footer reads "Decided by Muse Spark 1.3 · $… · 3 turns · ✓ Verified: 13 code checks + judge ·
+   - the footer reads "Decided by Muse Spark 1.3 · $… · 3 turns · ✓ Verified: 16 code checks + judge ·
      View trace".
 4. Click **View trace**. You should see Draft 1 with 3 turns, tokens and cost, marked "Recorded from a live
-   run", and under it the 13 code checks and the judge's verdict on each claim.
+   run", and under it the 16 code checks and the judge's verdict on each claim.
    - On Birgunj's Morning, approve Sita Karna's card with **Same rate as their last order**: it moves to
      "Ready at 8:00", marked "approved by you (same rate as their last order)". Press **Reset demo** to
      bring the card back.
@@ -97,7 +97,7 @@ Wait for **pheri-web** to show "Your service is live", then open its URL.
    - If it says "The Pheri API is not reachable", `PHERI_API_URL` is wrong: go back to step 3.
 6. **Proof**: the report says "Written by Muse Wonder, recorded from a live run" and "Attempt 1 rejected
    by code: headline → Attempt 2 passed". At the bottom, the Verification block: 11 drafts, 2 caught by
-   code, 4 by the judge, 5 retries, 1 sent to the owner, and "13 checks" under "Caught by code".
+   code, 4 by the judge, 5 retries, 1 sent to the owner, and "16 checks" under "Caught by code".
    - **Rules**: under the rules, "Before Pheri writes a message" shows the stage and plan scores, with
      "Money actions need 100%" and "Nudges need 80%".
 7. **Spend**: Meta and Baseten spend against the caps. "This server" says **Replay mode**.

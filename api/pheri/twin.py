@@ -25,13 +25,14 @@ from collections import Counter
 from dataclasses import dataclass, field
 from functools import lru_cache
 
-from .actions import BUSINESS_ACTIONS, CATALOG, CHANNELS, ProposedAction
+from .actions import BUSINESS_ACTIONS, CATALOG, CHANNELS, REACTIVE_ACTIONS, ProposedAction
 from .journey import STAGES, accuracy
 from .rules import CheckContext, NoDiscountFirstDays, Rule, check
 from .synth import COUNTRIES, NOW, OUT
 
 HOLDOUT_SHARE = 0.20
-ACTIONS = {b: tuple(a for a in acts if CATALOG[a].customer_facing) for b, acts in BUSINESS_ACTIONS.items()}
+ACTIONS = {b: tuple(a for a in acts if CATALOG[a].customer_facing and a not in REACTIVE_ACTIONS)
+           for b, acts in BUSINESS_ACTIONS.items()}
 
 # The twin's ground truth: chance of a good outcome (renews, replies, buys again) within the window.
 # Invented to be plausible, and hidden from the policy; the holdout gets BASELINE.

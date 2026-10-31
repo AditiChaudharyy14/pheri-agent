@@ -74,8 +74,13 @@ function Plain({ r }: { r: Slop }) {
           ))}
         </ul>
       )}
+      {(p.structural ?? []).length > 0 && (
+        <p className="mt-3 text-[0.85rem] text-ink-2">
+          <span className="text-rose">Also failed:</span> {(p.structural ?? []).map((x) => x.replace(/\.$/, "")).join(" · ")}.
+        </p>
+      )}
       <p className="mt-3 text-[0.8rem] text-muted">
-        {p.failed.length} of Pheri&rsquo;s checks failed · Muse Spark 1.3, {p.recorded ? "recorded from a live run" : "offline stand-in"}
+        {p.failed.length} problems found{p.judged ? `, ${p.judged} of them by the judge (shown here, never used to send)` : ""} · Muse Spark 1.3, {p.recorded ? "recorded from a live run" : "offline stand-in"}
         {p.failed.some((f) => f.hard) ? " · could never be sent" : ""}
       </p>
     </section>

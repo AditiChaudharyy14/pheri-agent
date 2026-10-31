@@ -9,6 +9,8 @@ export const ACTION_LABEL: Record<string, string> = {
   recommend_product: "Recommend a product",
   offer_subscription: "Offer a subscription",
   offer_reorder: "Time to reorder",
+  answer_question: "Answer their question",
+  holding_reply: "A fixed holding reply",
   task_for_owner: "A task for you",
   no_action: "Nothing for now",
   escalate_to_human: "Escalated to you",
@@ -135,7 +137,13 @@ export const factValue = (fact: string, v: unknown) => {
   if (fact === "journey_stage") return stageLabel(String(v));
   if (typeof v === "boolean") return v ? "yes" : "no";
   if (v === "True" || v === "False") return v === "True" ? "yes" : "no"; // evidence values arrive as Python's text
+  if (typeof v === "string" && /^[a-z]+(_[a-z0-9]+)+$/.test(v)) return VALUE_LABEL[v] ?? v.replaceAll("_", " ");
   return String(v);
+};
+
+/** Internal values a fact can hold (a complaint's kind), in words. */
+const VALUE_LABEL: Record<string, string> = {
+  return_requested: "asked to return it", wrong_colour: "wrong colour", wrong_size: "wrong size",
 };
 
 export const LANGUAGE_NAME: Record<string, string> = {

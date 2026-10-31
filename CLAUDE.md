@@ -7,7 +7,7 @@ Read this before every task. These rules are not optional.
   evidence by id), autonomy + approvals, guard + private mode (Muse Spark Open), evals, twin + Thompson (5,000,
   12/12 learned right, close calls flagged), Wonder report (checked in code), FastAPI, all 7 web screens, card
   footer, pronouns (only Maya's given), replay mode (PHERI_LLM_MODE=replay; pill "Recorded from a live run").
-- Verification (pheri/verify.py): verify_draft = 13 code checks (rules, schema, evidence, facts, pronouns, address
+- Verification (pheri/verify.py): verify_draft = 16 code checks (rules, schema, evidence, facts, promises (hard), pronouns, address
   "you"/name only in greeting, one problem, language, length, link allowlist, money, middle step, tools), then a judge
   (Muse Spark Open, Baseten, low) per claim. Reasons go back, max PHERI_VERIFY_MAX_ATTEMPTS=3 drafts, then the
   owner's queue (never sent). Runs inside autonomy.submit(); _execute() sends only a payload whose stored
@@ -25,12 +25,12 @@ Read this before every task. These rules are not optional.
 - Public demo (PHERI_PUBLIC_DEMO=1, render.yaml): a sandbox per visitor (cookie pheri_sandbox via web/proxy.ts,
   in memory, max 100, 30 min idle, idlest dropped first); "Reset demo" button; audit actor "demo visitor (public
   demo, no login)", rules by "demo setup (public demo, no login)".
-- Recorded (data/recorded/llm.jsonl): Brightdesk's 6 cards (re-recorded 31 Oct with the plan hint: 9 drafts, 1 caught
-  by code, 2 by the judge, all verified; Aarav no longer fails, so no recorded override example is left) and the
+- Recorded (data/recorded/llm.jsonl, 207 replies): Brightdesk's 6 cards (re-recorded 31 Oct after the judges' review:
+  11 drafts, 3 caught by code, 2 by the judge, all verified; no recorded override example is left) and the
   Brightdesk Wonder report (attempt 1 headline rejected, attempt 2 passed). Birgunj's report is the stand-in until the night is recorded.
   evals/judge_recorded.jsonl: the real judge on 20 cases in evals/drafts.jsonl: 10/10 planted claims caught,
-  9/10 supported passed (S04 "sent a cart" vs the fact days_since_enquiry: strict, pinned in test_evals; the 7
-  Birgunj cases rewritten for the new world and re-recorded on 29 Oct, Baseten $0.0227).
+  10/10 supported passed (re-recorded 31 Oct with the promise/question judge prompt and the six drafts that quoted
+  counts rewritten, Baseten $0.19; before it, S04 "sent a cart" was flagged as strict).
   Re-record: python scripts/record_demo.py --live --budget <usd> --baseten-budget <usd>.
 - Pivot (approved 29 Oct; plan in ~/.claude/plans/pasted-content-id-3e3c-use-the-humming-bachman.md): hero
   becomes Birgunj Saree Ghar (Kettle reskinned), six moments: Morning brief, Night shift, Slop vs Pheri, Speak a
@@ -116,6 +116,25 @@ Read this before every task. These rules are not optional.
   and rows tick through their stored steps (read, every draft caught or passed, outcome; 0.7 s each at 1x).
   Reduced motion: everything at once, no controls. Names link to the trace. Checked in scripts/evidence.mjs
   (clock moves, rows arrive, steps tick, trace link, reduced motion); night-arriving/working screenshots.
+- Judge review fixes (31 Oct; tests in test_judge_review.py):
+  1. answer_question (Birgunj, act_alone, REACTIVE_ACTIONS: not in the twin or the plan table). Fact open_question
+     (words.open_question on the newest message). Middle step: with a question open only answer_question or send_help
+     pass; answer_question needs a question. Judge claim "q" (QUESTION_CLAIM + customer_question).
+  2. words.plain / plain_reason at the display boundary; check plain_words (soft) on message + why; replay test and
+     evidence.mjs scan every owner-facing string/page for snake_case ids and quoted language codes.
+  3. Check promises (hard): stock, delivery times, photos, prices, discounts in en/ne/ne-Latn/hi/bho; a sentence that
+     hands it to the owner is not a promise. Judge prompt: promises need a cited fact.
+  4. Slop: promise check per sentence; the judge reads the plain draft (display only, whole profile as evidence);
+     specific lies first, generic failures in one line ("Also failed").
+  5. Profile.writes_in = words.read_language (code: ne-Latn, bho...); language check: Roman Nepali in, out.
+     Held-out test split: ne 49/60, ne-Latn 53/60, hi 55/57, bho 36/60, en 59/59.
+  6. Check private_stats (soft): STAT_FACTS numbers stay out of the message. Brief counts by the message's own tag
+     (written_in). Quotes: blockquote with a left rule. 16 code checks now.
+  Re-recorded all (Meta $0.58, Baseten $0.17 + judge evals $0.19): every card verified within 5 turns; 14 Birgunj
+  customers who asked something get answer_question; Roman Nepali replies in Roman Nepali; Birgunj 27 drafts (4 caught
+  by code, 2 by the judge). Native read still pending: some Nepali is clumsy (Nisha quotes her words back; "ओनर").
+  Data bug fixed: 28 old messages were dated after the night started (synth._before_night moves them a day back;
+  only their timestamps changed); Pooja Ansari's night message was hidden by one, so the brief counted 22, not 23.
 - Attack moment (Step 5, Glimmer cut: Modal needs a card): an attacker gets no word from any model. The owner gets
   the escalation; the customer gets a fixed holding reply written by code (pheri/holding.py, TEMPLATES ne, ne-Latn,
   hi, bho, en; native review pending, Aditi), in the language of their message, once, from decide_customer.
@@ -124,12 +143,12 @@ Read this before every task. These rules are not optional.
   length, links, money); no judge (the text claims nothing about the customer), stated in the stored verification;
   sent only through the sha gate, at 08:00 their time. Shown under Stopped (brief) and on the Night shift timeline.
   Recorder: same request twice in a run reuses its reply; refusals recorded; the pruned file
-  is re-checked in a fresh process and restored if anything misses. Recording 218 replies.
+  is re-checked in a fresh process and restored if anything misses. Recording 207 replies.
 - Waiting on Aditi: Nepali + Hindi clips; native review of Birgunj strings; Render clicks.
   Screenshots: uvicorn :8000 (replay), then `npm run build && npm start` (not the dev server), then
   `node scripts/evidence.mjs evidence [state]`; one heavy process at a time; restart the API before retaking
   (approving changes its state; the script approves last).
-- Live spend: Meta $5.8318 of $130, Baseten $3.2721 of $90, Modal $0 of $25. Tests: 402 (Postgres tests run when
+- Live spend: Meta $6.4134 of $130, Baseten $3.5415 of $90, Modal $0 of $25. Tests: 427 (Postgres tests run when
   PHERI_TEST_DATABASE_URL is set).
 
 ## What we are building

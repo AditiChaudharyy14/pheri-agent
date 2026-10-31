@@ -279,7 +279,7 @@ def test_replay_serves_mayas_recorded_live_run(monkeypatch, tmp_path):
     assert d["message"].startswith("Hi Maya, your weekly report")  # the model wrote "Your"; code lowercased it
     assert card["verification"]["passed"] and card["verification"]["judge"] and card["verification"]["judge_recorded"]
     assert "inbox" not in d["message"]  # one problem: the export behind her stage, not her second ticket
-    assert card["cost_usd"] > 0 and card["turns"] == 3  # what the live run paid, for its turns
+    assert card["cost_usd"] > 0 and card["turns"] == 4  # what the live run paid, for its turns (re-recorded 31 Oct)
     assert llm.ledger.totals("meta").settled_usd == 0  # replaying it spent nothing
     api = TestClient(create_app(llm))
     assert api.get("/health").json()["mode"] == "replay"
@@ -295,15 +295,16 @@ def test_replay_serves_mayas_recorded_live_run(monkeypatch, tmp_path):
         assert card["verification"]["judge_recorded"], card["customer"]["name"]  # the judge's verdicts too
     # Re-recorded on 31 Oct with the plan hint: before it, Aarav's refusals named nothing that fits, the loop took 7
     # turns and the judge rejected all three drafts. Now his one refusal names the plans that pass, and the next try
-    # (book_call) is verified on its first draft. (The owner-override path is tested in test_verify/test_autonomy.)
+    # (book_call) is verified (re-recorded 31 Oct: on its second draft). The owner-override path is tested in
+    # test_verify and test_autonomy.
     assert [c["customer"]["name"] for c in cards if not c["verification"]["passed"]] == []
     aarav = next(c for c in cards if c["customer"]["name"] == "Aarav Silva")
-    assert aarav["decision"]["action"] == "book_call" and aarav["turns"] <= 4 and len(aarav["drafts"]) == 1
+    assert aarav["decision"]["action"] == "book_call" and aarav["turns"] == 5 and len(aarav["drafts"]) == 2
     trace = api.get(f"{c(aarav['customer']['key'])}/trace").json()
     refused = [p for p in trace["prechecks"] if not p["allowed"]]
     assert len(refused) == 1 and "send_help, book_call" in refused[0]["plans_that_fit"]
-    totals = api.get(f"{BD}/verification").json()  # 9 drafts for 6 decisions: 3 really caught and rewritten
-    assert totals["decisions"] == 6 and totals["sent_to_owner"] == 0 and totals["drafts"] == 9
+    totals = api.get(f"{BD}/verification").json()  # 11 drafts for 6 decisions: 5 really caught and rewritten
+    assert totals["decisions"] == 6 and totals["sent_to_owner"] == 0 and totals["drafts"] == 11
 
 
 def test_replay_serves_birgunjs_recorded_night(monkeypatch, tmp_path):

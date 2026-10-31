@@ -67,7 +67,7 @@ A model's draft is a claim, not an action. `pheri/verify.py` checks every draft 
 sent; the idea follows Meta's Verifiable Agents workshop (28 Oct): verify the work in code, show the
 verification, and never let the agent mark its own homework.
 
-1. **Code first, 13 checks, free.** The owner's rules; the schema; evidence that exists in the profile;
+1. **Code first, 16 checks, free.** The owner's rules; the schema; evidence that exists in the profile;
    every number, date, amount and plan name present in the facts the draft cites; no pronoun the customer
    never gave; the message says "you", with their name only in the greeting (the why-text, for the owner,
    names them); one problem, the one behind their journey stage; the customer's language; length; links
@@ -116,10 +116,10 @@ onboarding customers" and picks another plan. The Rules screen shows the scores.
 more calls on that one report. The recorded run: attempt 1's headline stated no result, attempt 2 passed.
 
 What you see: the Decision trace shows every draft, which layer caught it and why, and the reasons sent
-back; each card's footer reads "Verified: 13 code checks + judge"; Proof has the totals. In the recorded
-live run (re-recorded 31 Oct), Brightdesk's 6 decisions took 9 drafts: 1 caught by code, 2 by the judge,
-all 6 verified in the end; Birgunj's night took 32 drafts for 21 messages written (5 caught by code, 6 by the
-judge, each rewritten). A draft that still fails is never sent: it waits for the owner, and a soft failure
+back; each card's footer reads "Verified: 16 code checks + judge"; Proof has the totals. In the recorded
+live run (re-recorded 31 Oct, after the judges' review), Brightdesk's 6 decisions took 11 drafts: 3 caught by
+code, 2 by the judge, all 6 verified in the end; Birgunj's night took 27 drafts for 21 messages written (4 caught
+by code, 2 by the judge, each rewritten). Customers who asked something get an answer, or "the owner will answer". A draft that still fails is never sent: it waits for the owner, and a soft failure
 can be sent only as a recorded owner override (tested in `test_verify` and `test_autonomy`).
 
 **How good is the judge?** `evals/drafts.jsonl` has 20 cases for it, each passing every code check: 10
@@ -253,7 +253,7 @@ network, no model key and no spend, while code still runs every rule check, evid
 autonomy dial. A reply is found by the conversation it answered, so if a prompt or the data changes,
 that conversation falls back to the offline stand-in, and the page says so: every decision card
 names who decided and how it was checked ("Decided by Muse Spark 1.3 · $0.0157 · 3 turns · Verified:
-13 code checks + judge", or "the offline stand-in"), and the header reads "Recorded from a live run".
+16 code checks + judge", or "the offline stand-in"), and the header reads "Recorded from a live run".
 The judge's verdicts are recorded too. `api/tests/test_app.py` fails if the recording stops matching the
 code.
 

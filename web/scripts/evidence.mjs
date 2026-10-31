@@ -10,7 +10,8 @@ const out = process.argv[2] ?? "evidence";
 const state = process.argv[3] ?? "main";
 const VIEWPORTS = { "390x844": { width: 390, height: 844 }, "1440x900": { width: 1440, height: 900 } };
 const PAGES = state === "main"
-  ? { morning: "/birgunj", night: "/birgunj/night", slop: "/birgunj/slop", proof: "/birgunj/proof", rules: "/birgunj/rules" }
+  ? { morning: "/birgunj", night: "/birgunj/night", slop: "/birgunj/slop", proof: "/birgunj/proof", rules: "/birgunj/rules",
+      customer: "/birgunj/customers/%2B918965164000", brightdesk: "/brightdesk" }
   : { morning: "/birgunj" };
 
 await mkdir(out, { recursive: true });
@@ -34,6 +35,10 @@ for (const [vp, size] of Object.entries(VIEWPORTS)) {
     await page.screenshot({ path: file, fullPage: true });
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     if (overflow > 1) problems.push(`${vp} ${name}: page is ${overflow}px wider than the viewport`);
+    // No internal ids on any page an owner reads (the trace page is the raw record, by design, and isn't scanned).
+    const ids = await page.evaluate(() =>
+      [...document.body.innerText.matchAll(/\b[a-z]+(?:_[a-z0-9]+)+\b|(['"])(en|ne|hi|bho|ne-Latn)\1/g)].map((m) => m[0]));
+    if (ids.length) problems.push(`${vp} ${name}: internal ids on the page: ${[...new Set(ids)].slice(0, 8).join(", ")}`);
     console.log(`${file}`);
   }
   if (state === "main") {

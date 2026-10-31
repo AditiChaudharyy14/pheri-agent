@@ -27,6 +27,7 @@ from pydantic import BaseModel
 from .llm import LLM, ModelOutputError, register_mock
 from .privacy import PRIVATE_EFFORT, PRIVATE_PROVIDER
 from .synth import FESTIVAL_WINDOW_DAYS, FESTIVALS, OUT, TODAY
+from .words import open_question, read_language
 
 PURPOSE = "profile_insights"
 MAX_SOURCES = 12  # most recent text sources sent per customer
@@ -368,6 +369,8 @@ def compute_facts(c: Customer, business: str, today: date = TODAY) -> tuple[dict
         newest = said[-1] if said else None
         facts["asks_about_money"] = bool(newest and mentions_money(newest.text))
         prov["asks_about_money"] = [newest.id] if newest else []
+        facts["open_question"] = bool(newest and open_question(newest.text))  # code reads it; answer it first
+        prov["open_question"] = [newest.id] if newest else []
         upcoming = sorted((d, k) for k, d in FESTIVALS.items() if d >= today)
         if upcoming:
             d, k = upcoming[0]
@@ -557,6 +560,8 @@ class Profile:
     model: str | None = None  # None when there was nothing to read
     pronouns: str | None = None  # as the customer gave them, e.g. "she/her"; None: use their name
     money_ask: str | None = None  # refund | discount | rate: for the owner's choices; never shown to the model
+    writes_in: str | None = None  # code's reading of their newest message: ne-Latn, bho, ne, hi, en (words.read_language)
+    question: str | None = None  # their newest message, when it asks something (for the judge's question claim)
 
     def as_dict(self) -> dict:
         return dataclasses.asdict(self)
@@ -591,7 +596,11 @@ def build_profile(ds: Dataset, key: str, llm: LLM, today: date = TODAY, private:
         provenance["unread"] = unread
     newest = next((s for s in c.sources if s.id in (fact_prov.get("asks_about_money") or [])), None)
     money = money_ask(newest.text) if facts.get("asks_about_money") and newest and newest.text else None
-    return Profile(ds.business, c.key, c.name, c.company, facts, insights, provenance, model, c.pronouns, money)
+    said = sorted((s for s in c.sources if s.kind in CUSTOMER_WRITTEN and s.text), key=lambda x: x.at or "")
+    writes_in = read_language(said[-1].text) if said else None
+    question = newest.text if facts.get("open_question") and newest else None
+    return Profile(ds.business, c.key, c.name, c.company, facts, insights, provenance, model, c.pronouns, money,
+                   writes_in, question)
 
 
 def build_profiles(ds: Dataset, llm: LLM, keys: list[str] | None = None, limit: int = 20,

@@ -5,7 +5,7 @@ import { PrivateSwitch } from "@/components/private-switch";
 import { Badge, Card, Chip, Label, PageHead, Skeleton } from "@/components/ui";
 import { api, type Brief, type Reply, type RunsOn, words } from "@/lib/api";
 
-const LANG: Record<string, string> = { en: "English", es: "Spanish", pt: "Portuguese", hi: "Hindi", ne: "Nepali", bh: "Bhojpuri / Hindi", bho: "Bhojpuri" };
+const LANG: Record<string, string> = { en: "English", es: "Spanish", pt: "Portuguese", hi: "Hindi", ne: "Nepali", "ne-Latn": "Roman Nepali", bh: "Bhojpuri / Hindi", bho: "Bhojpuri" };
 const STEP: Record<string, string> = { guard: "Reading replies", profile: "Profiles", decide: "Decisions", rules: "Compiling rules" };
 
 export default function NightPage({ params }: PageProps<"/[business]/night">) {
@@ -125,7 +125,7 @@ function ReplyCard({ business, r }: { business: string; r: Reply }) {
     <Card className={r.attack ? "border-rose/30" : ""}>
       <div className="flex flex-wrap items-center gap-2.5">
         <Badge tone={TONE[r.label] ?? "slate"}>{words(r.label)}</Badge>
-        <Badge>{LANG[r.language] ?? r.language}</Badge>
+        <Badge>{LANG[r.written_in ?? r.language] ?? r.written_in ?? r.language}</Badge>
         <Link href={`/${business}/customers/${encodeURIComponent(r.customer.key)}`} className="ml-1 text-ink hover:text-teal-ink">
           {r.customer.name}
         </Link>
@@ -137,7 +137,7 @@ function ReplyCard({ business, r }: { business: string; r: Reply }) {
           </span>
         )}
       </div>
-      <Message text={r.text} kind={r.kind} lang={r.language} />
+      <Message text={r.text} kind={r.kind} lang={r.written_in ?? r.language} />
       <p className="mt-2 text-[0.95rem] text-ink-2">
         <span className="text-muted">Summary: </span>
         {r.summary}

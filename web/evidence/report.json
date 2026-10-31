@@ -1,5 +1,5 @@
 {
-  "contract": "Purpose: the owner's morning check of what Pheri did overnight. Audience: a shop owner in Birgunj, often on a phone. Primary action: approve or reject what needs them; everything else is reading. Hierarchy: the night in sentences (not tiles) > needs you (marigold) > stopped (vermilion) > ready at 8:00 (teal) > one proof sentence. Memorable detail: every claim carries a receipt chip (the customer's own words in their script, with channel and date, or the shop's order number). Palette: teal = done, marigold = needs you, vermilion = blocked or stopped, on warm paper; no cards inside cards. Viewports: 390x844 and 1440x900. Reference: the repo's own tokens (web/app/globals.css) and components (web/components/ui.tsx), adapted to a phone-first layout.",
+  "contract": "Purpose: the owner's morning check of what Pheri did overnight. Audience: a shop owner in Birgunj, often on a phone. Primary action: approve or reject what needs them; everything else is reading. Hierarchy: the night in sentences (not tiles) > needs you (marigold) > stopped (vermilion) > ready at 8:00 (teal) > one proof sentence. Memorable detail: every claim carries a receipt chip (the customer's own words in their script, with channel and date, or the shop's order number). Palette: teal = done, marigold = needs you, vermilion = blocked or stopped, on warm paper; no cards inside cards. Viewports: 390x844 and 1440x900. Reference: the repo's own tokens (web/app/globals.css) and components (web/components/ui.tsx), adapted to a phone-first layout. Judges' review (31 Oct): no internal ids anywhere an owner reads (scripts/evidence.mjs scans every page it visits for snake_case ids and quoted language codes); quotes are plain blockquotes with a left rule, not boxes inside cards.",
   "targetViewports": [
     "390x844",
     "1440x900"
@@ -52,12 +52,12 @@
     {
       "viewport": "390x844",
       "artifact": "slop-390x844.png",
-      "observation": "Slop vs Pheri stacked: struck sentences with reasons in vermilion, whole-draft failures, then Pheri's draft with receipts and 'Goes out at 08:00'."
+      "observation": "Slop vs Pheri: the plain draft's specific lies first, struck on their sentences (photos 'just sent', 'sells out fast', claims the judge finds nowhere in the record; the judge runs for display only), the generic failures last in one 'Also failed' line; Pheri answers the customer's question or says the owner will."
     },
     {
       "viewport": "1440x900",
       "artifact": "slop-1440x900.png",
-      "observation": "Slop vs Pheri side by side for three customers (complaint, festival buyer, wholesale)."
+      "observation": "Slop vs Pheri: the plain draft's specific lies first, struck on their sentences (photos 'just sent', 'sells out fast', claims the judge finds nowhere in the record; the judge runs for display only), the generic failures last in one 'Also failed' line; Pheri answers the customer's question or says the owner will."
     },
     {
       "viewport": "390x844",
@@ -158,6 +158,26 @@
       "viewport": "1440x900",
       "artifact": "night-working-1440x900.png",
       "observation": "Night shift replay at 4x, after the arrivals: the clock reads 06:15 and rows tick through their stored steps (read, each draft caught or passed, the outcome); controls on their own row on a phone."
+    },
+    {
+      "viewport": "390x844",
+      "artifact": "customer-390x844.png",
+      "observation": "Sita Karna's customer page, scanned for internal ids."
+    },
+    {
+      "viewport": "390x844",
+      "artifact": "brightdesk-390x844.png",
+      "observation": "Brightdesk's morning, scanned for internal ids."
+    },
+    {
+      "viewport": "1440x900",
+      "artifact": "customer-1440x900.png",
+      "observation": "Sita Karna's customer page, scanned for internal ids."
+    },
+    {
+      "viewport": "1440x900",
+      "artifact": "brightdesk-1440x900.png",
+      "observation": "Brightdesk's morning, scanned for internal ids."
     }
   ]
 }

@@ -30,6 +30,8 @@ CATALOG: dict[str, ActionType] = {a.kind: a for a in (
     ActionType("recommend_product", "Recommend a product that fits what they already buy."),
     ActionType("offer_subscription", "Invite them to a monthly subscription."),
     ActionType("offer_reorder", "Remind them it is about time to reorder, with what they bought last time."),
+    ActionType("answer_question", "Answer the question the customer asked (delivery, size, price, stock) from the "
+                                  "facts, or say the owner will answer it."),
     ActionType("task_for_owner", "Ask the owner or the team to handle something by hand.", customer_facing=False),
     ActionType("no_action", "Do nothing now; say why.", customer_facing=False),
     # Created by code only (never offered to the model): a reply that looks like an attack goes to a person.
@@ -44,9 +46,12 @@ ESCALATE = "escalate_to_human"
 BUSINESS_ACTIONS: dict[str, tuple[str, ...]] = {
     "brightdesk": ("send_help", "book_call", "send_checkin", "offer_upgrade", "offer_discount", "task_for_owner",
                    "no_action"),
-    "birgunj": ("send_reminder", "recommend_product", "offer_reorder", "offer_discount", "send_help", "send_checkin",
-                "task_for_owner", "no_action"),
+    "birgunj": ("answer_question", "send_reminder", "recommend_product", "offer_reorder", "offer_discount", "send_help",
+                "send_checkin", "task_for_owner", "no_action"),
 }
+# Actions that answer what a customer just asked, not plans for a stage: the twin doesn't learn them and the middle
+# step's plan table doesn't score them; the middle step passes one only when the customer asked something.
+REACTIVE_ACTIONS = ("answer_question",)
 # Actions only code creates: never in list_allowed_actions, so the model can't choose them.
 CODE_ACTIONS: dict[str, tuple[str, ...]] = {"brightdesk": (), "birgunj": ("holding_reply",)}
 CHANNELS: dict[str, tuple[str, ...]] = {

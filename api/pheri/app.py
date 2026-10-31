@@ -54,6 +54,7 @@ from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
 from .actions import ProposedAction
+from .words import plain, plain_reason, read_language
 from .autonomy import approve, queue, reject, sent_messages
 from .config import REPO_ROOT, get_settings
 from .decide import decide_customer
@@ -513,7 +514,8 @@ def create_app(llm: LLM | None = None) -> FastAPI:
             sends_at = local_time(datetime.fromisoformat(action["payload"]["send_at"]),
                                   CheckContext(b, {"country": cu.attrs.get("country")}, CLOCKS[b][1]))
         drafts = [{"attempt": a.get("attempt", i + 1), "passed": a["verification"]["passed"],
-                   "caught_by": a["verification"]["caught_by"], "reasons": a["verification"]["reasons"][:3]}
+                   "caught_by": a["verification"]["caught_by"],
+                   "reasons": [plain_reason(r) for r in a["verification"]["reasons"][:3]]}
                   for i, a in enumerate(out.get("attempts") or [])]
         return {"sends_at_local": sends_at, "drafts": drafts,
                 "waits_for_owner": (action or {}).get("payload", {}).get("waits_for_owner"),
@@ -522,7 +524,10 @@ def create_app(llm: LLM | None = None) -> FastAPI:
                 "holding_reply": holding(b, k),
                 "customer": {"key": k, "name": cu.name, "company": cu.company, "town": cu.attrs.get("town"),
                              "stage": state.stages[b][k].stage},
-                "decision": out["decision"], "evidence": receipts(b, cu, out["evidence"]), "action": action,
+                # why is for the owner: in plain words (the message itself is shown exactly as it was checked)
+                "decision": {**out["decision"], "why_this": plain(out["decision"].get("why_this")),
+                             "why_now": plain(out["decision"].get("why_now"))},
+                "evidence": receipts(b, cu, out["evidence"]), "action": action,
                 "approval": approval, "skipped": out["skipped"], "fallback": out["fallback"],
                 "unsupported_numbers": out["unsupported_numbers"], "message_problems": out["message_problems"],
                 "private": out["private"], "cost_usd": out["cost_usd"], "turns": out["turns"],
@@ -591,7 +596,7 @@ def create_app(llm: LLM | None = None) -> FastAPI:
         if not v:
             return None
         return {"passed": v["passed"], "code_checks": v["code_checks"], "judge": v["judge_ran"],
-                "caught_by": v["caught_by"], "reasons": v["reasons"], "attempts": len(out.get("attempts") or []),
+                "caught_by": v["caught_by"], "reasons": [plain_reason(r) for r in v["reasons"]], "attempts": len(out.get("attempts") or []),
                 "hard_failed": v["hard_failed"], "soft_failed": v["soft_failed"],  # Verification's own
                 "judge_cost_usd": out.get("verify_cost_usd", 0.0),
                 "judge_recorded": all(a["verification"]["judge_recorded"] for a in out.get("attempts") or []
@@ -674,7 +679,9 @@ def create_app(llm: LLM | None = None) -> FastAPI:
                 esc = escalated.get(e["subject_id"])
                 out.append({"source_id": src.id, "kind": src.kind, "at": src.at, "text": src.text,
                             "customer": {"key": cu.key, "name": cu.name, "company": cu.company},
-                            "label": g["label"], "language": g["language"], "summary": g["summary"],
+                            "label": g["label"], "language": g["language"], "summary": plain(g["summary"]),
+                            # the message's own language (its tag, else code's reading): Bhojpuri stays Bhojpuri
+                            "written_in": src.lang or read_language(src.text or ""),
                             "attack": g["attack"], "stop": g["stop"], "screen_before": g["screen_before"],
                             "screen_after": g["screen_after"], "provider": g["provider"], "model": g["model"],
                             "escalation": {"id": esc["id"], "status": esc["status"]} if esc else None})
@@ -769,8 +776,9 @@ def create_app(llm: LLM | None = None) -> FastAPI:
         with state.lock:  # each attack's fixed reply, written by code (pheri/holding.py)
             stopped = [{**r, "holding_reply": holding(b, r["customer"]["key"])} for r in reps if r["attack"]]
         langs: dict[str, int] = {}
-        for r in reps:
-            langs[r["language"]] = langs.get(r["language"], 0) + 1
+        written = [r for r in reps if r["kind"] != "voice_note"]  # a voice note is counted as a voice note, once
+        for r in written:
+            langs[r["written_in"]] = langs.get(r["written_in"], 0) + 1
         twin_file = TWIN_DIR / f"{b}-n5000-seed7.json"
         proof = None
         if twin_file.exists():
@@ -780,7 +788,7 @@ def create_app(llm: LLM | None = None) -> FastAPI:
                      "outcome": "ordered" if b == "birgunj" else "responded"}
         clock = CLOCKS[b]
         return {"night": clock[0].isoformat(), "morning": clock[1].isoformat(),
-                "read": {"messages": len(reps), "by_language": langs,
+                "read": {"messages": len(written), "by_language": langs,
                          "voice_notes": {"read": sum(v["status"] != voice_module.UNREADABLE for v in voice),
                                          "unreadable": sum(v["status"] == voice_module.UNREADABLE for v in voice)}},
                 "customers": len(talking),

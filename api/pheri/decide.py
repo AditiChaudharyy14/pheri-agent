@@ -36,6 +36,7 @@ from pydantic import BaseModel, ValidationError, create_model, field_validator
 
 from .actions import ALL_CHANNELS, BUSINESS_ACTIONS, CATALOG, CHANNELS, CODE_ACTIONS, ESCALATE, ProposedAction
 from .autonomy import escalate, modes, open_escalation, owner_options, owner_reason, sent_messages, submit
+from .words import LANGUAGE_NAMES
 from .verify import (FEEDBACK_HEAD, NO_QUOTES, Draft, attach_evidence, fact_names, feedback,  # noqa: F401
                      message_problems, middle_step, quote_index, unsupported_numbers, verify_draft)
 from .verify import context as verify_context
@@ -145,6 +146,14 @@ and if it is not allowed choose another. Then answer with the decision JSON only
   should do. Friendly and short (two or three sentences). Be specific: lead with one problem, the one
   behind their journey stage (journey.because), in the words they used, and name the goal it gets in
   the way of when the profile has one. Leave any other problem for a later step.
+- If they asked something (fact open_question), the action is answer_question (send_help for a problem):
+  answer from the facts and quotes only, or say plainly that the owner will answer it this morning.
+  Recommend or remind only when no question is open.
+- Never claim or promise stock or availability, delivery dates or times, photos, prices or discounts that
+  no fact states, however softly; say the owner will confirm instead.
+- Write in the language and the script they write in (writes_in): Roman Nepali in, Roman Nepali out.
+- Counts about them (days since their last order, how many orders) belong in why_this and why_now, never
+  in the message. Use plain words everywhere, never internal names such as action or fact ids.
 - why_this: why this action fits this customer: cite the problem and the goal. why_now: why today
   rather than later; when a renewal is 14 days away or less, say so ("renews in N days").
 - The customer: in the message, talk to them as "you", with their first name only in the greeting
@@ -191,6 +200,9 @@ def _profile_view(p: Profile, j: Journey, latest: GuardResult | None = None) -> 
             "facts": p.facts,
             "journey": {"stage": j.stage, "because": [{"fact": b["fact"], "value": b["value"]} for b in j.because]},
             "insights": _insights_with_ids(p)}
+    if p.writes_in:  # code's reading of their newest message: language and script
+        view["writes_in"] = LANGUAGE_NAMES.get(p.writes_in, p.writes_in) + (
+            " (Nepali in Latin letters)" if p.writes_in == "ne-Latn" else "")
     if latest is not None and latest.provider is not None:
         # What the guard made of their newest reply: its label and a safe summary, never the raw text.
         view["latest_reply"] = {"label": latest.label, "language": latest.language, "summary": latest.summary}
@@ -206,7 +218,7 @@ def _allowed_view(store) -> dict:
             "owner_rules": [describe(c) for r in active_rules(store) for c in r.checks]}
 
 
-def money_hint(business: str, stage: str) -> str:
+def money_hint(business: str, stage: str, open_question: bool = False) -> str:
     """For a customer who asked about money, after a refused check: the owner decides the money; reply with a
     nudge that fits the stage (never a money action), and promise nothing."""
     from .verify import THRESHOLDS, action_class, middle_step_scores
@@ -214,17 +226,22 @@ def money_hint(business: str, stage: str) -> str:
     row = middle_step_scores(business).get(stage, {"plan_scores": {}})
     need = THRESHOLDS[business]["nudge"]
     fits = [a for a, s in row["plan_scores"].items() if action_class(a) == "nudge" and s + 1e-9 >= need]
+    if open_question and "answer_question" in BUSINESS_ACTIONS.get(business, ()):
+        fits = ["answer_question"]  # they asked: the answer is that the owner will answer
     use = f"using {' or '.join(fits)}" if fits else "using task_for_owner"
     return ("They asked about money (a rate, a refund or money off): the owner decides that, not you, so stop "
             f"trying actions. Answer now with a short holding reply {use}: say their request is noted and the owner "
             "replies this morning. Promise no price, discount, refund or date.")
 
 
-def plan_hint(business: str, stage: str) -> str:
+def plan_hint(business: str, stage: str, open_question: bool = False) -> str:
     """After the middle step refuses a plan: name the plans that do pass it for this stage, so the model's next try is
     one of them, not the next guess down the list (live, refusals with no hint cost a turn each)."""
     from .verify import THRESHOLDS, action_class, middle_step_scores
 
+    if open_question and "answer_question" in BUSINESS_ACTIONS.get(business, ()):
+        return ("They asked a question: answer it with answer_question (from the facts, or say the owner will "
+                "answer), or send_help for a problem.")
     row = middle_step_scores(business).get(stage, {"plan_scores": {}, "stage_score": 0.0})
     fits = [a for a, s in row["plan_scores"].items()
             if (cls := action_class(a)) and row["stage_score"] + 1e-9 >= THRESHOLDS[business][cls]
@@ -283,7 +300,8 @@ class _Run:
             rules = active_rules(self.store)
             a.send_at = next_send_time(rules, a, self.ctx)  # at night: the end of the customer's quiet hours
             r = check(rules, a, self.ctx)
-            ms = middle_step(self.store.business, self.journey.stage, args.action)
+            ms = middle_step(self.store.business, self.journey.stage, args.action,
+                             bool(self.profile.facts.get("open_question")))
             out = {"action": args.action, "allowed": r.allowed and ms["passed"], "violations": r.violations + ms["reasons"]}
             if a.send_at > self.ctx.now:  # only then: an answer that would go out now reads exactly as before
                 out["sends_at"] = f"{local_time(a.send_at, self.ctx)} the customer's time, when quiet hours end"
@@ -293,9 +311,11 @@ class _Run:
             if not out["allowed"] and self.profile.facts.get("asks_about_money"):
                 # Seen live: a money question with no fitting plan, so the model walked the action list one refusal
                 # per turn and ran out of turns. Money is the owner's: say so, and name the nudges that fit.
-                out["owner_decides"] = money_hint(self.store.business, self.journey.stage)
+                out["owner_decides"] = money_hint(self.store.business, self.journey.stage,
+                                                  bool(self.profile.facts.get("open_question")))
             elif ms["applies"] and not ms["passed"]:
-                out["plans_that_fit"] = plan_hint(self.store.business, self.journey.stage)
+                out["plans_that_fit"] = plan_hint(self.store.business, self.journey.stage,
+                                                  bool(self.profile.facts.get("open_question")))
             self.prechecks.append(out)
             self.store.audit("pheri", "rule_precheck", "customer", self.profile.customer_key,
                              {**out, "channel": args.channel, "discount_pct": args.discount_pct})
@@ -559,7 +579,7 @@ class _PrivateLoop:
                                discount_pct=10.0 if t.discount else None)
             a.send_at = next_send_time(active_rules(store), a, run.ctx)  # at night: when quiet hours end
             r = check(active_rules(store), a, run.ctx)
-            ms = middle_step(business, run.journey.stage, k)
+            ms = middle_step(business, run.journey.stage, k, bool(run.profile.facts.get("open_question")))
             dry.append({"action": k, "allowed": r.allowed and ms["passed"], "violations": r.violations + ms["reasons"]})
         run.prechecks = dry
         payload = {"today": now.date().isoformat(), "business_name": BUSINESS_NAMES[business],
@@ -664,6 +684,8 @@ def _mock_decide(messages: list[dict], schema: dict | None):
     prof, allowed = seen["get_profile"][-1], seen["list_allowed_actions"][-1]
     offered = {a["action"] for a in allowed["actions"]}
     plan = [(k, pct) for k, pct in _PLAYBOOK.get(prof["journey"]["stage"], []) if k in offered]
+    if prof["facts"].get("open_question") and "answer_question" in offered:
+        plan = [("answer_question", None)]  # a question gets an answer first
     mood = (prof["insights"].get("sentiment") or {}).get("label")
     if mood not in ("negative", "mixed"):
         plan = [step for step in plan if step[0] != "offer_discount"] or plan  # no goodwill needed
@@ -695,7 +717,7 @@ _ACTION_WORDS = {
     "send_help": "help with that problem", "book_call": "a short call", "send_checkin": "a friendly check-in",
     "offer_upgrade": "room to grow", "offer_discount": "a discount", "send_reminder": "a reminder",
     "recommend_product": "something that fits past orders", "offer_subscription": "a subscription",
-    "offer_reorder": "a nudge that it is time to reorder",
+    "offer_reorder": "a nudge that it is time to reorder", "answer_question": "an answer to what they asked",
     "task_for_owner": "a person looking at it", "no_action": "holding off",
 }
 _FACT_WORDS = {
@@ -783,9 +805,12 @@ def _mock_answer(prof: dict, kind: str, channel: str | None, pct: float | None, 
                             f"- The {team} team",
                "offer_upgrade": f"Hi {first}, you have outgrown your plan. Want us to add room for your team? "
                                 f"- The {team} team",
-               "recommend_product": f"Hi {first}, the new season's sarees are in. Want photos? - The {team} team",
-               "send_reminder": f"Hi {first}, the item you asked about is still here for you. Reply when you are "
-                                f"ready. - The {team} team",
+               "recommend_product": f"Hi {first}, would you like to see sarees that suit what you bought before? "
+                                    f"The owner can share photos this morning. - The {team} team",
+               "send_reminder": f"Hi {first}, following up on the item you asked about. The owner will confirm what "
+                                f"is available this morning. - The {team} team",
+               "answer_question": f"Hi {first}, thank you for asking. The owner will answer your question this "
+                                  f"morning. - The {team} team",
                "offer_reorder": f"Hi {first}, it is about time for your next order. The same as last time? "
                                 f"- The {team} team",
                "offer_subscription": f"Hi {first}, want your favourite tea delivered every month, no reordering? "

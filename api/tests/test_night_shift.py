@@ -121,3 +121,22 @@ def test_the_morning_brief_counts_what_the_night_did(monkeypatch, tmp_path):
     assert [v["lang"] for v in b["unreadable_voice"]] == ["ne"]  # Muse Voice reads Hindi, not Nepali
     assert b["proof"]["outcome"] == "ordered" and b["proof"]["lift_pp"] == 14.0
     assert api.get("/businesses/brightdesk/brief").json()["scheduled"] == []  # no night shift there
+
+
+def test_slop_vs_pheri_checks_a_plain_draft_exactly_as_pheris_own(monkeypatch, tmp_path):
+    from fastapi.testclient import TestClient
+
+    from pheri.app import create_app
+
+    monkeypatch.setenv("PHERI_LLM_MODE", "mock")
+    monkeypatch.setenv("PHERI_LEDGER_PATH", str(tmp_path / "l.sqlite"))
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    rows = TestClient(create_app()).get("/businesses/birgunj/slop").json()
+    assert [r["customer"]["stage"] for r in rows] == ["complaint", "festival", "wholesale"]
+    for r in rows:
+        plain = r["plain"]
+        assert not plain["passed"] and plain["failed"]
+        struck = [s for s in plain["sentences"] if s["struck"]]
+        assert struck and all(s["reasons"] for s in struck)  # every struck sentence says why, in plain words
+        assert {"money", "links"} <= {f["check"] for f in plain["failed"]}  # the stand-in offers 20% and a link
+        assert r["pheri"]["customer"]["key"] == r["customer"]["key"]

@@ -135,6 +135,7 @@ class State:
         self.voice = {b: voice.fill(ds, llm) for b, ds in self.data.items()}  # before anything reads the messages
         self.stages = {b: stages(ds) for b, ds in self.data.items()}  # code only, no model
         self.learned: dict[tuple[str, int, int], dict] = {}  # the same for everyone: written from the twin's results
+        self.slop: dict[str, list[dict]] = {}  # Slop vs Pheri: the same for everyone, made once
         self.lock = threading.RLock()  # the memory store is not thread-safe: one request at a time touches it
         self.public_demo = self.settings.public_demo
         if self.public_demo and self.settings.database_url:
@@ -646,6 +647,31 @@ def create_app(llm: LLM | None = None) -> FastAPI:
                             "screen_after": g["screen_after"], "provider": g["provider"], "model": g["model"],
                             "escalation": {"id": esc["id"], "status": esc["status"]} if esc else None})
             return out
+
+    SLOP_STAGES = {"birgunj": ("complaint", "festival", "wholesale"), "brightdesk": ("stuck", "at_risk_renewal", "quiet")}
+
+    @app.get("/businesses/{b}/slop")
+    def slop_view(b: str = Depends(business)):
+        """Slop vs Pheri for three customers: a plain AI draft (a real, recorded model reply) checked exactly as
+        Pheri's own drafts are, next to Pheri's card. The same for every visitor: it changes nothing."""
+        from . import slop
+
+        with state.lock:
+            warm(b)
+            if b not in state.slop:
+                keys = []
+                for st in SLOP_STAGES[b]:
+                    in_stage = [k for k in showcase(b) if state.stages[b][k].stage == st]
+                    wrote = [k for k in in_stage if any(src.kind in ("message", "ticket") and src.text
+                                                        for src in state.data[b].customers[k].sources)]
+                    k = (wrote or in_stage or [None])[0]  # someone who wrote, if the stage has one
+                    if k:
+                        keys.append(k)
+                checker = MemoryStore(b)
+                seed(checker, state.llm, by=DEMO_SETUP)
+                state.slop[b] = [slop.compare(state.data[b], k, checker, state.llm, CLOCKS[b][0]) for k in keys]
+            return [{**x, "pheri": card(b, x["customer"]["key"], state.decided[b][x["customer"]["key"]])}
+                    for x in state.slop[b]]
 
     @app.get("/businesses/{b}/brief")
     def brief(b: str = Depends(business)):

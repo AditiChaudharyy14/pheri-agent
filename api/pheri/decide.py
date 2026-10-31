@@ -26,6 +26,7 @@ itself and the send step checks the stored verification, so nothing here can ski
 from __future__ import annotations
 
 import json
+from pathlib import Path
 import re
 import sys
 from dataclasses import dataclass, field
@@ -131,6 +132,21 @@ TOOLS = [
                          "action is offer_discount.", CheckRulesArgs),
 ]
 ALLOWED_TOOLS = tuple(t["name"] for t in TOOLS)  # anything else the model calls is discarded and logged
+
+STYLE_GUIDE = Path(__file__).with_name("style_ne_hi.md")
+STYLE_GUIDES = {"birgunj": "STYLE_GUIDE"}  # business -> the module attribute naming its guide (tests can swap it)
+STYLE_WHEN = "the shop's own rules: follow every one whenever you write in Nepali, Hindi or Bhojpuri"
+
+
+def style_rules(business: str) -> list[str]:
+    """The shop's style rules for Nepali, Hindi and Bhojpuri, as the owner wrote them (every line of its guide that
+    starts with "- "). Read each time a brief is built, so a rule added to the file reaches the next draft. It goes
+    in the shop's brief (the first user turn): the system prompt stays Pheri's behaviour, the same for every shop."""
+    name = STYLE_GUIDES.get(business)
+    if name is None:
+        return []
+    return [x for x in globals()[name].read_text(encoding="utf-8").splitlines() if x.startswith("- ")]
+
 
 SYSTEM = """You are Pheri. You choose the single next best action for one customer of a business.
 Work like this: call get_profile and list_allowed_actions, choose an action, call check_rules with it,
@@ -485,8 +501,11 @@ class _ToolLoop:
 
     def __init__(self, run: _Run, llm: LLM, now: datetime, data_class: str, schema: type[Decision]):
         p = run.profile
-        user = json.dumps({"customer": p.customer_key, "business": p.business,
-                           "business_name": BUSINESS_NAMES[p.business], "today": now.date().isoformat()})
+        brief = {"customer": p.customer_key, "business": p.business,
+                 "business_name": BUSINESS_NAMES[p.business], "today": now.date().isoformat()}
+        if rules := style_rules(p.business):  # the shop's own style guide: part of its brief, not of Pheri's behaviour
+            brief["style_guide"] = {"follow_when": STYLE_WHEN, "rules": rules}
+        user = json.dumps(brief, ensure_ascii=False)
         # Stateless replay: the whole conversation goes out every turn, so nothing depends on Meta keeping a
         # stored response (live, ~1 in 8 chains failed with "referenced response not found or expired").
         self.items: list[dict] = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": user}]
@@ -585,6 +604,8 @@ class _PrivateLoop:
         payload = {"today": now.date().isoformat(), "business_name": BUSINESS_NAMES[business],
                    "profile": _profile_view(run.profile, run.journey, run.latest),
                    "allowed": _allowed_view(store), "dry_run": dry}
+        if rules := style_rules(business):
+            payload["style_guide"] = {"follow_when": STYLE_WHEN, "rules": rules}
         self.messages = [{"role": "system", "content": PRIVATE_SYSTEM},
                          {"role": "user", "content": json.dumps(payload, ensure_ascii=False, default=str)}]
         self.sent = [{"kind": "instructions", "text": PRIVATE_SYSTEM}, {"kind": "brief", "data": payload}]

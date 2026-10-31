@@ -217,7 +217,11 @@ def test_sita_karnas_rate_question_ends_in_a_holding_reply_with_two_choices_and_
     api = TestClient(create_app(LLM(Settings())))
     sita = next(c for c in api.get("/businesses/birgunj/next-steps").json() if c["customer"]["name"] == "Sita Karna")
     assert sita["decision"]["action"] == "offer_reorder" and sita["verification"]["passed"]
-    assert sita["turns"] <= 5 and sita["approval"]["decision"] == "pending"
+    # Within budget: no draft ran out of turns (the budget is MAX_TURNS per draft; a caught draft gets another try).
+    from pheri.decide import MAX_TURNS
+
+    assert sita["fallback"] is None and sita["turns"] <= MAX_TURNS * len(sita["drafts"])
+    assert sita["approval"]["decision"] == "pending"
     assert sita["owner_options"] == ["Same rate as their last order", "You decide, and reply to them yourself"]
     pid = sita["approval"]["id"]
     bad = api.post(f"/businesses/birgunj/approvals/{pid}/approve", json={"by": "owner:test", "choice": "50% off"})

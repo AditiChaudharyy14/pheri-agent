@@ -69,8 +69,8 @@ Read this before every task. These rules are not optional.
 - D3 done (evals at scale, evals/scale/): 591 labelled messages (labels by code; 310 paraphrased by Spark 1.3
   Contributor, checked in code) + 100 attacks + 50 judge cases, read once live by both models, every row saved
   (guard_<provider>.jsonl, resumable). Attacks stopped: Spark 1.3 87% [79-92], Spark Open 96% [90-98];
-  Bhojpuri 55% vs 90%, Roman Nepali 80% vs 90%; false alarms 0/591 vs 2/591. Judge: 24/25 planted caught (JP10
-  missed), 25/25 supported passed. Pinned in test_evals; table in README. Cost: Meta $1.91 + $0.05 paraphrase,
+  Bhojpuri 55% vs 90%, Roman Nepali 80% vs 90%; false alarms 0/591 vs 2/591. Judge (re-run 31 Oct, stricter prompt,
+  cases rebuilt; 3 wrong "very first order" labels on new customers fixed): 25/25 planted, 25/25 supported. Pinned in test_evals; table in README. Cost: Meta $1.91 + $0.05 paraphrase,
   Baseten $1.75 (guard + judge).
 - Guard v2 (dev-only tuning; 140 attacks, 40 each bho/ne-Latn, seeded dev/test split): code screen test 14/71 -> 68/71,
   full guard test 62 -> 70 (Spark 1.3), 69 -> 70 (Spark Open), false alarms unchanged. Defence in depth
@@ -133,6 +133,12 @@ Read this before every task. These rules are not optional.
   Re-recorded all (Meta $0.58, Baseten $0.17 + judge evals $0.19): every card verified within 5 turns; 14 Birgunj
   customers who asked something get answer_question; Roman Nepali replies in Roman Nepali; Birgunj 27 drafts (4 caught
   by code, 2 by the judge). Native read still pending: some Nepali is clumsy (Nisha quotes her words back; "ओनर").
+- Follow-up (31 Oct): verify.CLAIM_END splits claims at the danda/double danda too (one false Devanagari sentence
+  fails alone). Style guide api/pheri/style_ne_hi.md (Aditi's rules, every "- " line) goes in Birgunj's brief
+  (style_guide: follow_when + rules), never in the system prompt (test: behaviour is the same for every shop), so
+  Brightdesk's prompts are unchanged. Holding replies hi/bho say साहुजी. 50-case judge eval rebuilt for the new
+  rules and re-run: 25/25 planted, 25/25 supported (first run 22/25: three wrong labels, fixed in judge_cases.py).
+  scripts/review_replies.py writes every ne/ne-Latn/hi/bho reply for native review.
   Data bug fixed: 28 old messages were dated after the night started (synth._before_night moves them a day back;
   only their timestamps changed); Pooja Ansari's night message was hidden by one, so the brief counted 22, not 23.
 - Attack moment (Step 5, Glimmer cut: Modal needs a card): an attacker gets no word from any model. The owner gets
@@ -143,12 +149,12 @@ Read this before every task. These rules are not optional.
   length, links, money); no judge (the text claims nothing about the customer), stated in the stored verification;
   sent only through the sha gate, at 08:00 their time. Shown under Stopped (brief) and on the Night shift timeline.
   Recorder: same request twice in a run reuses its reply; refusals recorded; the pruned file
-  is re-checked in a fresh process and restored if anything misses. Recording 207 replies.
+  is re-checked in a fresh process and restored if anything misses. Recording 217 replies.
 - Waiting on Aditi: Nepali + Hindi clips; native review of Birgunj strings; Render clicks.
   Screenshots: uvicorn :8000 (replay), then `npm run build && npm start` (not the dev server), then
   `node scripts/evidence.mjs evidence [state]`; one heavy process at a time; restart the API before retaking
   (approving changes its state; the script approves last).
-- Live spend: Meta $6.4134 of $130, Baseten $3.5415 of $90, Modal $0 of $25. Tests: 427 (Postgres tests run when
+- Live spend: Meta $6.9202 of $130, Baseten $3.9048 of $90, Modal $0 of $25. Tests: 430 (Postgres tests run when
   PHERI_TEST_DATABASE_URL is set).
 
 ## What we are building

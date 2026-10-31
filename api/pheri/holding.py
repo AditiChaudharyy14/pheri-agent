@@ -24,8 +24,8 @@ CHANNEL = "whatsapp"
 TEMPLATES = {
     "ne": "नमस्ते {first}, हजुरको सन्देश पाइयो। साहुजीले आज बिहान आफैं जवाफ दिनुहुन्छ। - {shop} टिम",
     "ne-Latn": "Namaste {first}, hajur ko sandesh paiyo. Sahuji le aaja bihana aafai jawaf dinuhunchha. - {shop} team",
-    "hi": "नमस्ते {first}, आपका संदेश मिल गया। मालिक आज सुबह खुद जवाब देंगे। - {shop} टीम",
-    "bho": "प्रणाम {first}, रउआ के संदेस मिल गइल। मालिक आज भोरे खुदे जवाब दिहें। - {shop} टीम",
+    "hi": "नमस्ते {first}, आपका संदेश मिल गया। साहुजी आज सुबह खुद जवाब देंगे। - {shop} टीम",
+    "bho": "प्रणाम {first}, रउआ के संदेस मिल गइल। साहुजी आज भोरे खुदे जवाब दिहें। - {shop} टीम",
     "en": "Hi {first}, we got your message. The owner will reply to you personally this morning. - {shop} team",
 }
 NO_JUDGE = "written by code from a fixed template: it says nothing about the customer, so no judge is asked"

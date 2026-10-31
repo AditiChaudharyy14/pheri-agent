@@ -17,26 +17,28 @@ PAIRS = 25
 
 # stage -> (action, message, why_this, why_now, fact keys); {f[...]} are the customer's own facts.
 SUPPORTED = {
-    "loyal": ("offer_reorder", "Hi {first}, thank you for your {orders} orders so far. When it is time for the next one, just reply here.",
+    # Messages follow the rules of 31 Oct: no counts about the customer (they stay in why), no photos offered or
+    # promised by Pheri (the owner shares them), no "we will update you today".
+    "loyal": ("offer_reorder", "Hi {first}, thank you for ordering with us again and again. When it is time for the next one, just reply here.",
               "{first} is a loyal regular with {orders} orders.", "{first} last ordered {days_since_last_order} days ago.",
               ["journey_stage", "orders", "days_since_last_order"]),
     "wholesale": ("offer_reorder", "Hi {first}, your last lot was {last_order_items}. Shall we keep the same for the next one?",
                   "{first} buys wholesale; the last order was {last_order_items}.",
                   "{first} reorders about every {reorder_every_days} days and last ordered {days_since_last_order} days ago.",
                   ["journey_stage", "segment", "last_order_items", "reorder_every_days", "days_since_last_order"]),
-    "festival": ("recommend_product", "Hi {first}, {fest} is {days_to_next_festival} days away. Would you like photos of the new festival sarees?",
+    "festival": ("recommend_product", "Hi {first}, {fest} is {days_to_next_festival} days away. Would you like the owner to show you some festival sarees this morning?",
                  "{first} has only ever bought for festivals, {orders} orders in all.", "{fest} is in {days_to_next_festival} days.",
                  ["journey_stage", "festival_only", "orders", "next_festival", "days_to_next_festival"]),
-    "asked_no_order": ("send_reminder", "Hi {first}, you asked about an item {days_since_enquiry} days ago. Would you like to go ahead with the order?",
+    "asked_no_order": ("send_reminder", "Hi {first}, you asked about an item recently. Would you like to go ahead with the order?",
                        "{first} asked {days_since_enquiry} days ago and has not ordered since.", "{first} asked {days_since_enquiry} days ago.",
                        ["journey_stage", "days_since_enquiry", "days_since_last_order"]),
-    "complaint": ("send_help", "Hi {first}, we are sorry your order has a problem. We are looking into it today and will update you.",
+    "complaint": ("send_help", "Hi {first}, we are sorry your order has a problem. The owner will look into it this morning and reply to you.",
                   "{first} has {open_complaints} order with a problem that is still open.", "The problem is still open.",
                   ["journey_stage", "open_complaints", "complaint_kind"]),
-    "gone_quiet": ("send_checkin", "Hi {first}, it has been {days_since_last_order} days since your last order. Is there anything we can help with?",
+    "gone_quiet": ("send_checkin", "Hi {first}, it has been a while since your last order. Is there anything we can help with?",
                    "{first} has not ordered for {days_since_last_order} days.", "{first} last ordered {days_since_last_order} days ago.",
                    ["journey_stage", "days_since_last_order", "orders"]),
-    "new": ("recommend_product", "Hi {first}, welcome to Birgunj Saree Ghar. Would you like photos of our new sarees?",
+    "new": ("recommend_product", "Hi {first}, welcome to Birgunj Saree Ghar. Would you like the owner to show you some sarees this morning?",
             "{first} joined {days_since_signup} days ago.", "{first} is in the first weeks.",
             ["journey_stage", "days_since_signup", "orders"]),
 }
@@ -86,6 +88,8 @@ def judge_cases() -> list[dict]:
             draft = {"action": action, "channel": "whatsapp", "discount_pct": None, "message": msg.format(**vals) + T,
                      "why_this": why.format(**vals), "why_now": now.format(**vals), "fact_keys": keys, "quote_ids": []}
             where, kind, claim = PLANTED[n % len(PLANTED)]
+            if kind == "contradiction" and s == "new":  # "your very first order" is true for a new customer (31 Oct:
+                claim = " Thank you for shopping with us for so many years."  # 3 such labels were wrong; this isn't)
             planted = dict(draft)
             if where == "message":
                 planted["message"] = draft["message"].replace(T, claim.format(**vals) + T)

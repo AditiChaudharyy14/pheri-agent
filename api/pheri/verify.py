@@ -566,13 +566,16 @@ def claims(d: Draft) -> list[str]:
     out = []
     for text in (d.action.message if d.action.kind != "no_action" else "", d.why_this, d.why_now):
         text = _SIGNOFF.sub("", _GREETING.sub("", text.strip()))
-        for s in re.split(r"(?<=[.!?])\s+", text):
+        for s in CLAIM_END.split(text):
             s = s.strip()
             if len(re.findall(r"[^\W\d_]", s)) >= 3:
                 out.append(s[:1].upper() + s[1:])  # a claim is a sentence: "your export fails" reads "Your..."
     return out
 
 
+# A sentence ends at . ? ! (then a space), or at the Devanagari danda । or double danda ॥ (a space or not): one
+# claim per sentence in Nepali, Hindi and Bhojpuri too, so one false sentence fails alone.
+CLAIM_END = re.compile(r"(?<=[.!?])\s+|(?<=[।॥])\s*")
 QUESTION_CLAIM = "The message answers the customer's actual question, or says the owner will answer it."
 
 

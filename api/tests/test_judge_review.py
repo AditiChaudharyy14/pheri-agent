@@ -249,3 +249,70 @@ def test_nothing_an_owner_reads_carries_an_internal_id(monkeypatch, tmp_path):
                 if m := ID.search(text):
                     found.append(f"{url}{path}: {m.group(0)!r} in {text[:80]!r}")
     assert found == []
+
+
+# ---- follow-up (31 Oct): the danda splits claims; the shop's style guide reaches the prompt -----------------
+NISHA = "+9779844919678"  # new, writes Nepali in Devanagari, asked about blouse sizes
+
+
+def test_a_devanagari_draft_is_judged_sentence_by_sentence_and_one_false_claim_fails_alone(birgunj, llm, monkeypatch):
+    """Three sentences ended by the danda: three claims, not one. The judge (scripted here) rejects only the false
+    one, and the reason names that sentence alone."""
+    from pheri import llm as llm_module
+
+    false = "हजुरको अर्डर हिजो नै पठाइसकेका छौं।"  # "we sent your order yesterday": nothing in the record says so
+    seen = []
+
+    def judge(messages, schema):
+        data = json.loads(messages[-1]["content"])
+        seen.append(data["claims"])
+        return json.dumps({"verdicts": [{"claim_id": c["id"], "supported": c["text"] != false,
+                                         "reason": "no cited fact says it was sent" if c["text"] == false else "ok"}
+                                        for c in data["claims"]]})
+    monkeypatch.setitem(llm_module._mock_responders, "judge", judge)
+    msg = f"नमस्ते निशा, सोध्नुभएकोमा धन्यवाद। {false} साहुजीले आज बिहान साइजको जवाफ दिनुहुन्छ। - Birgunj Saree Ghar टिम"
+    _, v = check(birgunj, llm, NISHA, "answer_question", msg)
+    said = [c["text"] for c in seen[-1] if c["id"] != "q"]
+    assert said[:3] == ["नमस्ते निशा, सोध्नुभएकोमा धन्यवाद।", false, "साहुजीले आज बिहान साइजको जवाफ दिनुहुन्छ।"]
+    flagged = [r["claim"] for r in v.judge if not r["supported"]]
+    assert flagged == [false] and v.caught_by == "judge" and not v.passed
+
+
+def test_the_shops_style_guide_reaches_its_brief_line_by_line(birgunj, llm, tmp_path, monkeypatch):
+    """style_ne_hi.md, every "- " line, word for word, in Birgunj's brief (the first user turn); never in the system
+    prompt (Pheri's behaviour, the same for every shop) and never in Brightdesk's brief. A rule the owner adds to
+    the file reaches the next brief."""
+    from pheri import decide
+    from pheri import llm as llm_module
+
+    rules = [x for x in decide.STYLE_GUIDE.read_text(encoding="utf-8").splitlines() if x.startswith("- ")]
+    assert len(rules) >= 5 and any("साहुजी" in r and "ओनर" in r for r in rules)
+    assert not any(r in decide.SYSTEM or r in decide.PRIVATE_SYSTEM for r in rules)
+    briefs = {}
+    real = llm_module._mock_responders[decide.PURPOSE]
+
+    def spy(messages, schema):
+        first = json.loads(messages[1]["content"])
+        briefs[first["business"]] = first
+        return real(messages, schema)
+    monkeypatch.setitem(llm_module._mock_responders, decide.PURPOSE, spy)
+    guide = tmp_path / "style_ne_hi.md"
+    guide.write_text(decide.STYLE_GUIDE.read_text(encoding="utf-8") + "- Never use the word 'ग्राहक'.\n",
+                     encoding="utf-8")
+    monkeypatch.setattr(decide, "STYLE_GUIDE", guide)
+    store = MemoryStore("birgunj")
+    seed(store, llm, by="test")
+    decide.decide(build_profile(birgunj, NISHA, llm), store, llm, NIGHT_RUN)
+    assert briefs["birgunj"]["style_guide"]["rules"] == rules + ["- Never use the word 'ग्राहक'."]
+    assert "Nepali, Hindi or Bhojpuri" in briefs["birgunj"]["style_guide"]["follow_when"]
+    bd = load("brightdesk")
+    decide.decide(build_profile(bd, next(iter(bd.customers)), llm), MemoryStore("brightdesk"), llm)
+    assert "style_guide" not in briefs["brightdesk"]
+
+
+def test_code_written_replies_follow_the_style_guide_too():
+    from pheri.holding import TEMPLATES
+
+    for lang in ("ne", "hi", "bho"):
+        assert "साहुजी" in TEMPLATES[lang] and "ओनर" not in TEMPLATES[lang] and "मालिक" not in TEMPLATES[lang]
+    assert "Sahuji" in TEMPLATES["ne-Latn"]

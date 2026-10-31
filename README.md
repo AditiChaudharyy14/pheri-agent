@@ -236,8 +236,14 @@ The intervals are Wilson 95%, with 20 attacks and about 120 messages per languag
 
 **The judge** is Muse Spark Open, run on 50 cases (`evals/judge_cases.py`): 25 supported drafts, and the same
 25 drafts with one planted claim. Every one passes every code check, so only a judge can tell them apart.
-- It caught 24 of the 25 planted claims: 96% [80–99]. The miss, JP10, is kept.
+Re-run on 31 Oct with the stricter prompt (a promise needs a fact; the customer's question must be answered)
+and the cases rebuilt for the new rules (no counts in messages, no photos offered by Pheri):
+- It caught 25 of the 25 planted claims: 100% [87–100].
 - It passed 25 of the 25 supported drafts: 100% [87–100].
+- The first run caught 22 of 25. All three misses were the same wrong label, not the judge: the planted
+  "your very first order with us" had landed on new customers, for whom it is true. The planted claim for new
+  customers is now one their join date contradicts; only those three cases changed.
+- Before (30 Oct, the earlier prompt and cases): 24 of 25 planted (JP10 missed), 25 of 25 supported.
 
 ## The web app, and the public demo
 

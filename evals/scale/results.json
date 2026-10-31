@@ -689,12 +689,12 @@
  },
  "judge": {
   "planted_caught": {
-   "k": 24,
+   "k": 25,
    "n": 25,
-   "rate": 0.96,
+   "rate": 1.0,
    "ci": [
-    0.8046,
-    0.9929
+    0.8668,
+    1.0
    ]
   },
   "supported_passed": {
@@ -706,11 +706,9 @@
     1.0
    ]
   },
-  "judge_recorded": true,
-  "cost_usd": 0.1478,
-  "missed": [
-   "JP10"
-  ],
+  "judge_recorded": false,
+  "cost_usd": 0.1641,
+  "missed": [],
   "false_alarms": []
  }
 }

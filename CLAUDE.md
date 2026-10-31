@@ -107,13 +107,20 @@ Read this before every task. These rules are not optional.
   questions carry two owner choices written by code (autonomy.owner_options from profile.money_ask: rate /
   discount, capped by the rule / refund, plus 'You decide'); approve(choice=...) checks the pick and audits it;
   the card shows it. The general fix (a hint on every refused plan) would change 7 more recordings: not done.
+- Attack moment (Step 5, Glimmer cut: Modal needs a card): an attacker gets no word from any model. The owner gets
+  the escalation; the customer gets a fixed holding reply written by code (pheri/holding.py, TEMPLATES ne, ne-Latn,
+  hi, bho, en; native review pending, Aditi), in the language of their message, once, from decide_customer.
+  Action holding_reply is code-only (actions.CODE_ACTIONS: never in list_allowed_actions, so no recording changed).
+  verify_template runs the code checks that apply (rules incl. quiet hours + do-not-contact, template, language,
+  length, links, money); no judge (the text claims nothing about the customer), stated in the stored verification;
+  sent only through the sha gate, at 08:00 their time. Shown under Stopped (brief) and on the Night shift timeline.
   Recorder: same request twice in a run reuses its reply; refusals recorded; the pruned file
   is re-checked in a fresh process and restored if anything misses. Recording 228 replies.
 - Waiting on Aditi: Nepali + Hindi clips; native review of Birgunj strings; Render clicks.
   Screenshots: uvicorn :8000 (replay), then `npm run build && npm start` (not the dev server), then
   `node scripts/evidence.mjs evidence [state]`; one heavy process at a time; restart the API before retaking
   (approving changes its state; the script approves last).
-- Live spend: Meta $5.7159 of $130, Baseten $3.2292 of $90, Modal $0 of $25. Tests: 394 (Postgres tests run when
+- Live spend: Meta $5.7159 of $130, Baseten $3.2292 of $90, Modal $0 of $25. Tests: 401 (Postgres tests run when
   PHERI_TEST_DATABASE_URL is set).
 
 ## What we are building

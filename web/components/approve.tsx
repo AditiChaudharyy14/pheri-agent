@@ -32,7 +32,7 @@ export function ApproveReject({ business, approvalId, check, options = [] }: { b
     <div className="flex flex-col items-stretch gap-2">
       {verified && options.length > 0 ? (
         <>
-          <p className="text-[0.85rem] leading-snug text-ink-2">Send the holding reply, and you will:</p>
+          <p className="text-[0.85rem] leading-snug text-ink-2">Send Pheri&rsquo;s reply, and you will:</p>
           {options.map((o, i) => (
             <button
               key={o}

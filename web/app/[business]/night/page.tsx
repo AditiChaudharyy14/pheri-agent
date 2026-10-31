@@ -50,6 +50,11 @@ async function Timeline({ params }: { params: PageProps<"/[business]/night">["pa
             {e.kind === "voice_note" && e.text && <p className="text-[0.8rem] text-muted">{e.voice}</p>}
             <Drafts e={e} />
             <p className={`mt-1 text-[0.92rem] font-medium ${TEXT[tone(e)]}`}>{outcome(e)}</p>
+            {e.holding_reply && (
+              <p lang={e.holding_reply.language ?? undefined} className="mt-1 border-l-2 border-line-2 pl-3 text-[0.9rem] text-ink-2">
+                {e.holding_reply.message}
+              </p>
+            )}
           </li>
         ))}
       </ol>
@@ -68,7 +73,10 @@ function tone(e: NightEvent): keyof typeof DOT {
 }
 
 function outcome(e: NightEvent): string {
-  if (e.outcome === "stopped") return "Stopped: it tried to trick Pheri. Nothing was done; it waits for you.";
+  if (e.outcome === "stopped")
+    return e.holding_reply
+      ? `Stopped: it tried to trick Pheri. No model writes to them: a fixed reply written by code goes out at ${e.holding_reply.sends_at_local ?? "08:00"} their time, and the rest waits for you.`
+      : "Stopped: it tried to trick Pheri. Nothing was done; it waits for you.";
   if (e.outcome === "blocked") return "Blocked by your rule: they asked not to be contacted. Nothing sent.";
   if (e.outcome === "awaiting_approval") return `Waits for you: ${actionLabel(e.action).toLowerCase()}. ${e.waits_for_owner ?? ""}`;
   if (e.outcome === "scheduled") return `${actionLabel(e.action)}, checked, goes out at ${e.sends_at_local ?? "08:00"} their time.`;

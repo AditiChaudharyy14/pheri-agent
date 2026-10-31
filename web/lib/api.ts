@@ -213,7 +213,7 @@ export type Brief = {
   read: { messages: number; by_language: Record<string, number>; voice_notes: { read: number; unreadable: number } };
   customers: number;
   scheduled: NextStepWithTime[]; sent: NextStepWithTime[]; need_you: NextStepWithTime[]; blocked: NextStepWithTime[];
-  stopped: Reply[];
+  stopped: (Reply & { holding_reply?: HoldingReply | null })[];
   unreadable_voice: { customer: string; name: string; lang: string; says: string }[];
   voice_stand_in: boolean;
   proof: { treated: number; holdout: number; lift_pp: number; ci_pp: [number, number]; verdict: string; customers: number;
@@ -226,8 +226,11 @@ export type DraftStep = { attempt: number; passed: boolean; caught_by: string | 
 export type NightEvent = {
   at: string | null; customer: { key: string; name: string; town?: string | null; stage: string }; lang: string | null;
   kind: string; text: string; voice: string | null; outcome: string; action: string; sends_at_local: string | null;
-  waits_for_owner: string | null; drafts: DraftStep[];
+  waits_for_owner: string | null; drafts: DraftStep[]; holding_reply?: HoldingReply | null;
 };
+/** The fixed reply, written by code (never a model), that a customer whose message looked like an attack gets. */
+export type HoldingReply = { message: string; language: string | null; status: string; sends_at_local: string | null;
+  checks: number | null };
 export type SlopSentence = { text: string; struck: boolean; reasons: string[] };
 export type Slop = {
   customer: { key: string; name: string; stage: string };

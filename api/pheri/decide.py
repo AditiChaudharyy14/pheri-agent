@@ -34,7 +34,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ValidationError, create_model, field_validator
 
-from .actions import ALL_CHANNELS, BUSINESS_ACTIONS, CATALOG, CHANNELS, ESCALATE, ProposedAction
+from .actions import ALL_CHANNELS, BUSINESS_ACTIONS, CATALOG, CHANNELS, CODE_ACTIONS, ESCALATE, ProposedAction
 from .autonomy import escalate, modes, open_escalation, owner_options, owner_reason, sent_messages, submit
 from .verify import (FEEDBACK_HEAD, NO_QUOTES, Draft, attach_evidence, fact_names, feedback,  # noqa: F401
                      message_problems, middle_step, quote_index, unsupported_numbers, verify_draft)
@@ -586,9 +586,21 @@ def decide_customer(ds, key: str, store, llm: LLM, now: datetime = NOW) -> Outco
     from .profile import CUSTOMER_WRITTEN, build_profile, norm_email
 
     c = ds.customers[norm_email(key)]
+    said = sorted((s for s in c.sources if s.kind in CUSTOMER_WRITTEN and s.text), key=lambda s: s.at or "")
+    language = said[-1].lang if said else None
     with private_fence(store, llm):
         guarded = screen_history(store, llm, c.key, [s for s in c.sources if s.kind in CUSTOMER_WRITTEN],
                                  ds.data_class)
+        attack = next((g for g in guarded if g.attack), None)
+        if attack and "holding_reply" in CODE_ACTIONS.get(store.business, ()):
+            # The owner has the escalation; the customer gets a fixed reply written by code, once. No model writes
+            # a word to them (pheri/holding.py), and it waits for the end of their quiet hours like everything else.
+            from .holding import holding_reply_for, send_holding_reply
+
+            if holding_reply_for(store, c.key) is None:
+                ctx = CheckContext(store.business, {"country": c.attrs.get("country")}, now,
+                                   sent_messages(store, c.key), do_not_contact=store.do_not_contact(c.key) is not None)
+                send_holding_reply(store, ctx, c.key, c.name.split()[0], language or attack.language)
         if store.do_not_contact(c.key) or open_escalation(store, c.key):
             # No profile call either: nothing would be done with it.
             thin = Profile(ds.business, c.key, c.name, c.company, {}, {}, {}, None)

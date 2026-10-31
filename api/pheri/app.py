@@ -519,6 +519,7 @@ def create_app(llm: LLM | None = None) -> FastAPI:
                 "waits_for_owner": (action or {}).get("payload", {}).get("waits_for_owner"),
                 "owner_options": (action or {}).get("payload", {}).get("owner_options") or [],
                 "owner_choice": owner_choice(b, action),
+                "holding_reply": holding(b, k),
                 "customer": {"key": k, "name": cu.name, "company": cu.company, "town": cu.attrs.get("town"),
                              "stage": state.stages[b][k].stage},
                 "decision": out["decision"], "evidence": receipts(b, cu, out["evidence"]), "action": action,
@@ -527,6 +528,19 @@ def create_app(llm: LLM | None = None) -> FastAPI:
                 "private": out["private"], "cost_usd": out["cost_usd"], "turns": out["turns"],
                 "decided_by": decided_by(out), "verification": verification_line(out),
                 "override": override_of(b, action)}
+
+    def holding(b: str, k: str) -> dict | None:
+        """The fixed reply, written by code, that a customer whose message looked like an attack gets."""
+        from .holding import holding_reply_for
+
+        a = holding_reply_for(state.stores[b], k)
+        if a is None:
+            return None
+        cu = state.data[b].customers[k]
+        at = a["payload"].get("send_at")
+        when = local_time(datetime.fromisoformat(at), CheckContext(b, {"country": cu.attrs.get("country")}, CLOCKS[b][1]))             if at and a["status"] == "scheduled" else None
+        return {"message": a["payload"]["message"], "language": a["payload"].get("language"), "status": a["status"],
+                "sends_at_local": when, "checks": (a["payload"].get("verification") or {}).get("code_checks")}
 
     def owner_choice(b: str, action: dict | None) -> str | None:
         """What the owner picked when approving a money question (from the audit log), or None."""
@@ -714,7 +728,7 @@ def create_app(llm: LLM | None = None) -> FastAPI:
             out.append({"at": src.at, "customer": c["customer"], "lang": src.lang, "kind": src.kind, "text": src.text,
                         "voice": note["says"] if note else None, "outcome": outcome, "action": c["decision"]["action"],
                         "sends_at_local": c.get("sends_at_local"), "waits_for_owner": c.get("waits_for_owner"),
-                        "drafts": c.get("drafts") or []})
+                        "drafts": c.get("drafts") or [], "holding_reply": c.get("holding_reply")})
         return sorted(out, key=lambda x: x["at"] or "")
 
     def rule_moments(b: str, cards: list[dict]) -> list[dict]:
@@ -752,7 +766,8 @@ def create_app(llm: LLM | None = None) -> FastAPI:
         need = [c for c in talking if (c["approval"] or {}).get("decision") == "pending"
                 or c["decision"]["action"] == "task_for_owner"]
         voice = list(state.voice[b].values())
-        stopped = [r for r in reps if r["attack"]]
+        with state.lock:  # each attack's fixed reply, written by code (pheri/holding.py)
+            stopped = [{**r, "holding_reply": holding(b, r["customer"]["key"])} for r in reps if r["attack"]]
         langs: dict[str, int] = {}
         for r in reps:
             langs[r["language"]] = langs.get(r["language"], 0) + 1

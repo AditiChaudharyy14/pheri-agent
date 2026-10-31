@@ -4,7 +4,7 @@ import { ApproveReject } from "@/components/approve";
 import { DecidedByLine } from "@/components/decided-by";
 import { EvidenceChips } from "@/components/evidence";
 import { Skeleton } from "@/components/ui";
-import { api, pct, type Brief, type NextStepWithTime } from "@/lib/api";
+import { api, pct, type Brief, type NextStepWithTime, type HoldingReply } from "@/lib/api";
 import { actionLabel, clockNPT, dayNPT, LANGUAGE_NAME, stageLabel } from "@/lib/labels";
 
 /** The owner's morning check, usually on a phone: what the night shift did, in sentences, then what needs them. */
@@ -168,16 +168,18 @@ async function Morning({ params }: { params: PageProps<"/[business]">["params"] 
             {b.stopped.map((r) => (
               <li key={r.source_id} className="py-3">
                 <p className="text-[0.92rem] text-muted">
-                  {r.customer.name} · {LANGUAGE_NAME[r.language] ?? r.language}
+                  {r.customer.name} · {LANGUAGE_NAME[r.holding_reply?.language ?? r.language] ?? r.language}
                 </p>
                 <p lang={r.language} className="mt-1 font-serif text-[1.05rem] leading-snug text-ink">
                   &ldquo;{r.text}&rdquo;
                 </p>
+                {r.holding_reply && <HoldingLine h={r.holding_reply} />}
               </li>
             ))}
           </ul>
           <p className="mt-2 text-[0.9rem] text-ink-2">
-            Pheri won&rsquo;t act on these or write back. <Link href={`/${business}/night`} className="text-teal-ink underline">
+            Pheri won&rsquo;t act on these, and no model writes to them; each gets only the fixed reply above, and
+            you decide the rest. <Link href={`/${business}/night`} className="text-teal-ink underline">
               Read how each was caught
             </Link>
             .
@@ -282,6 +284,18 @@ function NeedYou({ business, step }: { business: string; step: NextStepWithTime 
         )}
       </div>
     </article>
+  );
+}
+
+function HoldingLine({ h }: { h: HoldingReply }) {
+  return (
+    <div className="mt-2 border-l-2 border-line-2 pl-3">
+      <p className="text-[0.82rem] text-muted">
+        {h.status === "scheduled" ? `Goes out at ${h.sends_at_local ?? "8:00"} their time` : h.status === "executed" ? "Sent" : "Not sent"}
+        {" "}· a fixed reply written by code, not by a model{h.checks ? ` · ${h.checks} checks passed` : ""}
+      </p>
+      <p lang={h.language ?? undefined} className="mt-0.5 text-[0.95rem] leading-snug text-ink-2">{h.message}</p>
+    </div>
   );
 }
 

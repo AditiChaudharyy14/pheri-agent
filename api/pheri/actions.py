@@ -35,6 +35,9 @@ CATALOG: dict[str, ActionType] = {a.kind: a for a in (
     # Created by code only (never offered to the model): a reply that looks like an attack goes to a person.
     ActionType("escalate_to_human", "A person reads this customer's message before Pheri does anything.",
                customer_facing=False),
+    # Created by code only: the fixed reply a customer whose message looked like an attack gets (pheri/holding.py).
+    ActionType("holding_reply", "A fixed reply written by code, never by a model: the message came in, and the "
+                                "owner replies in person."),
 )}
 ESCALATE = "escalate_to_human"
 
@@ -44,6 +47,8 @@ BUSINESS_ACTIONS: dict[str, tuple[str, ...]] = {
     "birgunj": ("send_reminder", "recommend_product", "offer_reorder", "offer_discount", "send_help", "send_checkin",
                 "task_for_owner", "no_action"),
 }
+# Actions only code creates: never in list_allowed_actions, so the model can't choose them.
+CODE_ACTIONS: dict[str, tuple[str, ...]] = {"brightdesk": (), "birgunj": ("holding_reply",)}
 CHANNELS: dict[str, tuple[str, ...]] = {
     "brightdesk": ("email", "in_app"),
     "birgunj": ("whatsapp", "instagram_dm"),
@@ -65,7 +70,7 @@ class ProposedAction(BaseModel):
 
 def problems(business: str, action: ProposedAction) -> list[str]:
     """Structural checks that hold for every business, whatever its owner's rules say."""
-    if action.kind not in BUSINESS_ACTIONS[business]:
+    if action.kind not in BUSINESS_ACTIONS[business] + CODE_ACTIONS.get(business, ()):
         return [f"{action.kind!r} is not an action {business} offers"]
     t = CATALOG[action.kind]
     out = []

@@ -227,3 +227,50 @@ def test_sita_karnas_rate_question_ends_in_a_holding_reply_with_two_choices_and_
     assert ok.status_code == 200 and ok.json()["status"] == "scheduled"
     again = api.get(f"/businesses/birgunj/customers/{sita['customer']['key']}/decision").json()
     assert again["owner_choice"] == "Same rate as their last order"
+
+
+# ---- the attack moment: no model writes to an attacker; a fixed reply, by code, goes out at 08:00 -----------------
+@pytest.mark.parametrize("lang", ["ne", "ne-Latn", "hi", "bho", "en"])
+def test_every_holding_reply_template_passes_the_code_checks_and_waits_for_eight(lang, llm):
+    from pheri.holding import send_holding_reply
+
+    store = MemoryStore("birgunj")
+    seed(store, llm, by="test")  # quiet hours 21-08 and the 10% limit
+    a = send_holding_reply(store, CheckContext("birgunj", {"country": "NP"}, NIGHT_RUN), "+9779800000000", "Asha", lang)
+    v = a["payload"]["verification"]
+    assert v["passed"] and v["judge_ran"] is False and "no judge is asked" in v["note"]
+    assert a["status"] == "scheduled" and a["payload"]["written_by"] == "code" and a["payload"]["language"] == lang
+    assert local_time(datetime.fromisoformat(a["payload"]["send_at"]), CheckContext("birgunj", {"country": "NP"},
+                                                                                    NIGHT_RUN)) == "08:00"
+
+
+def test_a_holding_reply_is_never_sent_to_someone_who_asked_not_to_be_contacted(llm):
+    from pheri.holding import send_holding_reply
+
+    store = MemoryStore("birgunj")
+    ctx = CheckContext("birgunj", {"country": "NP"}, MORNING, do_not_contact=True)
+    a = send_holding_reply(store, ctx, "+9779800000000", "Asha", "ne")
+    assert a["status"] == "blocked" and not a["payload"]["verification"]["passed"]
+
+
+def test_the_recorded_attackers_each_get_a_fixed_reply_in_their_own_language(monkeypatch, tmp_path):
+    """Replay of the curated night: three attacks (ne, ne-Latn, bho), each escalated to the owner, each with a fixed
+    reply written by code in the language of the message, scheduled for 08:00. The model wrote none of it."""
+    from fastapi.testclient import TestClient
+
+    from pheri.app import create_app
+    from pheri.config import REPO_ROOT
+    from pheri.holding import TEMPLATES
+
+    monkeypatch.setenv("PHERI_LLM_MODE", "replay")
+    monkeypatch.setenv("PHERI_LLM_REPLAY", str(REPO_ROOT / "data" / "recorded" / "llm.jsonl"))
+    monkeypatch.setenv("PHERI_LEDGER_PATH", str(tmp_path / "ledger.sqlite"))
+    monkeypatch.delenv("PHERI_LLM_RECORD", raising=False)
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    brief = TestClient(create_app(LLM(Settings()))).get("/businesses/birgunj/brief").json()
+    held = [s["holding_reply"] for s in brief["stopped"]]
+    assert sorted(h["language"] for h in held) == ["bho", "ne", "ne-Latn"]
+    for s, h in zip(brief["stopped"], held):
+        first = s["customer"]["name"].split()[0]
+        assert h["status"] == "scheduled" and h["sends_at_local"] == "08:00"
+        assert h["message"] == TEMPLATES[h["language"]].format(first=first, shop="Birgunj Saree Ghar")

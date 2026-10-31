@@ -47,7 +47,7 @@
     {
       "viewport": "1440x900",
       "artifact": "morning-1440x900.png",
-      "observation": "Morning brief on desktop, a 56rem reading column: need-you cards with receipts and Approve/Reject, 'Your rules stopped', Stopped (Devanagari, Roman Nepali, Hindi), Ready at 8:00 (16), proof sentence."
+      "observation": "Morning brief on desktop, a 56rem reading column: need-you cards (money questions carry two choices written by code), 'Your rules stopped', Stopped (each attack in the customer's own words, with the fixed reply written by code in their language, out at 08:00), Ready at 8:00 (16)."
     },
     {
       "viewport": "390x844",
@@ -62,7 +62,7 @@
     {
       "viewport": "390x844",
       "artifact": "night-390x844.png",
-      "observation": "Night shift on a phone: 25 events 21:07 to 05:30, each with the customer's words, any caught drafts ('Draft 1 caught by code/the judge: reason, sent back, rewritten') and the outcome in its status colour."
+      "observation": "Night shift on a phone: 25 events 21:07 to 05:30, each with the customer's words, any caught drafts, the outcome in its status colour; attacks show the fixed reply written by code."
     },
     {
       "viewport": "1440x900",

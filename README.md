@@ -1,5 +1,8 @@
 # Pheri
 
+**Live demo: [pheri-web.onrender.com](https://pheri-web.onrender.com)** (API: [pheri-api.onrender.com](https://pheri-api.onrender.com/health)).
+A recorded night from a live run, replayed; each visitor gets their own sandbox, and Reset demo puts it back.
+
 The next step for every customer, inside your rules. Pheri is an AI agent that understands each
 customer, decides their next best action ("why this, why now"), acts only inside the business's
 rules and approvals, and proves what worked with a holdout.

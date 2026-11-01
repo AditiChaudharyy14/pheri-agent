@@ -194,7 +194,8 @@ Read this before every task. These rules are not optional.
   sent only through the sha gate, at 08:00 their time. Shown under Stopped (brief) and on the Night shift timeline.
   Recorder: same request twice in a run reuses its reply; refusals recorded; the pruned file
   is re-checked in a fresh process and restored if anything misses. Recording 579 replies (pruning kept all: the voice compile key failed the re-check; harmless, to look at).
-- Waiting on Aditi: Nepali + Hindi clips; native review of Birgunj strings; Render clicks.
+- Live on Render (1 Nov): https://pheri-web.onrender.com + https://pheri-api.onrender.com; .github/workflows/keepalive.yml GETs both every 10 min until 9 Nov 2026 23:59 UTC (every push to main deploys).
+- Waiting on Aditi: native review of Birgunj strings.
   Screenshots: uvicorn :8000 (replay), then `npm run build && npm start` (not the dev server), then
   `node scripts/evidence.mjs evidence [state]`; one heavy process at a time; restart the API before retaking
   (approving changes its state; the script approves last).

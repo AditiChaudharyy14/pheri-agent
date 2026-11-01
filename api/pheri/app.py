@@ -567,6 +567,7 @@ def create_app(llm: LLM | None = None) -> FastAPI:
                 "owner_choice": owner_choice(b, action),
                 "blocked_by_rule": ((action or {}).get("rule_check") or {}).get("blocked_by_rule"),
                 "owner_offer": offer_view(b, k),
+                "attachments": (action or {}).get("payload", {}).get("attachments") or [],
                 "holding_reply": holding(b, k),
                 "customer": {"key": k, "name": cu.name, "company": cu.company, "town": cu.attrs.get("town"),
                              "stage": state.stages[b][k].stage},

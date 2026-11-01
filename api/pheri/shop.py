@@ -16,7 +16,8 @@ from functools import lru_cache
 from .synth import OUT
 from .words import read_language
 
-SHOP_FACTS = ("shop_delivery", "shop_cod", "shop_size_guide", "shop_stock", "shop_collection", "shop_returns")
+SHOP_FACTS = ("shop_delivery", "shop_cod", "shop_size_guide", "shop_stock", "shop_collection", "shop_returns",
+              "shop_last_order")
 
 TOWN_WORDS = {
     "Birgunj": ("birgunj", "बीरगंज", "वीरगञ्ज", "बिरगंज"), "Parwanipur": ("parwanipur", "परवानीपुर"),
@@ -73,31 +74,73 @@ def _category(text: str | None) -> str | None:
 
 
 # Facts in the language the customer wrote: a Nepali, Hindi or Bhojpuri reply copies these names, never English ones.
-LABELS = {"en": ("in stock", "photo", "collection", "from NPR {n}", "photos"),
-          "ne-Latn": ("in stock", "photo", "collection", "from NPR {n}", "photos"),
-          "ne": ("स्टकमा", "फोटो", "कलेक्सन", "NPR {n} देखि", "फोटो"),
-          "hi": ("स्टॉक में", "फोटो", "कलेक्शन", "NPR {n} से", "फोटो"),
-          "bho": ("स्टॉक में", "फोटो", "कलेक्शन", "NPR {n} से", "फोटो")}
+# Money is "रु" in Devanagari and "Rs" in Roman letters, never "NPR". A retail customer hears "in stock"; only a
+# wholesale buyer is told how many. No photo id is ever in a fact: code attaches the photos (photos_for).
+DEVANAGARI = ("ne", "hi", "bho")
+STOCK_WORDS = {"en": "in stock", "ne-Latn": "stock ma chha", "ne": "स्टकमा छ", "hi": "स्टॉक में है", "bho": "स्टॉक में बा"}
+COUNT_WORDS = {"en": "{n} in stock", "ne-Latn": "stock ma {n}", "ne": "स्टकमा {n}", "hi": "स्टॉक में {n}",
+               "bho": "स्टॉक में {n} गो"}
+COLLECTION = {"en": "{f} collection: {items}; from {money}", "ne-Latn": "{f} collection: {items}; {money} dekhi",
+              "ne": "{f} कलेक्सन: {items}; {money} देखि", "hi": "{f} कलेक्शन: {items}; {money} से",
+              "bho": "{f} कलेक्शन: {items}; {money} से"}
+DELIVERY = {"en": ("{t}: {d} day{s}, delivery charge {money}", "{t}: {d} day{s}, free delivery"),
+            "ne-Latn": ("{t}: {d} din, delivery charge {money}", "{t}: {d} din, delivery nishulka"),
+            "ne": ("{t}: {d} दिन, डेलिभरी शुल्क {money}", "{t}: {d} दिन, डेलिभरी निःशुल्क"),
+            "hi": ("{t}: {d} दिन, डिलीवरी चार्ज {money}", "{t}: {d} दिन, डिलीवरी मुफ़्त"),
+            "bho": ("{t}: {d} दिन, डिलीवरी चार्ज {money}", "{t}: {d} दिन, डिलीवरी मुफ्त")}
+LAST_ORDER = {"en": "Last order on record: {items}, {money}", "ne-Latn": "Pachhillo order: {items}, {money}",
+              "ne": "पछिल्लो अर्डर: {items}, {money}", "hi": "पिछला ऑर्डर: {items}, {money}",
+              "bho": "पिछला ऑर्डर: {items}, {money}"}
+
+
+def money(n: int | float, lang: str) -> str:
+    return f"रु {n:g}" if lang in DEVANAGARI else f"Rs {n:g}"
+
+
+def _lang(lang: str) -> str:
+    return lang if lang in STOCK_WORDS else "en"
 
 
 def _name(it: dict, lang: str) -> str:
     return (it.get("names") or {}).get(lang) or it["name"]
 
 
-def _item_line(it: dict, lang: str) -> str:
-    stock_w, photo_w = LABELS.get(lang, LABELS["en"])[:2]
-    count = "" if it["stock"] is None else (f"{it['stock']} {stock_w}, " if lang in ("en", "ne-Latn")
-                                            else f"{stock_w} {it['stock']}, ")
-    return f"{_name(it, lang)}: {count}NPR {it['price_npr']}, {photo_w} {it['photo']}"
+def _item_line(it: dict, lang: str, wholesale: bool) -> str:
+    lang = _lang(lang)
+    stock = "" if it["stock"] is None else (
+        COUNT_WORDS[lang].format(n=it["stock"]) if wholesale else STOCK_WORDS[lang]) + ", "
+    return f"{_name(it, lang)}: {stock}{money(it['price_npr'], lang)}"
 
 
 def _collection_line(s: dict, fest: str, lang: str) -> str:
+    lang = _lang(lang)
     items = [it for it in s["catalog"] if it["id"] in s["collections"][fest]]
-    _, _, coll_w, from_w, photos_w = LABELS.get(lang, LABELS["en"])
     fest_name = (s.get("festival_names", {}).get(fest) or {}).get(lang) or fest.title()
-    low = min(it["price_npr"] for it in items)
-    return (f"{fest_name} {coll_w}: " + ", ".join(_name(it, lang) for it in items) + f"; {from_w.format(n=low)}; "
-            f"{photos_w} " + ", ".join(it["photo"] for it in items) + ".")
+    return COLLECTION[lang].format(f=fest_name, items=", ".join(_name(it, lang) for it in items),
+                                   money=money(min(it["price_npr"] for it in items), lang))
+
+
+def _by_order_name(s: dict, name: str) -> dict | None:
+    """The catalogue item or wholesale lot an order line names ("Cotton saree bundle x20", "Banarasi silk saree")."""
+    for it in s.get("bundles", []) + s["catalog"]:
+        if name.strip().casefold() in [it["name"].casefold(), *(n.casefold() for n in it.get("order_names", []))]:
+            return it
+    return None
+
+
+def photos_for(prov: list[str], business: str = "birgunj") -> list[dict]:
+    """The shop's own photos of the items a cited fact names (its provenance "shop:catalog:<ids>")."""
+    s = shop(business)
+    by_id = {it["id"]: it for it in s.get("catalog", []) + s.get("bundles", [])}
+    ids = [i for ref in prov if ref.startswith(("shop:catalog:", "shop:collections:", "shop:last_order:"))
+           for i in ref.split(":", 2)[2].split(",") if i in by_id]
+    out, seen = [], set()
+    for i in ids:
+        ph = by_id[i]["photo"]
+        if ph not in seen:
+            seen.add(ph)
+            out.append({"photo": ph, "item": by_id[i]["name"], "src": f"/catalog/{ph}.png"})
+    return out
 
 
 def asked_town(text: str) -> str | None:
@@ -106,14 +149,17 @@ def asked_town(text: str) -> str | None:
 
 
 def facts_for(text: str | None, town: str | None, country: str | None, festival: str | None,
-              business: str = "birgunj", last_item: str | None = None) -> tuple[dict, dict]:
+              business: str = "birgunj", last_item: str | None = None, wholesale: bool = False,
+              last_order: dict | None = None) -> tuple[dict, dict]:
     """The shop facts that answer this message, and their provenance. Nothing when the message asks nothing the file
-    holds."""
+    holds. `last_order`: their last order on record, for "the same as last time"."""
+    from .words import reorder_request
+
     s = shop(business)
     if not s or not text:
         return {}, {}
     on = topics(text)
-    lang = read_language(text)  # names and labels in the language of their message: no English product names
+    lang = _lang(read_language(text))  # in the language of their message: no English product names
     items = _items(text, s["catalog"])
     if not items and on & {"stock", "price"} and last_item:
         # "Any more like last time?" names no item: their last order does, if it is the kind of thing they named.
@@ -124,25 +170,35 @@ def facts_for(text: str | None, town: str | None, country: str | None, festival:
     where = asked_town(text) or town
     if ("delivery" in on or asked_town(text)) and where in s["delivery"]:
         d = s["delivery"][where]
-        facts["shop_delivery"] = (f"{where}: {d['days']} day{'s' if d['days'] > 1 else ''}, "
-                                  + ("free delivery" if not d["charge_npr"] else f"delivery charge NPR {d['charge_npr']}"))
+        t = s.get("town_names", {}).get(where, where) if lang in DEVANAGARI else where
+        paid, free = DELIVERY[lang]
+        facts["shop_delivery"] = (paid if d["charge_npr"] else free).format(
+            t=t, d=d["days"], s="s" if d["days"] > 1 else "", money=money(d["charge_npr"], lang))
         prov["shop_delivery"] = ["shop:delivery"]
     if "cod" in on:
-        facts["shop_cod"], prov["shop_cod"] = s["cod"].get(s["delivery"].get(where, {}).get("country", country or "NP"),
-                                                           s["cod"]["NP"]), ["shop:cod"]
+        rule = s["cod"].get(s["delivery"].get(where, {}).get("country", country or "NP"), s["cod"]["NP"])
+        facts["shop_cod"], prov["shop_cod"] = rule.get(lang, rule["en"]), ["shop:cod"]
     if "size" in on:
-        facts["shop_size_guide"], prov["shop_size_guide"] = s["size_guide"], ["shop:size_guide"]
+        facts["shop_size_guide"], prov["shop_size_guide"] = s["size_guide"].get(lang, s["size_guide"]["en"]),             ["shop:size_guide"]
     if items and on & {"stock", "price", "photos", "designs", "size"}:
-        facts["shop_stock"] = "; ".join(_item_line(it, lang) for it in items)
-        prov["shop_stock"] = ["shop:catalog"]
+        facts["shop_stock"] = "; ".join(_item_line(it, lang, wholesale) for it in items)
+        prov["shop_stock"] = ["shop:catalog:" + ",".join(it["id"] for it in items)]
     if on & {"designs", "photos"}:
         fests = s["collections"]
         fest = next((f for f in fests if f in (text or "").casefold() or _alias(text, f)), None) or festival
         if fest in fests:
             facts["shop_collection"] = _collection_line(s, fest, lang)
-            prov["shop_collection"] = ["shop:collections"]
+            prov["shop_collection"] = ["shop:collections:" + ",".join(fests[fest])]
     if "returns" in on:
-        facts["shop_returns"], prov["shop_returns"] = s["returns"], ["shop:returns"]
+        facts["shop_returns"], prov["shop_returns"] = s["returns"].get(lang, s["returns"]["en"]), ["shop:returns"]
+    if last_order and reorder_request(text):  # "the same lot as last time": what the last order on record holds
+        lines = [_by_order_name(s, n) for n in last_order["items"].split(";")]
+        known = [it for it in lines if it]
+        names = ", ".join(_name(it, lang) for it in known) or last_order["items"]
+        facts["shop_last_order"] = LAST_ORDER[lang].format(items=names, money=money(last_order["total_npr"], lang))
+        if known:
+            facts["shop_last_order"] += "; " + "; ".join(_item_line(it, lang, wholesale) for it in known)
+        prov["shop_last_order"] = ["shop:last_order:" + ",".join(it["id"] for it in known)]
     return facts, prov
 
 

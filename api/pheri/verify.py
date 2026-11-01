@@ -77,8 +77,8 @@ JUDGE_MAX_OUTPUT_TOKENS = 2500  # Muse Spark Open always reasons; the guard need
 MAX_CLAIMS = 12
 
 CODE_CHECKS = ("rules", "schema", "evidence", "facts", "promises", "answers", "pronouns", "address", "one_problem",
-               "language", "length", "links", "money", "plain_words", "private_stats", "middle_step", "tools")
-SOFT_CHECKS = ("answers", "address", "one_problem", "length", "language", "plain_words", "private_stats",
+               "repeats", "language", "length", "links", "money", "plain_words", "private_stats", "middle_step", "tools")
+SOFT_CHECKS = ("answers", "address", "one_problem", "repeats", "length", "language", "plain_words", "private_stats",
                "middle_step", "judge")  # an owner may override these
 # Counts that describe a customer's behaviour: they belong in why, for the owner; a message that quotes them back
 # ("108 days since your last order") reads like surveillance. A date or a festival is not one of them.
@@ -488,7 +488,8 @@ def action_class(kind: str) -> str | None:
     return "money" if kind in MONEY_ACTIONS else "nudge"
 
 
-ANSWERS = ("answer_question", "send_help")  # what may go to a customer who asked something: an answer, or help
+ANSWERS = ("answer_question", "send_photos", "send_help")
+OWNERS_COMPLAINTS = ("late", "damaged", "wrong_colour")  # the owner answers these; an exchange is shop policy  # what may go to a customer who asked something: an answer, or help
 
 
 def middle_step(business: str, stage: str, kind: str, open_question: bool = False) -> dict:
@@ -579,6 +580,11 @@ def claims(d: Draft) -> list[str]:
 # A sentence ends at . ? ! (then a space), or at the Devanagari danda । or double danda ॥ (a space or not): one
 # claim per sentence in Nepali, Hindi and Bhojpuri too, so one false sentence fails alone.
 CLAIM_END = re.compile(r"(?<=[.!?])\s+|(?<=[।॥])\s*")
+UNASKED_CLAIM = "The message adds nothing the customer didn't ask about and nothing the cited facts don't require."
+UNASKED_HOW = ("Claim x is true only if every sentence answers what customer_question asks, or is needed by a cited "
+               "fact (a greeting and a sign-off count as nothing added). It is false if the message brings up a topic "
+               "they never raised: cash on delivery when they asked about stock, a festival they never named, "
+               "another product.")
 QUESTION_CLAIM = "The message answers the customer's actual question, or says the owner will answer it."
 
 
@@ -591,8 +597,8 @@ def _judge(d: Draft, vc: VerifyContext, evidence: list[dict]) -> tuple[list[dict
     ids = [f"c{i + 1}" for i in range(len(said))]
     t = CATALOG.get(d.action.kind)
     question = getattr(vc.profile, "question", None) if t and t.customer_facing else None
-    if question:  # one more claim: the message answers what they asked, or says the owner will
-        said, ids = said + [QUESTION_CLAIM], ids + ["q"]
+    if question:  # two more claims: it answers what they asked (or says the owner will), and adds nothing unasked
+        said, ids = said + [QUESTION_CLAIM, UNASKED_CLAIM], ids + ["q", "x"]
     data = {"business": BUSINESS_NAMES.get(vc.ctx.business, vc.ctx.business),
             "customer_first_name": (vc.profile.name or "").split()[0] if vc.profile.name else None,
             "action": d.action.kind, "journey_stage": vc.journey.stage,
@@ -602,6 +608,9 @@ def _judge(d: Draft, vc: VerifyContext, evidence: list[dict]) -> tuple[list[dict
             "claims": [{"id": i, "text": s} for i, s in zip(ids, said)]}
     if question:
         data["customer_question"] = question
+        data["how_to_judge_x"] = UNASKED_HOW
+        # Seen live: without the whole message the judge could not tell whether it answers ("no message provided").
+        data["message"] = d.action.message
     named = festivals_named(" ".join([*said, *map(str, data["cited_facts"].values())]))
     if named:  # Tihar is Diwali is Deepawali: a claim that uses another name for a cited festival is the same claim
         data["festival_names_that_mean_the_same"] = named
@@ -667,15 +676,41 @@ def verify_draft(d: Draft, vc: VerifyContext) -> Verification:
                 for _, does, said in promises(d.action.message, backed, d.action.kind, cited)]
 
     def answers() -> list[str]:
-        """A question the shop's own facts answer is answered, not handed to the owner. The owner keeps money
-        decisions, refunds and complaints (and voice notes Pheri can't read, which never reach a draft)."""
+        """A question (or "the same as last time") the shop's own facts answer is answered from them, not handed to
+        the owner. The owner keeps money decisions, refunds and complaints about a late, damaged or wrong order (and
+        voice notes Pheri can't read, which never reach a draft). An exchange is policy: the shop file answers it."""
         shop = [k for k in p.facts if k.startswith("shop_")]
-        if not (p.facts.get("open_question") and shop) or p.facts.get("asks_about_money") or j.stage == "complaint"                 or getattr(p, "money_ask", None) == "refund" or cited & set(shop):
+        asked = p.facts.get("open_question") or p.facts.get("asks_reorder")
+        owners = p.facts.get("asks_about_money") or getattr(p, "money_ask", None) == "refund" \
+            or p.facts.get("complaint_kind") in OWNERS_COMPLAINTS
+        photo_facts = {"shop_stock", "shop_collection", "shop_last_order"} & set(shop)
+        if p.facts.get("asks_photos") and photo_facts and not owners and d.action.kind != "send_photos":
+            return ["they asked for photos and the shop has them: use the send photos step (code attaches the "
+                    "photos of the items in the facts you cite), and say the photos are sent"]
+        if not (asked and shop) or owners or cited & set(shop):
             return []
         if OWNER.search(d.action.message):
-            return ["hands the question to the owner, but the shop's facts answer it ("
+            return ["hands it to the owner, but the shop's facts answer it ("
                     + ", ".join(FACT_WORDS.get(k, k) for k in shop) + "): answer from them, and cite them"]
         return []
+
+    def repeats() -> list[str]:
+        """One message, each thing once: no sentence or idea said twice (handing it to the owner twice counts)."""
+        body = d.action.message
+        for sign in SIGN_OFF.values():
+            body = body[:-len(sign)].rstrip() if body.endswith(sign) else body
+        sents = [x.strip() for x in CLAIM_END.split(body) if len(re.findall(r"[^\W\d_]", x)) >= 3]
+        words = [{w for w in re.findall(r"[\w\u0900-\u097F]+", x.casefold()) if len(w) > 2} for x in sents]
+        out = []
+        owner = [x for x in sents if OWNER.search(x)]
+        if len(owner) >= 2:
+            out.append(f"says twice that the owner will answer (\u201c{owner[0]}\u201d / \u201c{owner[1]}\u201d): say it once")
+        for i in range(len(sents)):
+            for k in range(i + 1, len(sents)):
+                a, b = words[i], words[k]
+                if a and b and len(a & b) / len(a | b) >= 0.6:
+                    out.append(f"repeats itself (\u201c{sents[i]}\u201d / \u201c{sents[k]}\u201d): say it once")
+        return out[:2]
 
     def plain_words() -> list[str]:
         ids = internal_ids(" ".join((d.action.message, d.why_this, d.why_now)))
@@ -709,6 +744,7 @@ def verify_draft(d: Draft, vc: VerifyContext) -> Verification:
         ("pronouns", True, lambda: pronoun_problems(d, p)),
         ("address", facing, lambda: signature_problems(d, p) + _address(d, p)),
         ("one_problem", facing, lambda: _one_problem(d, p, j)),
+        ("repeats", facing, repeats),
         ("language", facing, language),
         ("length", facing, lambda: [f"the message is {len(d.action.message)} characters; keep it under "
                                     f"{MAX_MESSAGE_CHARS}"] if len(d.action.message) > MAX_MESSAGE_CHARS else []),
@@ -777,6 +813,9 @@ def _mock_judge(messages: list[dict], schema: dict | None) -> str:
     have = {f"{float(n.replace(',', '.')):g}" for n in _NUMBER.findall(backed)}
     out = []
     for c in data["claims"]:
+        if c["id"] == "x":  # the stand-in can't tell what was asked; a real judge reads the question
+            out.append({"claim_id": "x", "supported": True, "reason": "the stand-in does not judge this"})
+            continue
         if c["id"] == "q":  # the stand-in takes an answer or help as answering; a real judge reads the message
             ok = data["action"] in ANSWERS
             out.append({"claim_id": "q", "supported": ok, "reason": "it answers" if ok else "it ignores the question"})

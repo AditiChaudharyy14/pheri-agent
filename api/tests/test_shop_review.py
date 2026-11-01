@@ -54,14 +54,14 @@ def test_the_shop_file_answers_what_the_message_asks_and_nothing_else():
     assert all({"ne", "hi", "bho"} <= set(it["names"]) for it in shop["catalog"])  # a name in every language
     assert {"Birgunj", "Kalaiya", "Janakpur", "Hetauda", "Bettiah", "Raxaul"} <= set(shop["delivery"])
     f, prov = facts_for("First time ordering here. Do you deliver to Hetauda?", "Birgunj", "NP", "tihar")
-    assert f == {"shop_delivery": "Hetauda: 2 days, delivery charge NPR 150"} and prov["shop_delivery"] == ["shop:delivery"]
+    assert f == {"shop_delivery": "Hetauda: 2 days, delivery charge Rs 150"} and prov["shop_delivery"] == ["shop:delivery"]
     f, _ = facts_for("यो बनारसी साडी अझै छ? क्यास अन डेलिभरी हुन्छ?", "Birgunj", "NP", "tihar")
-    assert f["shop_stock"].startswith("रातो बनारसी सिल्क साडी: स्टकमा 4, NPR 8500, फोटो PH-101")  # their language
-    assert f["shop_cod"].startswith("Cash on delivery in Nepal")
+    assert f["shop_stock"].startswith("रातो बनारसी सिल्क साडी: स्टकमा छ, रु 8500")  # their language; retail: no count
+    assert f["shop_cod"].startswith("नेपालभित्र रु 15000")  # the rule in their language
     f, _ = facts_for("cash on delivery milega?", "Raxaul", "IN", "tihar")
     assert "no cash on delivery" in f["shop_cod"]  # across the border: pay first
     f, _ = facts_for("ब्लाउजको साइज कसरी छान्ने?", "Birgunj", "NP", "tihar")
-    assert "Blouse sizes 32 to 44" in f["shop_size_guide"]
+    assert "छातीको सबैभन्दा फराकिलो भाग नापेर १ इन्च थप्नुहोस्" in f["shop_size_guide"]  # the Nepali size line
     assert facts_for("Thank you, the saree was lovely.", "Birgunj", "NP", "tihar")[0] == {}
     # "any more like last time?" names nothing: the last order does, if it is the kind of thing they named
     assert "Kurta set" in facts_for("is there the same again, like last time?", "Birgunj", "NP", None,
@@ -88,7 +88,8 @@ def test_a_cited_shop_fact_backs_a_delivery_time_and_stock():
     assert promises("It reaches Hetauda within 2 days.", "hetauda: 2 days", "answer_question", ["shop_delivery"]) == []
     assert [k for k, _, _ in promises("It reaches Hetauda within 2 days.", "", "answer_question")] == ["delivery"]
     assert promises("The red saree is still in stock.", "4 in stock", "answer_question", ["shop_stock"]) == []
-    assert promises("Here are the photos: PH-101.", "photo ph-101", "answer_question", ["shop_stock"]) == []
+    assert promises("We have sent the photos.", "", "send_photos", ["shop_stock"]) == []  # code attaches them
+    assert [k for k, _, _ in promises("We have sent the photos.", "", "answer_question", ["shop_stock"])] == ["photos"]
 
 
 def test_the_brief_reports_the_deferral_rate(monkeypatch, tmp_path):
@@ -202,12 +203,12 @@ def test_a_devanagari_spelling_variant_of_the_name_still_gets_the_honorific():
 
 def test_product_names_come_in_the_customers_language_never_english():
     f, _ = facts_for("छठ खातिर नया डिजाइन आइल बा? फोटो भेजीं।", "Birgunj", "NP", "chhath")
-    assert f["shop_stock"] == "छठ खातिर पियर कॉटन साड़ी: स्टॉक में 12, NPR 1800, फोटो PH-105"
+    assert f["shop_stock"] == "छठ खातिर पियर कॉटन साड़ी: स्टॉक में बा, रु 1800"
     assert f["shop_collection"].startswith("छठ कलेक्शन: छठ खातिर पियर कॉटन साड़ी")
     f, _ = facts_for("छठ के लिए नए डिज़ाइन आए हैं? फोटो भेजिए।", "Birgunj", "NP", "chhath")
     assert f["shop_stock"].startswith("छठ की पीली कॉटन साड़ी")
     f, _ = facts_for("Is the red saree still in stock?", "Birgunj", "NP", "tihar")
-    assert f["shop_stock"].startswith("Red Banarasi silk saree: 4 in stock")
+    assert f["shop_stock"].startswith("Red Banarasi silk saree: in stock, Rs 8500")
     import re
     for lang_text in ("यो बनारसी साडी अझै छ?", "छठ के लिए नए डिज़ाइन आए हैं?", "छठ खातिर नया डिजाइन आइल बा?"):
         values = " ".join(facts_for(lang_text, "Birgunj", "NP", "chhath")[0].values())

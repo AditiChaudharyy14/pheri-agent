@@ -334,6 +334,16 @@ function Ready({ business, step, sent = false }: { business: string; step: NextS
           <span className="font-medium text-ink">{step.customer.name}</span>{" "}
           <span className="text-[0.92rem] text-ink-2">· {actionLabel(d.action)}</span>
           {step.owner_offer && <OfferLine o={step.owner_offer} />}
+          {step.attachments && step.attachments.length > 0 && (
+            <span className="mt-1.5 flex flex-wrap items-center gap-1.5" aria-label="Catalogue photos attached by code">
+              {step.attachments.map((a) => (
+                // eslint-disable-next-line @next/next/no-img-element -- small static catalogue files
+                <img key={a.photo} src={a.src} alt={`Catalogue photo: ${a.item}`} width={36} height={45}
+                     className="rounded border border-line" />
+              ))}
+              <span className="text-[0.8rem] text-muted">photos attached by code</span>
+            </span>
+          )}
         </span>
         <span className="shrink-0 text-[0.85rem] text-teal-ink">
           {step.approval?.decision === "approved" ? `✓ approved by you${step.owner_choice ? ` (${step.owner_choice.toLowerCase()})` : ""}, ` : ""}

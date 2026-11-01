@@ -1,5 +1,5 @@
 {
-  "_about": "Birgunj Saree Ghar's own shop file: synthetic, like every row in this folder. What the shop sells and has in stock, its size guide, where and when it delivers, cash on delivery, returns, and the festival collections. Pheri cites it as facts (pheri/shop.py); an answer may say only what it says. Counted as of 30 Oct 2026. Product and festival names in Nepali, Hindi and Bhojpuri (names, festival_names) are what a reply in that language uses; they wait for a native review.",
+  "_about": "Birgunj Saree Ghar's own shop file: synthetic, like every row in this folder. What the shop sells and has in stock (retail items and wholesale lots), its size guide, where and when it delivers, cash on delivery, exchanges, and the festival collections, with every customer-facing text in English, Roman Nepali, Nepali, Hindi and Bhojpuri. Photo ids point at synthetic catalogue images (photos/); they never appear in a message. Pheri cites it as facts (pheri/shop.py). Counted as of 30 Oct 2026; the Nepali, Hindi and Bhojpuri texts wait for a native review.",
   "currency": "NPR",
   "catalog": [
     {
@@ -28,7 +28,10 @@
         "ne": "रातो बनारसी सिल्क साडी",
         "hi": "लाल बनारसी सिल्क साड़ी",
         "bho": "लाल बनारसी सिल्क साड़ी"
-      }
+      },
+      "order_names": [
+        "Banarasi silk saree"
+      ]
     },
     {
       "id": "BSG-S02",
@@ -51,7 +54,8 @@
         "ne": "मरुन बनारसी सिल्क साडी",
         "hi": "मैरून बनारसी सिल्क साड़ी",
         "bho": "मैरून बनारसी सिल्क साड़ी"
-      }
+      },
+      "order_names": []
     },
     {
       "id": "BSG-S03",
@@ -74,7 +78,10 @@
         "ne": "ढाका साडी, नयाँ बुट्टा",
         "hi": "ढाका साड़ी, नया पैटर्न",
         "bho": "ढाका साड़ी, नया डिजाइन"
-      }
+      },
+      "order_names": [
+        "Dhaka saree"
+      ]
     },
     {
       "id": "BSG-S04",
@@ -95,7 +102,10 @@
         "ne": "कटन साडी",
         "hi": "कॉटन साड़ी",
         "bho": "सूती साड़ी"
-      }
+      },
+      "order_names": [
+        "Cotton saree"
+      ]
     },
     {
       "id": "BSG-S05",
@@ -119,7 +129,10 @@
         "ne": "छठको पहेंलो कटन साडी",
         "hi": "छठ की पीली कॉटन साड़ी",
         "bho": "छठ खातिर पियर कॉटन साड़ी"
-      }
+      },
+      "order_names": [
+        "Cotton saree (Chhath yellow)"
+      ]
     },
     {
       "id": "BSG-S06",
@@ -139,7 +152,10 @@
         "ne": "जर्जेट साडी",
         "hi": "जॉर्जेट साड़ी",
         "bho": "जॉर्जेट साड़ी"
-      }
+      },
+      "order_names": [
+        "Georgette saree"
+      ]
     },
     {
       "id": "BSG-L01",
@@ -160,7 +176,10 @@
         "ne": "लेहेंगा चोली",
         "hi": "लहंगा चोली",
         "bho": "लहंगा चोली"
-      }
+      },
+      "order_names": [
+        "Lehenga choli"
+      ]
     },
     {
       "id": "BSG-K01",
@@ -181,7 +200,10 @@
         "ne": "कुर्ता सेट",
         "hi": "कुर्ता सेट",
         "bho": "कुर्ता सेट"
-      }
+      },
+      "order_names": [
+        "Kurta set"
+      ]
     },
     {
       "id": "BSG-P01",
@@ -201,7 +223,10 @@
         "ne": "पश्मिना सल",
         "hi": "पश्मीना शॉल",
         "bho": "पश्मीना शॉल"
-      }
+      },
+      "order_names": [
+        "Pashmina shawl"
+      ]
     },
     {
       "id": "BSG-B01",
@@ -221,10 +246,19 @@
         "ne": "ब्लाउज सिलाई",
         "hi": "ब्लाउज़ सिलाई",
         "bho": "ब्लाउज सिलाई"
-      }
+      },
+      "order_names": [
+        "Blouse stitching"
+      ]
     }
   ],
-  "size_guide": "Blouse sizes 32 to 44, in inches round the chest; measure round the fullest part and add 1 inch. A saree is 5.5 m with a 0.8 m blouse piece. Blouse stitching takes 3 days.",
+  "size_guide": {
+    "en": "Blouse sizes 32 to 44, in inches round the chest; measure round the fullest part and add 1 inch. A saree is 5.5 m with a 0.8 m blouse piece. Blouse stitching takes 3 days.",
+    "ne-Latn": "Blouse size 32 dekhi 44 inch, chhati ko naap ma. Chhati ko sabbhanda pharakilo bhag napera 1 inch thapnuhos. Saree 5.5 meter, 0.8 meter blouse piece sahit. Blouse silai 3 din ma.",
+    "ne": "ब्लाउज साइज ३२ देखि ४४ इन्च, छातीको नापमा। छातीको सबैभन्दा फराकिलो भाग नापेर १ इन्च थप्नुहोस्। साडी ५.५ मिटरको, ०.८ मिटर ब्लाउज पिससहित। ब्लाउज सिलाई ३ दिनमा।",
+    "hi": "ब्लाउज़ साइज़ 32 से 44 इंच, छाती के नाप से। छाती का सबसे चौड़ा हिस्सा नापकर 1 इंच जोड़ें। साड़ी 5.5 मीटर की, 0.8 मीटर ब्लाउज़ पीस के साथ। ब्लाउज़ सिलाई 3 दिन में।",
+    "bho": "ब्लाउज साइज 32 से 44 इंच, छाती के नाप से। छाती के सबसे चौड़ा हिस्सा नाप के 1 इंच जोड़ लीं। साड़ी 5.5 मीटर के, 0.8 मीटर ब्लाउज पीस संगे। ब्लाउज सिलाई 3 दिन में।"
+  },
   "delivery": {
     "Birgunj": {
       "days": 1,
@@ -283,10 +317,28 @@
     }
   },
   "cod": {
-    "NP": "Cash on delivery in Nepal for orders up to NPR 15000.",
-    "IN": "Across the border (India): pay first by UPI or bank transfer; no cash on delivery."
+    "NP": {
+      "en": "Cash on delivery in Nepal for orders up to Rs 15000.",
+      "ne-Latn": "Nepal bhitra Rs 15000 samma ko order ma cash on delivery.",
+      "ne": "नेपालभित्र रु 15000 सम्मको अर्डरमा क्यास अन डेलिभरी।",
+      "hi": "नेपाल में रु 15000 तक के ऑर्डर पर कैश ऑन डिलीवरी।",
+      "bho": "नेपाल में रु 15000 ले के ऑर्डर पर कैश ऑन डिलीवरी।"
+    },
+    "IN": {
+      "en": "Across the border (India): pay first by UPI or bank transfer; no cash on delivery.",
+      "ne-Latn": "India ma: pahile UPI wa bank bata tirnuhos; cash on delivery chhaina.",
+      "ne": "भारतमा: पहिले UPI वा बैंकबाट भुक्तानी; क्यास अन डेलिभरी छैन।",
+      "hi": "भारत में: पहले UPI या बैंक से भुगतान; कैश ऑन डिलीवरी नहीं।",
+      "bho": "भारत में: पहिले UPI भा बैंक से भुगतान; कैश ऑन डिलीवरी ना होई।"
+    }
   },
-  "returns": "Exchange within 7 days if unworn with the tag on; a size exchange is free. A refund is the owner's decision.",
+  "returns": {
+    "en": "Exchange within 7 days if unworn with the tag on; a size exchange is free. A refund is the owner's decision.",
+    "ne-Latn": "Nalagayeko ra tag bhayeko saman 7 din bhitra satna milchha; size satna nishulka. Paisa firta sahuji ko nirnaya.",
+    "ne": "नलगाएको र ट्याग भएको सामान ७ दिनभित्र साट्न मिल्छ; साइज साट्न निःशुल्क। पैसा फिर्ता साहुजीको निर्णय।",
+    "hi": "बिना पहना, टैग लगा सामान 7 दिन में बदल सकते हैं; साइज़ बदलना मुफ़्त। पैसे वापसी का फ़ैसला साहुजी करेंगे।",
+    "bho": "बिना पहिनल, टैग लागल सामान 7 दिन में बदल सकीला; साइज बदलल मुफ्त बा। पइसा वापसी साहुजी तय करिहें।"
+  },
   "festival_names": {
     "tihar": {
       "ne": "तिहार",
@@ -320,5 +372,56 @@
       "BSG-S03",
       "BSG-L01"
     ]
+  },
+  "bundles": [
+    {
+      "id": "BSG-W01",
+      "name": "Cotton saree bundle x20",
+      "price_npr": 26000,
+      "stock": 3,
+      "photo": "PH-104",
+      "names": {
+        "ne": "२० वटा कटन साडीको लट",
+        "hi": "20 कॉटन साड़ियों का लॉट",
+        "bho": "20 गो सूती साड़ी के लॉट"
+      }
+    },
+    {
+      "id": "BSG-W02",
+      "name": "Georgette saree bundle x10",
+      "price_npr": 21000,
+      "stock": 2,
+      "photo": "PH-106",
+      "names": {
+        "ne": "१० वटा जर्जेट साडीको लट",
+        "hi": "10 जॉर्जेट साड़ियों का लॉट",
+        "bho": "10 गो जॉर्जेट साड़ी के लॉट"
+      }
+    },
+    {
+      "id": "BSG-W03",
+      "name": "Kurta set bundle x15",
+      "price_npr": 33000,
+      "stock": 2,
+      "photo": "PH-301",
+      "names": {
+        "ne": "१५ वटा कुर्ता सेटको लट",
+        "hi": "15 कुर्ता सेट का लॉट",
+        "bho": "15 गो कुर्ता सेट के लॉट"
+      }
+    }
+  ],
+  "town_names": {
+    "Birgunj": "बिरगंज",
+    "Parwanipur": "परवानीपुर",
+    "Simara": "सिमरा",
+    "Kalaiya": "कलैया",
+    "Hetauda": "हेटौंडा",
+    "Janakpur": "जनकपुर",
+    "Kathmandu": "काठमाडौं",
+    "Raxaul": "रक्सौल",
+    "Motihari": "मोतिहारी",
+    "Bettiah": "बेतिया",
+    "Sitamarhi": "सीतामढ़ी"
   }
 }

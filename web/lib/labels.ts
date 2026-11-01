@@ -10,6 +10,7 @@ export const ACTION_LABEL: Record<string, string> = {
   offer_subscription: "Offer a subscription",
   offer_reorder: "Time to reorder",
   answer_question: "Answer their question",
+  send_photos: "Send photos",
   holding_reply: "A fixed holding reply",
   task_for_owner: "A task for you",
   no_action: "Nothing for now",

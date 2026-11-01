@@ -7,7 +7,7 @@ Read this before every task. These rules are not optional.
   evidence by id), autonomy + approvals, guard + private mode (Muse Spark Open), evals, twin + Thompson (5,000,
   12/12 learned right, close calls flagged), Wonder report (checked in code), FastAPI, all 7 web screens, card
   footer, pronouns (only Maya's given), replay mode (PHERI_LLM_MODE=replay; pill "Recorded from a live run").
-- Verification (pheri/verify.py): verify_draft = 17 code checks (rules, schema, evidence, facts, promises (hard), pronouns, address
+- Verification (pheri/verify.py): verify_draft = 18 code checks (rules, schema, evidence, facts, promises (hard), pronouns, address
   "you"/name only in greeting, one problem, language, length, link allowlist, money, middle step, tools), then a judge
   (Muse Spark Open, Baseten, low) per claim. Reasons go back, max PHERI_VERIFY_MAX_ATTEMPTS=3 drafts, then the
   owner's queue (never sent). Runs inside autonomy.submit(); _execute() sends only a payload whose stored
@@ -129,7 +129,7 @@ Read this before every task. These rules are not optional.
   5. Profile.writes_in = words.read_language (code: ne-Latn, bho...); language check: Roman Nepali in, out.
      Held-out test split: ne 49/60, ne-Latn 53/60, hi 55/57, bho 36/60, en 59/59.
   6. Check private_stats (soft): STAT_FACTS numbers stay out of the message. Brief counts by the message's own tag
-     (written_in). Quotes: blockquote with a left rule. 17 code checks now.
+     (written_in). Quotes: blockquote with a left rule. 18 code checks now.
   Re-recorded all (Meta $0.58, Baseten $0.17 + judge evals $0.19): every card verified within 5 turns; 14 Birgunj
   customers who asked something get answer_question; Roman Nepali replies in Roman Nepali; Birgunj 27 drafts (4 caught
   by code, 2 by the judge). Native read still pending: some Nepali is clumsy (Nisha quotes her words back; "ओनर").
@@ -145,7 +145,7 @@ Read this before every task. These rules are not optional.
      facts_for attaches only what the newest message asks (shop_delivery, shop_cod, shop_size_guide, shop_stock,
      shop_collection, shop_returns; receipts say "shop file"). Check answers (soft): a deferral on a question the
      shop's facts answer fails, unless money, a refund or a complaint. Promises: a cited shop fact backs a delivery
-     time, stock or photo ids. Brief: questions asked/answered/deferred and the deferral rate. 17 code checks.
+     time, stock or photo ids. Brief: questions asked/answered/deferred and the deferral rate. 18 code checks.
   2. Unreadable voice note: decide_customer asks no model; holding.VOICE_TEMPLATES (fixed, by code) only.
   3. Festival aliases (words.FESTIVAL_ALIASES): the judge's data carries festival_names_that_mean_the_same whenever
      a festival is named; the profile view carries their_word_for_the_festival.
@@ -170,6 +170,16 @@ Read this before every task. These rules are not optional.
   Works per visitor sandbox; Reset demo restores. Rules page: Speak a rule panel. Catalog has ne/hi/bho names
   ("छठ खातिर पियर कॉटन साड़ी"); stock/collection facts come in the message's language. words.fix_spelling fixes
   the model's दिनुहुछ/हुछ before verification.
+- Native review round 2 (1 Nov; tests in test_review_round2.py): send_photos (reactive, act_alone) attaches the
+  shop's synthetic catalogue photos (scripts/make_catalog_photos.py -> data/synth/birgunj/photos, web/public/catalog)
+  of the items in the cited shop facts (provenance shop:catalog:<ids>); no photo id in any fact, message or image;
+  PH-/catalogue ids are internal ids. Judge claim x ("adds nothing unasked", how_to_judge_x) with every question.
+  answers check: exchanges and "same as last time" (fact asks_reorder, shop_last_order) are answered from the shop
+  file; owner keeps money, refunds, late/damaged/wrong-colour complaints. Check repeats (soft): nothing said twice.
+  Late deliveries always wait for the owner; code opens the reply with an apology (words.APOLOGY). Shop facts in the
+  message's language and script: रु / Rs (never NPR), retail without counts (wholesale with), Nepali size line;
+  code also fixes NPR and a Latin greeting in a Devanagari reply. synth.repair_histories: 21 orders made to match
+  the messages about them (history_check; 0 mismatches over 300 customers). 18 code checks.
   Data bug fixed: 28 old messages were dated after the night started (synth._before_night moves them a day back;
   only their timestamps changed); Pooja Ansari's night message was hidden by one, so the brief counted 22, not 23.
 - Attack moment (Step 5, Glimmer cut: Modal needs a card): an attacker gets no word from any model. The owner gets

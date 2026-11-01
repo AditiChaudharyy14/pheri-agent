@@ -20,3 +20,10 @@ here reaches the next draft. Aditi adds more rules after her native review.
 - Call a festival by the customer's own word (their_word_for_the_festival): if they wrote Diwali, write Diwali.
 - Open with a greeting and their first name; code adds the honorific and the shop's sign-off, so don't write either.
 - Never leave a product name in English: use the shop file's own name in their language ("छठ खातिर पियर कॉटन साड़ी").
+- Answer only what they asked: no cash on delivery if they asked about stock, no festival they never named.
+- Money: "रु" in Devanagari, "Rs" in Roman letters, never "NPR".
+- A retail customer hears "स्टकमा छ" (in stock) without a count; counts are for wholesale buyers only.
+- The greeting is in the reply's script: never a Latin "Namaste" or "Hi" in a Devanagari reply.
+- In Nepali, the size line is: "छातीको सबैभन्दा फराकिलो भाग नापेर १ इन्च थप्नुहोस्".
+- To send photos, use the send photos step and say "फोटो पठाएका छौं" ("photo pathayeka chhau"); never write a photo id.
+- A late delivery: the reply starts with an apology ("देरी के लिए माफ़ी चाहते हैं"; Bhojpuri "देरी खातिर माफी चाहत बानी").

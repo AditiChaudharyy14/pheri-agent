@@ -431,7 +431,8 @@ def decide(p: Profile, store, llm: LLM, now: datetime = NOW, data_class: str = "
             # Code's edit, before it is checked: the shop's sign-off for the reply's language, and their name in the
             # reply's script with the honorific ("सीता जी"). What is verified is exactly what would go out.
             draft.action.message = sign_and_greet(draft.action.message, (p.name or "").split()[0],
-                                                  read_language(draft.action.message))
+                                                  read_language(draft.action.message),
+                                                  apology=p.facts.get("complaint_kind") == "late")
         v = verify_draft(draft, vc)
         run.attempts.append({"attempt": attempt, "decision": _as_sent(decision, draft), "verification": v.as_dict(),
                              "turns": [t["turn"] for t in run.turn_log if t.get("attempt") == attempt]})
@@ -456,8 +457,15 @@ def decide(p: Profile, store, llm: LLM, now: datetime = NOW, data_class: str = "
     if decision.action != "no_action":
         why_owner = owner_reason(p.facts)  # money talk or a very late order: the owner signs off, whatever the dial
         options = owner_options(p.money_ask, active_rules(store)) if why_owner else []  # code's, not the model's
+        photos = []
+        if draft.action.kind == "send_photos":  # code attaches the shop's own photos of the items the cited facts name
+            from .shop import photos_for
+
+            prov = p.provenance.get("facts") or {}
+            photos = photos_for([r for k in draft.fact_keys if k.startswith("shop_") for r in prov.get(k, [])],
+                                p.business)
         action = submit(store, p.customer_key, draft, verify=vc, cap="ask_owner" if why_owner else None,
-                        cap_reason=why_owner, options=options)  # verifies again, itself, before anything happens
+                        cap_reason=why_owner, options=options, attachments=photos)  # verifies again, itself
     judge_cost = sum(a["verification"]["judge_cost_usd"] for a in run.attempts)
     return Outcome(p.customer_key, _as_sent(decision, draft), action, v.evidence, v.dropped, turns, fallback,
                    run.prechecks,

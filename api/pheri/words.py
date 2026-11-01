@@ -23,7 +23,8 @@ ACTION_WORDS = {
     "offer_upgrade": "suggest an upgrade", "offer_discount": "offer a discount",
     "send_reminder": "follow up on their question", "recommend_product": "recommend a product",
     "offer_subscription": "offer a subscription", "offer_reorder": "time to reorder",
-    "answer_question": "answer their question", "task_for_owner": "a task for you", "no_action": "nothing for now",
+    "answer_question": "answer their question", "send_photos": "send catalogue photos",
+    "task_for_owner": "a task for you", "no_action": "nothing for now",
     "escalate_to_human": "escalated to you", "holding_reply": "a fixed holding reply",
 }
 STAGE_WORDS = {
@@ -47,6 +48,8 @@ FACT_WORDS = {
     "shop_delivery": "delivery (shop file)", "shop_cod": "cash on delivery (shop file)",
     "shop_size_guide": "size guide (shop file)", "shop_stock": "stock and price (shop file)",
     "shop_collection": "festival collection (shop file)", "shop_returns": "exchanges (shop file)",
+    "shop_last_order": "their last order (shop file)", "asks_reorder": "asked for the same again",
+    "asks_photos": "asked for photos",
 }
 CHECK_WORDS = {
     "one_problem": "one problem", "middle_step": "the plan check", "plain_words": "plain words",
@@ -55,7 +58,7 @@ CHECK_WORDS = {
 PLAIN = {**ACTION_WORDS, **STAGE_WORDS, **FACT_WORDS, **CHECK_WORDS}
 
 # An internal id: snake_case, or a language code in quotes.
-_ID = re.compile(r"\b[a-z]+(?:_[a-z0-9]+)+\b")
+_ID = re.compile(r"\b[a-z]+(?:_[a-z0-9]+)+\b|\bPH-\d+\b|\bBSG-[SLKPBW]\d{2}\b")  # + photo and catalogue ids
 _CODE = re.compile(r"""(['"])(en|ne|hi|bho|ne-Latn|es|pt)\1""")
 
 
@@ -70,10 +73,11 @@ def plain(text: str | None) -> str | None:
     if not text:
         return text
     out = _CODE.sub(lambda m: LANGUAGE_NAMES.get(m.group(2), m.group(2)), text)
+    out = re.sub(r"\bPH-\d+\b|\bBSG-[SLKPBW]\d{2}\b", "a catalogue photo", out)
     return _ID.sub(lambda m: PLAIN.get(m.group(0), m.group(0).replace("_", " ")), out)
 
 
-CHECK_NAMES = {"answers": "Answers", "rules": "Your rules", "schema": "Form", "evidence": "Evidence", "facts": "Facts",
+CHECK_NAMES = {"repeats": "Said twice", "answers": "Answers", "rules": "Your rules", "schema": "Form", "evidence": "Evidence", "facts": "Facts",
                "promises": "Promises", "pronouns": "Pronouns", "address": "How it talks to them",
                "one_problem": "One problem", "language": "Language", "length": "Length", "links": "Links",
                "money": "Money", "plain_words": "Plain words", "private_stats": "Private numbers",
@@ -138,6 +142,15 @@ def read_language(text: str) -> str:
     return _mock_language(t) if _LATIN.search(t) else "en"
 
 
+REORDER = re.compile(r"same as last time|like before|like last time|पहिलेकै जस्तो|पहिलेको जस्तै|पिछली बार जैसा|"
+                     r"पिछली बार जैसी|पिछला बेर जइसन|पिछला बेर जइसे|pahile jastai|pahilekai jasto|testai pathau", re.I)
+
+
+def reorder_request(text: str | None) -> bool:
+    """Do they ask for the same again ("पिछली बार जैसा लॉट भेज दीजिए")? Answered from their last order on record."""
+    return bool(text and REORDER.search(text))
+
+
 QUESTION_WORDS = re.compile(
     r"\?|\b(kati|kaha|kahile|kasari|kina|ke\s+(cha|chha|ho))\b|"
     r"(कति|कहाँ|कहिले|कसरी|किन|कब|कितना|कितने|कैसे|कहाँ|क्या|केतना|कइसे|कहिया)",
@@ -200,8 +213,11 @@ def promises(message: str, backed: str, action_kind: str, cited: tuple | list | 
                 continue
             if kind == "price" and re.sub(r"\D", "", m.group(0)) and re.sub(r"\D", "", m.group(0)) in backed:
                 continue
-            if cited & set(BACKED_BY.get(kind, ())) or (kind == "photos" and re.search(r"ph-\d+", backed)):
+            if cited & set(BACKED_BY.get(kind, ())):
                 continue
+            if kind == "photos" and action_kind == "send_photos" and cited & {"shop_stock", "shop_collection",
+                                                                               "shop_last_order"}:
+                continue  # code attaches the shop's photos of the items these facts name
             out.append((kind, does, m.group(0).strip()))
     return list(dict.fromkeys(out))
 
@@ -269,12 +285,23 @@ def fix_spelling(message: str) -> str:
     return re.sub(r"[ऀ-ॣ०-ॿ]+", lambda m: SPELLING.get(m.group(0), m.group(0)), message or "")  # not the danda
 
 
-def sign_and_greet(message: str, first: str, lang: str | None) -> str:
+APOLOGY = {"hi": "देरी के लिए माफ़ी चाहते हैं।", "bho": "देरी खातिर माफी चाहत बानी।", "ne": "ढिलाइका लागि माफी चाहन्छौं।",
+           "ne-Latn": "Dhilai ko lagi maaf garnuhola.", "en": "Sorry for the delay."}
+_SORRY = re.compile(r"माफ|maaf|sorry|क्षमा|खेद", re.I)
+_LATIN_GREETING = re.compile(r"^\s*(?:hi|hello|dear|namaste|namaskar|pranam)\b[\s,!]*", re.I)
+
+
+def sign_and_greet(message: str, first: str, lang: str | None, apology: bool = False) -> str:
     """Code's edit to a shop reply, before it is verified: the shop's sign-off for the reply's language (any sign-off
     the model wrote is replaced) and the customer's name, right after the greeting, in the reply's script with the
     honorific. A message that opens without a greeting keeps its opening."""
     lang = lang if lang in SIGN_OFF else "en"
     body = _ANY_SIGN_OFF.sub("", fix_spelling(message).rstrip())
+    if lang in _DEVANAGARI_LANGS:  # money in the reply's script, and a greeting in it too
+        body = re.sub(r"\b(?:NPR|Rs\.?)\s*", "रु ", body)
+        body = _LATIN_GREETING.sub("प्रणाम " if lang == "bho" else "नमस्ते ", body)
+    else:
+        body = re.sub(r"\bNPR\s*", "Rs ", body)
     body = re.sub(r"\s*[-–—]+\s*(?:the\s+)?(?:team|टीम|टिम)\s*[.।]?\s*$", "", body, flags=re.I).rstrip(" ,-–—")
     m = _GREET.match(body)
     if m:
@@ -290,4 +317,11 @@ def sign_and_greet(message: str, first: str, lang: str | None) -> str:
                 rest = _HONORIFIC.sub("", rest[len(n):])
                 body = f"{m.group(1)} {name_for(first, lang)}{rest if rest[:1] in ',।!.' else ', ' + rest.lstrip()}"
                 break
+    if apology and not _SORRY.search(body):  # a late order: the reply starts with sorry, right after the greeting
+        g = _GREET.match(body)
+        head, rest = (body[:g.end()], body[g.end():]) if g else ("", body)
+        name = re.match(r"[^,।!.]{0,40}[,।!.]\s*", rest) if g else None
+        if name:
+            head, rest = head + name.group(0), rest[name.end():]
+        body = f"{head}{APOLOGY[lang]} {rest}".strip()
     return f"{body} {SIGN_OFF[lang]}"

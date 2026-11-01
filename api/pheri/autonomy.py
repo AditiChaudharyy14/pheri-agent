@@ -33,7 +33,7 @@ DEFAULT_MODE = "ask_owner"
 DEFAULT_MODES = {"task_for_owner": "act_alone"}  # internal: it only puts a task on the owner's list
 # Human sign-off by stakes, per business: the night shift sends safe nudges on its own (still verified, still inside
 # the rules, still after quiet hours), and anything that changes what a customer pays waits for the owner.
-BUSINESS_MODES = {"birgunj": {"answer_question": "act_alone", "send_reminder": "act_alone", "recommend_product": "act_alone", "offer_reorder": "act_alone",
+BUSINESS_MODES = {"birgunj": {"answer_question": "act_alone", "send_photos": "act_alone", "send_reminder": "act_alone", "recommend_product": "act_alone", "offer_reorder": "act_alone",
                               "send_help": "act_alone", "send_checkin": "act_alone", "offer_discount": "ask_owner"}}
 
 
@@ -45,8 +45,11 @@ def owner_reason(facts: dict) -> str | None:
     code from the facts; None when Pheri may act as the dial says."""
     if facts.get("asks_about_money"):
         return "They asked about money (a rate, a refund or money off): yours to decide."
-    if (facts.get("days_late") or 0) >= LATE_FOR_OWNER_DAYS:
-        return f"Their order is {facts['days_late']} days late: a word from you lands better than one from Pheri."
+    if facts.get("complaint_kind") == "late" or (facts.get("days_late") or 0) >= LATE_FOR_OWNER_DAYS:
+        # native review, 1 Nov: every late delivery waits for the owner (the reply opens with an apology, by code)
+        late = facts.get("days_late")
+        return (f"Their order is {late} days late" if late else "Their order is late") + \
+            ": a word from you lands better than one from Pheri."
     return None
 
 
@@ -99,7 +102,8 @@ def _payload(a: ProposedAction) -> dict:
 
 
 def submit(store, customer_key: str, draft: Draft, *, verify: VerifyContext, cap: str | None = None,
-           actor: str = "pheri", cap_reason: str | None = None, options: list[str] | None = None) -> dict:
+           actor: str = "pheri", cap_reason: str | None = None, options: list[str] | None = None,
+           attachments: list[dict] | None = None) -> dict:
     """Verify the draft, check the rules in code, then the dial. Returns the stored action. `cap` limits the mode.
     verify_draft runs here, whoever calls: the model has no way to skip it or to call it."""
     action, ctx = draft.action, verify.ctx
@@ -111,6 +115,8 @@ def submit(store, customer_key: str, draft: Draft, *, verify: VerifyContext, cap
         payload["waits_for_owner"] = cap_reason
     if options:
         payload["owner_options"] = list(options)
+    if attachments:  # the shop's own catalogue photos (send_photos); the message never names their ids
+        payload["attachments"] = list(attachments)
     with store.tx():  # rules, dial and writes from one consistent view
         result = check(active_rules(store), action, ctx)
         mode = at_most(mode_for(store, action.kind), cap if t and t.customer_facing else None)

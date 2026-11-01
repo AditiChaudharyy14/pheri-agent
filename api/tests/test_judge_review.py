@@ -78,7 +78,8 @@ def test_the_judge_is_asked_whether_the_message_answers_the_question(birgunj, ll
     _, v = check(birgunj, llm, BIKASH, "answer_question", "Hi Bikash, " + "dhanyabad sodhnu bhayeko ma. Sahuji le "
                  "aaja bihana jawaf dinuhunchha." + TEAM)
     sent = seen[-1]
-    assert sent["customer_question"].startswith("pohor ko dhaka saree") and sent["claims"][-1]["id"] == "q"
+    assert sent["customer_question"].startswith("pohor ko dhaka saree") and [c["id"] for c in sent["claims"]][-2:] == \
+        ["q", "x"] and "how_to_judge_x" in sent
     assert any(r["claim_id"] == "q" and r["supported"] for r in v.judge)
     seen.clear()
     _, v = check(birgunj, llm, BIKASH, "recommend_product", msg)  # ignores the question: the plan check and judge

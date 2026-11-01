@@ -27,7 +27,7 @@ from pydantic import BaseModel
 from .llm import LLM, ModelOutputError, register_mock
 from .privacy import PRIVATE_EFFORT, PRIVATE_PROVIDER
 from .synth import FESTIVAL_WINDOW_DAYS, FESTIVALS, OUT, TODAY
-from .words import open_question, read_language
+from .words import open_question, read_language, reorder_request
 
 PURPOSE = "profile_insights"
 MAX_SOURCES = 12  # most recent text sources sent per customer
@@ -380,8 +380,16 @@ def compute_facts(c: Customer, business: str, today: date = TODAY) -> tuple[dict
         # answer may cite. Only for what the newest message is about.
         from .shop import facts_for
 
+        facts["asks_reorder"] = bool(newest and reorder_request(newest.text))  # "the same as last time"
+        from .shop import topics
+
+        facts["asks_photos"] = bool(newest and "photos" in topics(newest.text))  # code can send the shop's photos
+        prov["asks_photos"] = [newest.id] if newest else []
+        prov["asks_reorder"] = [newest.id] if newest else []
+        last = sorted(c.orders, key=lambda o: o["date"])[-1] if c.orders else None
         sf, sp = facts_for(newest.text if newest else None, facts.get("town"), facts.get("country"),
-                           facts.get("next_festival"), business, facts.get("last_order_items"))
+                           facts.get("next_festival"), business, facts.get("last_order_items"),
+                           wholesale=facts.get("segment") == "wholesale", last_order=last)
         facts.update(sf)
         prov.update(sp)
     return facts, prov

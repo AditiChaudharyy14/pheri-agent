@@ -66,6 +66,61 @@ def _dt(day: date, rng: random.Random) -> datetime:
     return datetime(day.year, day.month, day.day, rng.randint(6, 21), rng.randint(0, 59), rng.randint(0, 59))
 
 
+FABRIC_ITEMS = {"cotton": (("Cotton saree", 1500), ("Cotton saree bundle x20", 26000)),
+                "dhaka": (("Dhaka saree", 3500), ("Dhaka saree", 3500)),
+                "banarasi": (("Banarasi silk saree", 8500), ("Banarasi silk saree", 8500)),
+                "georgette": (("Georgette saree", 2400), ("Georgette saree bundle x10", 21000))}
+KIND_ITEMS = {"saree": ("Georgette saree", 2400), "lehenga": ("Lehenga choli", 14000), "kurta": ("Kurta set", 2800),
+              "shawl": ("Pashmina shawl", 3200)}
+
+
+def repair_histories(customers: list[dict], orders: list[dict], messages: list[dict], voice: dict,
+                     owner_of: dict) -> int:
+    """Native review, 1 Nov: a message about an order must match it ("cotton like before" after a georgette lot did
+    not). For each message that names an item its order doesn't hold (history_check.mismatch), that order (the last
+    one for "like before", the one with the problem for a complaint) is made to hold it. No random draws: every
+    other row stays the same. Returns how many orders changed."""
+    from .history_check import AGAIN, CATEGORIES, FABRICS, PROBLEMS, _words, mismatch, named
+
+    segment = {c["phone"]: c["segment"] for c in customers}
+    by_owner: dict[str, list[int]] = {}
+    for i, phone in ((k, v) for k, v in owner_of.items() if isinstance(k, int)):
+        by_owner.setdefault(phone, []).append(i)
+    changed = 0
+    for m in sorted(messages, key=lambda m: m["received_at"]):
+        phone = owner_of.get(m["id"])
+        text = m["text"] or voice.get(m["id"], {}).get("script", "")
+        idx = sorted(by_owner.get(phone, []), key=lambda i: orders[i]["date"])
+        if not idx or not mismatch(text, [orders[i] for i in idx]):
+            continue
+        low, words = text.casefold(), _words(text)
+        problem = [i for i in idx if orders[i]["status"] in PROBLEMS]
+        again = any((w in words) if len(w) <= 5 else (w in low) for w in AGAIN)
+        target = idx[-1] if again or not problem else problem[-1]
+        wholesale = segment.get(phone) == "wholesale"
+        kinds, fabrics = named(text, CATEGORIES), named(text, FABRICS)
+        items = [FABRIC_ITEMS[f][wholesale] for f in sorted(fabrics)]
+        if "saree" in kinds and not fabrics:
+            items.append(KIND_ITEMS["saree"])
+            if any(w in low for w in ("दुई", "दो ", "two")):
+                items.append(("Dhaka saree", 3500))
+        items += [KIND_ITEMS[k] for k in ("lehenga", "kurta", "shawl") if k in kinds]
+        if "blouse" in kinds:  # the blouse that didn't fit: stitched for a saree in that order
+            have = [x.strip() for x in orders[target]["items"].split(";")]
+            saree = next((x for x in have if "saree" in x.casefold()), None)
+            items = [(saree, 0)] if saree else [("Banarasi silk saree", 8500)]
+            items.append(("Blouse stitching", 600))
+            if saree:  # keep the saree's own price
+                old = dict(PRODUCTS + BUNDLES)
+                items[0] = (saree, old.get(saree, 0))
+        if not items:
+            continue
+        orders[target]["items"] = "; ".join(n for n, _ in items)
+        orders[target]["total_npr"] = sum(p for _, p in items)
+        changed += 1
+    return changed
+
+
 def _before_night(d: datetime) -> datetime:
     """An older message is never dated after the night it came before: one drawn later than 21:00 on 29 October
     (Nepal time) moves back a day. Drawn first, moved after, so the random stream (and every other row) stays the
@@ -494,6 +549,7 @@ def birgunj(rng: random.Random) -> dict:
     customer sheet, an order book, WhatsApp/Instagram catalogue events and the messages. Seeded."""
     used: set[str] = set()
     customers, orders, events, messages, truth, world, attacks, voice = [], [], [], [], {}, {}, [], {}
+    owner_of: dict[int, str] = {}  # order index -> phone; message id -> phone (for repair_histories, never written)
     oid = 7000
 
     def add_order(c, day, items, status="delivered", late_days=0):
@@ -501,6 +557,7 @@ def birgunj(rng: random.Random) -> dict:
         oid += 1
         promised = day + timedelta(days=3 if c["country"] == "NP" else 5)
         delivered = "" if status in ("late", "cod_refused") else (promised + timedelta(days=late_days)).isoformat()
+        owner_of[len(orders)] = c["phone"]
         orders.append({"order_no": f"BSG-{oid}", "phone": _messy_phone(c["phone"], rng), "date": day.isoformat(),
                        "items": "; ".join(n for n, _ in items), "total_npr": sum(p for _, p in items),
                        "payment": c["payment"], "status": status, "promised_by": promised.isoformat(),
@@ -510,6 +567,7 @@ def birgunj(rng: random.Random) -> dict:
         lang = lang or c["language"]
         text = rng.choice(BIRGUNJ_MESSAGES[situation][lang])
         mid = f"W{len(messages) + 1:04d}"
+        owner_of[mid] = c["phone"]
         via_ig = c["instagram"] and rng.random() < 0.4
         messages.append({"id": mid, "channel": "instagram_dm" if via_ig else "whatsapp",
                          "from": c["instagram"] if via_ig else _messy_phone(c["phone"], rng), "kind": "text",
@@ -629,6 +687,7 @@ def birgunj(rng: random.Random) -> dict:
             continue
         used.add(c["phone"])
         mid = f"N{len(night) + 1:03d}"
+        owner_of[mid] = c["phone"]
         messages.append({"id": mid, "channel": "whatsapp", "from": c["phone"], "kind": "text", "text": text,
                          "lang": lang, "received_at": _iso((NIGHT_START + timedelta(seconds=at)).replace(tzinfo=None))})
         night.append({"customer": c["phone"], "role": role, "message": mid, "lang": lang})
@@ -640,12 +699,14 @@ def birgunj(rng: random.Random) -> dict:
             continue
         used.add(c["phone"])
         mid = f"V{len(voice) + 1:03d}"
+        owner_of[mid] = c["phone"]
         messages.append({"id": mid, "channel": "whatsapp", "from": c["phone"], "kind": "voice_note", "text": "",
                          "audio": f"audio/{mid}.wav", "lang": lang,
                          "received_at": _iso((NIGHT_START + timedelta(seconds=at)).replace(tzinfo=None))})
         voice[mid] = {"customer": c["phone"], "lang": lang, "script": transcript}
         night.append({"customer": c["phone"], "role": f"voice_{lang}", "message": mid, "lang": lang})
 
+    repair_histories(customers, orders, messages, voice, owner_of)
     sheet = [{"id": c["id"], "name": f"{c['first']} {c['last']}", "phone": _messy_phone(c["phone"], rng),
               "instagram": c["instagram"], "town": c["town"], "country": c["country"],
               "type": c["segment"], "joined": c["joined"].strftime(rng.choice(["%Y-%m-%d", "%d/%m/%Y"])),

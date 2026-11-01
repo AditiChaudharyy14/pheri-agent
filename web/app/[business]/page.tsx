@@ -3,9 +3,10 @@ import { Suspense } from "react";
 import { ApproveReject } from "@/components/approve";
 import { DecidedByLine } from "@/components/decided-by";
 import { EvidenceChips } from "@/components/evidence";
+import { StartHere } from "@/components/start-here";
 import { Skeleton } from "@/components/ui";
 import { api, pct, type Brief, type NextStepWithTime, type HoldingReply, type OwnerOffer } from "@/lib/api";
-import { actionLabel, clockNPT, dayNPT, LANGUAGE_NAME, stageLabel } from "@/lib/labels";
+import { actionLabel, clockNPT, dayNPT, LANGUAGE_NAME, OUTCOME, stageLabel } from "@/lib/labels";
 
 /** The owner's morning check, usually on a phone: what the night shift did, in sentences, then what needs them. */
 export default function MorningPage({ params }: PageProps<"/[business]">) {
@@ -32,6 +33,8 @@ async function Morning({ params }: { params: PageProps<"/[business]">["params"] 
         <h1 className="mt-1 text-[2rem] leading-tight font-medium lg:text-[2.6rem]">Good morning.</h1>
       </header>
 
+      {business === "birgunj" && <StartHere business={business} />}
+
       {!night ? (
         <section className="rounded-2xl border border-line bg-surface p-6">
           <p className="font-serif text-[1.35rem] leading-snug">Nothing came in overnight, so Pheri had nothing to do.</p>
@@ -41,7 +44,7 @@ async function Morning({ params }: { params: PageProps<"/[business]">["params"] 
           </p>
         </section>
       ) : (
-        <section aria-label="The night, in short" className="font-serif text-[1.3rem] leading-relaxed text-ink lg:text-[1.55rem]">
+        <section id="brief" aria-label="The night, in short" className="scroll-mt-32 font-serif text-[1.3rem] leading-relaxed text-ink lg:text-[1.55rem]">
           <p>
             While you slept, Pheri read <b className="font-semibold">{b.read.messages} messages</b>
             {langs.length > 0 && <> ({langs.map(([l, n]) => `${n} in ${LANGUAGE_NAME[l] ?? l}`).join(", ")})</>}
@@ -52,7 +55,7 @@ async function Morning({ params }: { params: PageProps<"/[business]">["params"] 
             {b.scheduled.length > 0 && (
               <>
                 <Count tone="teal" n={b.scheduled.length} one="reply" many="replies" /> passed every check and{" "}
-                {b.scheduled.length === 1 ? "goes" : "go"} out at <b className="font-semibold">8:00</b>, when your quiet
+                {b.scheduled.length === 1 ? "goes" : "go"} out at <b className="font-semibold">08:00</b>, when your quiet
                 hours end.{" "}
               </>
             )}
@@ -62,13 +65,13 @@ async function Morning({ params }: { params: PageProps<"/[business]">["params"] 
               </>
             )}
             {b.need_you.length ? (
-              <Count tone="marigold" n={b.need_you.length} one="needs you" many="need you" />
+              <Count tone="marigold" n={b.need_you.length} one="waits for you" many="wait for you" />
             ) : (
-              <span>Nothing needs you</span>
+              <span>Nothing waits for you</span>
             )}
             {b.rule_moments.length > 0 && (
               <>
-                ; your rules stopped <Count tone="vermilion" n={b.rule_moments.length} one="step" many="steps" />
+                ; <Count tone="vermilion" n={b.rule_moments.length} one="step" many="steps" /> blocked by your rules
               </>
             )}
             .
@@ -119,7 +122,7 @@ async function Morning({ params }: { params: PageProps<"/[business]">["params"] 
         <section aria-labelledby="need-you">
           <h2 id="need-you" className="flex items-baseline gap-3 text-[1.45rem] font-medium">
             <Dot tone="marigold" />
-            {b.need_you.length} {b.need_you.length === 1 ? "needs" : "need"} you
+            {OUTCOME.waits} <span className="text-muted">({b.need_you.length})</span>
           </h2>
           <ul className="mt-3 space-y-4">
             {b.need_you.map((s) => (
@@ -151,7 +154,7 @@ async function Morning({ params }: { params: PageProps<"/[business]">["params"] 
         <section aria-labelledby="ruled">
           <h2 id="ruled" className="flex items-baseline gap-3 text-[1.25rem] font-medium">
             <Dot tone="vermilion" />
-            Your rules stopped
+            {OUTCOME.blocked}
           </h2>
           <ul className="mt-2 divide-y divide-line border-y border-line">
             {b.rule_moments.map((m) => (
@@ -173,7 +176,7 @@ async function Morning({ params }: { params: PageProps<"/[business]">["params"] 
         <section aria-labelledby="stopped">
           <h2 id="stopped" className="flex items-baseline gap-3 text-[1.25rem] font-medium">
             <Dot tone="vermilion" />
-            Stopped
+            {OUTCOME.attack}
           </h2>
           <ul className="mt-2 divide-y divide-line border-y border-line">
             {b.stopped.map((r) => (
@@ -202,7 +205,7 @@ async function Morning({ params }: { params: PageProps<"/[business]">["params"] 
         <section aria-labelledby="ready">
           <h2 id="ready" className="flex items-baseline gap-3 text-[1.25rem] font-medium">
             <Dot tone="teal" />
-            Ready at 8:00
+            {OUTCOME.scheduled} <span className="text-muted">({b.scheduled.length})</span>
           </h2>
           <ul className="mt-2 divide-y divide-line border-y border-line">
             {b.scheduled.map((s) => (
@@ -248,7 +251,7 @@ function Who({ business, step }: { business: string; step: NextStepWithTime }) {
   const c = step.customer;
   return (
     <p className="flex flex-wrap items-baseline gap-x-2">
-      <Link href={`/${business}/customers/${encodeURIComponent(c.key)}`} className="font-serif text-[1.2rem] font-medium text-ink hover:text-teal-ink">
+      <Link href={`/${business}/customers/${c.ref}`} className="font-serif text-[1.2rem] font-medium text-ink hover:text-teal-ink">
         {c.name}
       </Link>
       <span className="text-[0.9rem] text-muted">
@@ -284,7 +287,7 @@ function NeedYou({ business, step }: { business: string; step: NextStepWithTime 
       </div>
       <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="text-[0.85rem]">
-          <DecidedByLine business={business} customerKey={step.customer.key} by={step.decided_by} cost={step.cost_usd}
+          <DecidedByLine business={business} customerKey={step.customer.ref} by={step.decided_by} cost={step.cost_usd}
                          turns={step.turns} isPrivate={step.private} verification={step.verification} override={step.override} />
         </div>
         {step.approval?.decision === "pending" && !task && (
@@ -302,7 +305,7 @@ function HoldingLine({ h }: { h: HoldingReply }) {
   return (
     <div className="mt-2 border-l-2 border-line-2 pl-3">
       <p className="text-[0.82rem] text-muted">
-        {h.status === "scheduled" ? `Goes out at ${h.sends_at_local ?? "8:00"} their time` : h.status === "executed" ? "Sent" : "Not sent"}
+        {h.status === "scheduled" ? `Goes out at ${h.sends_at_local ?? "08:00"} their time` : h.status === "executed" ? "Sent" : "Not sent"}
         {" "}· a fixed reply written by code, not by a model{h.checks ? ` · ${h.checks} checks passed` : ""}
       </p>
       <p lang={h.language ?? undefined} className="mt-0.5 text-[0.95rem] leading-snug text-ink-2">{h.message}</p>
@@ -314,12 +317,12 @@ function HoldingLine({ h }: { h: HoldingReply }) {
 function OfferLine({ o }: { o: OwnerOffer }) {
   return o.blocked_by_rule ? (
     <span className="mt-1 block text-[0.88rem]">
-      <span className="font-medium text-rose">Blocked by your new rule:</span>{" "}
+      <span className="font-medium text-rose">{OUTCOME.blocked}, your new one:</span>{" "}
       <span className="text-ink-2">the {o.pct}% offer ({o.blocked_by_rule.reason}). Nothing goes out.</span>
     </span>
   ) : (
     <span className="mt-1 block text-[0.88rem] text-ink-2">
-      <span className="text-teal-ink">+ your {o.pct}% offer, written by code, {o.status === "scheduled" ? "out at 8:00" : o.status}:</span>{" "}
+      <span className="text-teal-ink">+ your {o.pct}% offer, written by code, {o.status === "scheduled" ? "goes out at 08:00" : o.status}:</span>{" "}
       <span lang={o.language ?? undefined}>{o.message}</span>
     </span>
   );
@@ -347,7 +350,7 @@ function Ready({ business, step, sent = false }: { business: string; step: NextS
         </span>
         <span className="shrink-0 text-[0.85rem] text-teal-ink">
           {step.approval?.decision === "approved" ? `✓ approved by you${step.owner_choice ? ` (${step.owner_choice.toLowerCase()})` : ""}, ` : ""}
-          {sent ? (step.approval?.decision === "approved" ? "sent" : "✓ sent") : `${step.sends_at_local ?? "8:00"} their time`}
+          {sent ? (step.approval?.decision === "approved" ? "sent" : "✓ sent") : `${step.sends_at_local ?? "08:00"} their time`}
         </span>
       </summary>
       <div className="mt-2 space-y-3 pl-0">
@@ -358,7 +361,7 @@ function Ready({ business, step, sent = false }: { business: string; step: NextS
         </p>
         <EvidenceChips evidence={step.evidence} />
         <div className="text-[0.85rem]">
-          <DecidedByLine business={business} customerKey={step.customer.key} by={step.decided_by} cost={step.cost_usd}
+          <DecidedByLine business={business} customerKey={step.customer.ref} by={step.decided_by} cost={step.cost_usd}
                          turns={step.turns} isPrivate={step.private} verification={step.verification} override={step.override} />
         </div>
       </div>

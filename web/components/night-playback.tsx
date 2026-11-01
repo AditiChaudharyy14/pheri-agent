@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useReducer, useState, useSyncExternalStore } from "react";
 import type { NightEvent } from "@/lib/api";
-import { actionLabel, clockNPT, LANGUAGE_NAME } from "@/lib/labels";
+import { actionLabel, clockNPT, LANGUAGE_NAME, OUTCOME } from "@/lib/labels";
 
 /** Replays the recorded night. Messages arrive on a clock that ticks from 21:00 to 06:00 (Nepal time), at the time
  * each one came in; at 06:15 the night shift runs (as it really does) and each row ticks through its steps: read,
@@ -45,14 +45,14 @@ function tone(e: NightEvent): Tone {
 function outcome(e: NightEvent): string {
   if (e.outcome === "stopped")
     return e.holding_reply
-      ? `Stopped: it tried to trick Pheri. No model writes to them: a fixed reply written by code goes out at ${e.holding_reply.sends_at_local ?? "08:00"} their time, and the rest waits for you.`
-      : "Stopped: it tried to trick Pheri. Nothing was done; it waits for you.";
-  if (e.outcome === "blocked") return "Blocked by your rule: they asked not to be contacted. Nothing sent, no model asked.";
+      ? `${OUTCOME.attack}: it tried to trick Pheri. No model writes to them: a fixed reply written by code goes out at ${e.holding_reply.sends_at_local ?? "08:00"} their time, and the rest waits for you.`
+      : `${OUTCOME.attack}: it tried to trick Pheri. Nothing was done; it waits for you.`;
+  if (e.outcome === "blocked") return `${OUTCOME.blocked}: they asked not to be contacted. Nothing sent, no model asked.`;
   if (e.outcome === "voice_note")
-    return `A voice note Pheri can't read: no model was asked. A fixed reply by code says you will listen${e.holding_reply ? `; out at ${e.holding_reply.sends_at_local ?? "08:00"} their time` : ""}.`;
-  if (e.outcome === "awaiting_approval") return `Waits for you: ${actionLabel(e.action).toLowerCase()}. ${e.waits_for_owner ?? ""}`;
-  if (e.outcome === "scheduled") return `${actionLabel(e.action)}, checked, goes out at ${e.sends_at_local ?? "08:00"} their time.`;
-  if (e.action === "task_for_owner") return "A task for you.";
+    return `${OUTCOME.waits}: a voice note Pheri can't read, so no model was asked. A fixed reply by code says you will listen${e.holding_reply ? `; out at ${e.holding_reply.sends_at_local ?? "08:00"} their time` : ""}.`;
+  if (e.outcome === "awaiting_approval") return `${OUTCOME.waits}: ${actionLabel(e.action).toLowerCase()}. ${e.waits_for_owner ?? ""}`;
+  if (e.outcome === "scheduled") return `Goes out at ${e.sends_at_local ?? "08:00"} their time: ${actionLabel(e.action).toLowerCase()}, checked.`;
+  if (e.action === "task_for_owner") return `${OUTCOME.waits}: a task for you.`;
   return actionLabel(e.action) || "Nothing to do.";
 }
 
@@ -208,7 +208,7 @@ export function NightPlayback({ business, events }: { business: string; events: 
               <p className="text-[0.85rem] text-muted">
                 {e.at ? clockNPT(e.at) : ""} ·{" "}
                 <Link
-                  href={traceable ? `/${business}/customers/${encodeURIComponent(e.customer.key)}/trace` : `/${business}/customers/${encodeURIComponent(e.customer.key)}`}
+                  href={traceable ? `/${business}/customers/${e.customer.ref}/trace` : `/${business}/customers/${e.customer.ref}`}
                   className="text-ink-2 underline decoration-line-2 underline-offset-2 hover:text-teal-ink"
                   title={traceable ? "See every turn of this decision" : "See this customer"}
                 >

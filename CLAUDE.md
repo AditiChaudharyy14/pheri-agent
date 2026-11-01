@@ -27,7 +27,7 @@ Read this before every task. These rules are not optional.
   demo, no login)", rules by "demo setup (public demo, no login)".
 - Recorded (data/recorded/llm.jsonl, 207 replies): Brightdesk's 6 cards (re-recorded 31 Oct after the judges' review:
   11 drafts, 3 caught by code, 2 by the judge, all verified; no recorded override example is left) and the
-  Brightdesk Wonder report (attempt 1 headline rejected, attempt 2 passed). Birgunj's report is the stand-in until the night is recorded.
+  Brightdesk Wonder report (attempt 1 headline rejected, attempt 2 passed). Birgunj's Wonder report recorded live 1 Nov (1 call, passed on attempt 1, $0.056).
   evals/judge_recorded.jsonl: the real judge on 20 cases in evals/drafts.jsonl: 10/10 planted claims caught,
   9/10 supported passed (1 Nov, S04/J03 answer from the shop file; S04's why "sent a cart" is flagged as strict
   against days_since_enquiry, as on 29 Oct; on 31 Oct it passed: the strict call comes and goes).
@@ -208,13 +208,26 @@ Read this before every task. These rules are not optional.
   length, links, money); no judge (the text claims nothing about the customer), stated in the stored verification;
   sent only through the sha gate, at 08:00 their time. Shown under Stopped (brief) and on the Night shift timeline.
   Recorder: same request twice in a run reuses its reply; refusals recorded; the pruned file
-  is re-checked in a fresh process and restored if anything misses. Recording 696 replies (pruning kept all: the voice compile key failed the re-check; harmless, to look at).
+  is re-checked in a fresh process and restored if anything misses. Recording 697 replies (pruning kept all: the voice compile key failed the re-check; harmless, to look at).
+- Final polish (1 Nov, judge walkthrough; tests in test_final_polish.py): Proof leads with "+14.0 points overall (all
+  stages combined)", plain words (points = extra orders per 100 customers, likely range, "customers Pheri deliberately
+  didn't message"), why stages differ (weighted by customers: 14.03), every stage with its counts (wholesale 442/105)
+  and Wonder's checked note. "How we know it's safe and right" reads GET /evals (evals/scale saved results, never
+  re-run): 0 harmful actions (pipeline: open 140/140, 6 past, 0 sent; closed 74/140, 7 past, 3 ordinary sends), judge
+  25/25, attacks per language closed vs open with ranges, milestone chart. README eval table corrected to the pinned
+  140-attack results (was the 100-attack run). Customer URLs: opaque ids c001..c300 (state.refs, file order); the
+  API accepts ref or key; evidence.mjs fails on a phone/email in any customer link. One set of outcome words
+  (labels.OUTCOME): Goes out at 08:00 / Waits for you / Blocked by your rule / Attack stopped; code-screen names in
+  plain words (labels.SCREEN_LABEL). Private mode box: one sentence + switch, per-step models folded. Rules: plan
+  table folded ("How Pheri checks a plan before writing (details)"), examples a list, Speak a rule above the fold
+  (390 px too). Morning: dismissible "Start here" (5 steps; localStorage, hidden until read). Brightdesk tab: "Also
+  works for software companies" ("Also for software" on phones).
 - Live on Render (1 Nov): https://pheri-web.onrender.com + https://pheri-api.onrender.com; .github/workflows/keepalive.yml GETs both every 10 min until 9 Nov 2026 23:59 UTC (every push to main deploys).
 - Waiting on Aditi: native review of Birgunj strings.
   Screenshots: uvicorn :8000 (replay), then `npm run build && npm start` (not the dev server), then
   `node scripts/evidence.mjs evidence [state]`; one heavy process at a time; restart the API before retaking
   (approving changes its state; the script approves last).
-- Live spend: Meta $10.8616 of $130, Baseten $5.2373 of $90, Modal $0 of $25. Tests: 459 + 15 skipped (Postgres tests run when
+- Live spend: Meta $10.9173 of $130, Baseten $5.2373 of $90, Modal $0 of $25. Tests: 464 + 15 skipped (Postgres tests run when
   PHERI_TEST_DATABASE_URL is set).
 
 ## What we are building

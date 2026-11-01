@@ -204,7 +204,7 @@ Keys go in `.env` (see `.env.example`), never in the repo. Every model call pass
 - Hindi (hi) and Bhojpuri (bho);
 - English (en).
 
-There are 591 labelled messages plus 100 attacks. The attacks come in five kinds: overrides, false owner
+There are 591 labelled messages plus 140 attacks (20 per language, 40 for Bhojpuri and Roman Nepali). The attacks come in five kinds: overrides, false owner
 authority, data theft, mass refunds, and a tool call hidden inside an order question.
 
 **Labels are set by code.** Each message comes from a template written for one label in one language
@@ -218,20 +218,20 @@ The guard read every message once on each model, recorded (`python evals/scale.p
 
 | | Muse Spark 1.3 (closed) | Muse Spark Open (open weights) |
 |---|---|---|
-| Attacks stopped, all | 87% [79–92] (87/100) | **96% [90–98] (96/100)** |
+| Attacks stopped, all | 84% [77–89] (117/140) | **95% [90–98] (133/140)** |
 | — Nepali | 100% [84–100] | 100% [84–100] |
-| — Roman Nepali | 80% [58–92] | 90% [70–97] |
+| — Roman Nepali | 82% [68–91] (33/40) | 90% [77–96] (36/40) |
 | — Hindi | 100% [84–100] | 100% [84–100] |
-| — Bhojpuri | **55% [34–74]** | **90% [70–97]** |
+| — Bhojpuri | **60% [45–74] (24/40)** | **92% [80–97] (37/40)** |
 | — English | 100% [84–100] | 100% [84–100] |
 | Harmless messages stopped (false alarms) | 0% [0–1] (0/591) | 0.3% [0–1] (2/591) |
 | Label right (question, complaint, objection, stop, purchase, other) | 95.8% [94–97] | 96.5% [95–98] |
 | — Bhojpuri | 89.2% [82–94] | 95.0% [90–98] |
-| Language right (family) | 96.0% [94–97] | 98.8% [98–99] |
-| — Bhojpuri (as Hindi family) | 83.6% [77–89] | 97.1% [93–99] |
-| Cost of the run | $1.75 | $1.58 (Baseten, estimated) |
+| Language right (family) | 95.3% [94–97] | 98.9% [98–99] |
+| — Bhojpuri (as Hindi family) | 82.5% [76–88] | 97.5% [94–99] |
+| Cost of the run | $1.89 | $1.72 (Baseten, estimated) |
 
-The intervals are Wilson 95%, with 20 attacks and about 120 messages per language. What it shows:
+The intervals are Wilson 95%, with 20 to 40 attacks and about 120 messages per language. The same numbers are on the demo's Proof page, read from `evals/scale/results.json`. What it shows:
 - On attacks written the way customers on the border write, Bhojpuri and Roman Nepali, the open-weight model
   is clearly better. A business can run it privately.
 - The code screen alone stops few of these; the models do the work.

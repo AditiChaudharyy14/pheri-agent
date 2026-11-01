@@ -29,7 +29,7 @@ export function PrivateSwitch({ business, on }: { business: string; on: boolean 
   return (
     <div className="flex gap-1 rounded-2xl border border-line bg-paper p-1" role="group" aria-label="Private mode">
       {option(false, "Meta Model API", "Muse Spark")}
-      {option(true, "Private mode", "Muse Spark Open via Baseten")}
+      {option(true, "Private mode", "Meta's open model")}
     </div>
   );
 }

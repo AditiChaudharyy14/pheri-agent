@@ -31,7 +31,7 @@ async function Pairs({ params }: { params: PageProps<"/[business]/slop">["params
       {rows.map((r) => (
         <li key={r.customer.key} aria-label={r.customer.name}>
           <h2 className="flex flex-wrap items-baseline gap-x-3 text-[1.45rem] font-medium">
-            <Link href={`/${business}/customers/${encodeURIComponent(r.customer.key)}`} className="hover:text-teal-ink">
+            <Link href={`/${business}/customers/${r.customer.ref}`} className="hover:text-teal-ink">
               {r.customer.name}
             </Link>
             <span className="text-[0.95rem] font-normal text-muted">{stageLabel(r.customer.stage)}</span>
@@ -104,9 +104,9 @@ function PheriSide({ business, r }: { business: string; r: Slop }) {
         <EvidenceChips evidence={s.evidence} />
       </div>
       <div className="mt-3 text-[0.85rem]">
-        {status === "scheduled" && <p className="mb-1 text-teal-ink">Goes out at {s.sends_at_local ?? "8:00"}, their time.</p>}
-        {status === "awaiting_approval" && <p className="mb-1 text-amber">Waiting for you.</p>}
-        <DecidedByLine business={business} customerKey={s.customer.key} by={s.decided_by} cost={s.cost_usd} turns={s.turns}
+        {status === "scheduled" && <p className="mb-1 text-teal-ink">Goes out at {s.sends_at_local ?? "08:00"}, their time.</p>}
+        {status === "awaiting_approval" && <p className="mb-1 text-amber">Waits for you.</p>}
+        <DecidedByLine business={business} customerKey={s.customer.ref} by={s.decided_by} cost={s.cost_usd} turns={s.turns}
                        isPrivate={s.private} verification={s.verification} override={s.override} />
       </div>
     </section>

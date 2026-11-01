@@ -11,7 +11,7 @@ const state = process.argv[3] ?? "main";
 const VIEWPORTS = { "390x844": { width: 390, height: 844 }, "1440x900": { width: 1440, height: 900 } };
 const PAGES = state === "main"
   ? { morning: "/birgunj", night: "/birgunj/night", slop: "/birgunj/slop", proof: "/birgunj/proof", rules: "/birgunj/rules",
-      customer: "/birgunj/customers/%2B918965164000", brightdesk: "/brightdesk" }
+      customer: "/birgunj/customers/c159", brightdesk: "/brightdesk" }
   : { morning: "/birgunj" };
 
 await mkdir(out, { recursive: true });
@@ -39,6 +39,10 @@ for (const [vp, size] of Object.entries(VIEWPORTS)) {
     const ids = await page.evaluate(() =>
       [...document.body.innerText.matchAll(/\b[a-z]+(?:_[a-z0-9]+)+\b|(['"])(en|ne|hi|bho|ne-Latn)\1/g)].map((m) => m[0]));
     if (ids.length) problems.push(`${vp} ${name}: internal ids on the page: ${[...new Set(ids)].slice(0, 8).join(", ")}`);
+    // Customer URLs are opaque ids: never a phone number or an email in a link.
+    const leaky = await page.evaluate(() =>
+      [...document.querySelectorAll("a[href*='/customers/']")].map((a) => a.getAttribute("href")).filter((h) => /%2B|\+|%40|@|\d{7,}/.test(h)));
+    if (leaky.length) problems.push(`${vp} ${name}: a customer link carries a phone number or email: ${leaky[0]}`);
     console.log(`${file}`);
   }
   if (state === "main") {
@@ -115,13 +119,13 @@ if (state === "main") {
     if (!preview) problems.push("speak a rule: the preview shows no waiting step that breaks the rule");
     await page.getByRole("button", { name: "Confirm the rule" }).click();
     await page.getByText("In force from now on.").waitFor({ timeout: 60_000 });
-    const flipped = await page.getByText("Blocked by your new rule:").count();
+    const flipped = await page.getByText(/Blocked by your rule, your new one:/).count();
     if (!flipped) problems.push("speak a rule: nothing flipped after confirming");
     await page.screenshot({ path: `${out}/speak-confirmed-1440x900.png`, fullPage: true });
     for (const [vp, size] of Object.entries(VIEWPORTS)) {
       await page.setViewportSize(size);
       await page.goto(BASE + "/birgunj", { waitUntil: "networkidle" });
-      const blocked = await page.getByText("Blocked by your new rule:").count();
+      const blocked = await page.getByText(/Blocked by your rule, your new one:/).count();
       if (!blocked) problems.push(`${vp} speak a rule: the morning brief does not show the blocked offer`);
       await page.screenshot({ path: `${out}/speak-flipped-${vp}.png`, fullPage: true });
       console.log(`${out}/speak-flipped-${vp}.png (blocked offers shown: ${blocked})`);

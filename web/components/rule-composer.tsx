@@ -71,20 +71,22 @@ export function RuleComposer({ business }: { business: string }) {
           Preview
         </button>
       </div>
-      <div className="mt-3 flex flex-wrap gap-2">
+      <p className="mt-4 text-[0.92rem] text-muted">Or try one of these:</p>
+      <ul className="mt-1.5 space-y-1.5" aria-label="Example rules">
         {EXAMPLES.map((x) => (
-          <button
-            key={x}
-            onClick={() => {
-              setText(x);
-              setDraft(null);
-            }}
-            className="rounded-full border border-line px-3 py-1 text-[0.88rem] text-ink-2 hover:bg-sunk"
-          >
-            {x}
-          </button>
+          <li key={x}>
+            <button
+              onClick={() => {
+                setText(x);
+                setDraft(null);
+              }}
+              className="text-left text-[0.98rem] text-ink-2 underline decoration-line-2 underline-offset-4 hover:text-teal-ink"
+            >
+              &ldquo;{x}&rdquo;
+            </button>
+          </li>
         ))}
-      </div>
+      </ul>
 
       {error && <p className="mt-4 text-rose">{error}</p>}
       {done && (

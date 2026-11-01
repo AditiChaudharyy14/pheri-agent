@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { ReactNode } from "react";
 import { BUSINESSES, type Business } from "@/lib/api";
 
 // The owner's morning first, then what happened overnight. Journey is reached from a customer, Spend from the footer.
@@ -37,6 +38,16 @@ export function Nav({ business }: { business: Business }) {
   );
 }
 
+// Birgunj Saree Ghar is the shop Pheri is built for; Brightdesk shows the same agent on a software company.
+const TAB: Partial<Record<Business, ReactNode>> = {
+  brightdesk: (
+    <span title="Brightdesk, a software company">
+      <span className="sm:hidden">Also for software</span>
+      <span className="hidden sm:inline">Also works for software companies</span>
+    </span>
+  ),
+};
+
 export function BusinessSwitch({ business }: { business: Business }) {
   const path = usePathname();
   // Same section in the other business; a customer page belongs to one business, so go to its home.
@@ -53,7 +64,7 @@ export function BusinessSwitch({ business }: { business: Business }) {
             b === business ? "bg-ink text-paper font-medium" : "text-ink-2 hover:bg-sunk"
           }`}
         >
-          {BUSINESSES[b]}
+          {TAB[b] ?? BUSINESSES[b]}
         </Link>
       ))}
     </div>

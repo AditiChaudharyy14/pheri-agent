@@ -33,14 +33,40 @@ export const CHANNEL_NAME: Record<string, string> = {
 export const langOf = (code: string | null | undefined) =>
   ({ ne: "ne", "ne-Latn": "ne-Latn", hi: "hi", bho: "bho", en: "en" } as Record<string, string>)[code ?? ""] ?? undefined;
 
+/** Where a step ended up: one set of words on every page (Morning, Night shift, Slop vs Pheri, a customer). */
+export const OUTCOME = {
+  scheduled: "Goes out at 08:00",
+  waits: "Waits for you",
+  blocked: "Blocked by your rule",
+  attack: "Attack stopped",
+} as const;
+
+/** The code screen's pattern names, in plain words (what the message tried to do). */
+export const SCREEN_LABEL: Record<string, string> = {
+  override_rules: "told Pheri to ignore its rules",
+  role_override: "pretended to switch Pheri into an admin mode",
+  exfiltrate: "tried to get other customers' phone numbers or data",
+  mass_refund: "asked for every order to be refunded",
+  false_authority: "claimed to speak for the owner",
+  prompt_markup: "hid instructions inside the message",
+  tool_call: "tried to make Pheri run a tool",
+  encoded_payload: "hid instructions in a block of code",
+  // what code corrected in the model's reading
+  language_not_iso: "a language name it could not use",
+  unsafe_summary: "an unsafe summary, rewritten",
+  code_saw_attack: "the model missed the attack; code caught it",
+  code_saw_stop: "the model missed a request to stop; code caught it",
+};
+export const screenLabel = (s: string) => SCREEN_LABEL[s] ?? s.replaceAll("_", " ");
+
 export const STATUS_LABEL: Record<string, string> = {
-  awaiting_approval: "Waiting for you",
+  awaiting_approval: OUTCOME.waits,
   executed: "Done",
   approved: "Approved",
   rejected: "Rejected",
-  blocked: "Blocked by a rule",
+  blocked: OUTCOME.blocked,
   suggested: "Suggested",
-  scheduled: "Ready at 8:00",
+  scheduled: OUTCOME.scheduled,
 };
 
 export const actionLabel = (a: string | null | undefined) => (a ? ACTION_LABEL[a] ?? a.replaceAll("_", " ") : "");

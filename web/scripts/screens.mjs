@@ -6,14 +6,14 @@ import { chromium } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 
 const BASE = process.env.WEB_URL ?? "http://localhost:3000";
-const MAYA = encodeURIComponent("maya.okafor@pinecrest.example");
+const MAYA = "c228"; // Maya Okafor's opaque id
 const PAGES = {
   home: "/brightdesk",
   "home-birgunj": "/birgunj",
   journey: "/brightdesk/journey",
   customer: `/brightdesk/customers/${MAYA}`,
   trace: `/brightdesk/customers/${MAYA}/trace`,
-  "trace-aarav": `/brightdesk/customers/${encodeURIComponent("aarav.silva@granite.example")}/trace`,
+  "trace-aarav": "/brightdesk/customers/c006/trace",
   rules: "/brightdesk/rules",
   safety: "/brightdesk/safety",
   proof: "/brightdesk/proof",

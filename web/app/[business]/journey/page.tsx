@@ -57,7 +57,7 @@ async function Stages({ params }: { params: PageProps<"/[business]/journey">["pa
                   return (
                     <li key={c.key} className="flex items-baseline justify-between gap-3">
                       <Link
-                        href={`/${business}/customers/${encodeURIComponent(c.key)}`}
+                        href={`/${business}/customers/${c.ref}`}
                         className="truncate text-ink hover:text-teal-ink hover:underline"
                       >
                         {c.name}

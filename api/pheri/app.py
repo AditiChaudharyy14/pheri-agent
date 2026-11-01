@@ -117,6 +117,30 @@ class PrivateModeIn(By):
     rules: bool = False
 
 
+# ---- saved evals, for the Proof page ---------------------------------------------------
+EVALS_DIR = REPO_ROOT / "evals" / "scale"
+EVAL_LANGS = ("ne", "ne-Latn", "hi", "bho", "en")
+
+
+def eval_summary() -> dict:
+    results = json.loads((EVALS_DIR / "results.json").read_text(encoding="utf-8"))
+    guard = {}
+    for provider, g in results["guard"].items():
+        guard[provider] = {lang: {"attacks_stopped": g[lang]["attacks_stopped"], "label": g[lang]["label"],
+                                  "false_alarms": g[lang]["false_alarms"]} for lang in ("all", *EVAL_LANGS)}
+    pipeline = {}
+    for provider in ("baseten", "meta"):
+        path = EVALS_DIR / f"pipeline_{provider}.jsonl"
+        rows = [json.loads(x) for x in path.read_text(encoding="utf-8").splitlines() if x.strip()] if path.exists() else []
+        pipeline[provider] = {"run": len(rows), "of": results["guard"][provider]["all"]["attacks_stopped"]["n"],
+                              "past_guard": sum(bool(r["past_guard"]) for r in rows),
+                              "sent": sum(bool(r["sent"]) for r in rows),
+                              "harmful": sum(bool(r["harm"]) for r in rows)}
+    j = results["judge"]
+    return {"messages": results["messages"], "guard": guard, "pipeline": pipeline,
+            "judge": {"planted_caught": j["planted_caught"], "supported_passed": j["supported_passed"]}}
+
+
 # ---- state ------------------------------------------------------------------------
 DEMO_ACTOR = "demo visitor (public demo, no login)"  # who the audit log names in the public demo: never an owner
 DEMO_SETUP = "demo setup (public demo, no login)"  # who confirmed the starting rules there
@@ -144,6 +168,9 @@ class State:
         self.data = {b: load(b) for b in BUSINESSES}
         self.voice = {b: voice.fill(ds, llm) for b, ds in self.data.items()}  # before anything reads the messages
         self.stages = {b: stages(ds) for b, ds in self.data.items()}  # code only, no model
+        # A customer's address in a URL: an opaque id in file order ("c042"), never a phone number or an email.
+        self.refs = {b: {k: f"c{i:03d}" for i, k in enumerate(ds.customers, 1)} for b, ds in self.data.items()}
+        self.by_ref = {b: {r: k for k, r in refs.items()} for b, refs in self.refs.items()}
         self.learned: dict[tuple[str, int, int], dict] = {}  # the same for everyone: written from the twin's results
         self.slop: dict[str, list[dict]] = {}  # Slop vs Pheri: the same for everyone, made once
         self.lock = threading.RLock()  # the memory store is not thread-safe: one request at a time touches it
@@ -248,15 +275,16 @@ def create_app(llm: LLM | None = None) -> FastAPI:
         return b
 
     def customer(b: str, key: str):
+        key = state.by_ref[b].get(key, key)
         c = state.data[b].customers.get(norm_email(key))
         if c is None:
             raise HTTPException(404, f"no customer {key!r} at {b}")
         return c
 
     def profile_of(b: str, key: str) -> Profile:
+        key = customer(b, key).key
         k = (b, norm_email(key))
         if k not in state.profiles:
-            customer(b, key)
             state.profiles[k] = build_profile(state.data[b], key, state.llm,
                                               private=private_mode(state.stores[b])["profile"])
         return state.profiles[k]
@@ -302,7 +330,7 @@ def create_app(llm: LLM | None = None) -> FastAPI:
     @app.get("/businesses/{b}/customers")
     def customers(b: str = Depends(business), stage_: str | None = Query(None, alias="stage"),
                   limit: int = Query(50, ge=1, le=500), offset: int = Query(0, ge=0)):
-        rows = [{"key": k, "name": c.name, "company": c.company, "stage": state.stages[b][k].stage,
+        rows = [{"key": k, "ref": state.refs[b][k], "name": c.name, "company": c.company, "stage": state.stages[b][k].stage,
                  "because": [{"fact": x["fact"], "value": x["value"]} for x in state.stages[b][k].because]}
                 for k, c in state.data[b].customers.items()]
         if stage_:
@@ -314,7 +342,7 @@ def create_app(llm: LLM | None = None) -> FastAPI:
         c = customer(b, key)
         facts, prov = compute_facts(c, b)
         j = stage(b, facts, prov)
-        return {"key": c.key, "name": c.name, "company": c.company, "facts": facts, "journey": j.as_dict(),
+        return {"key": c.key, "ref": state.refs[b][c.key], "name": c.name, "company": c.company, "facts": facts, "journey": j.as_dict(),
                 "do_not_contact": state.stores[b].do_not_contact(c.key)}
 
     @app.get("/businesses/{b}/customers/{key}/profile")
@@ -506,8 +534,20 @@ def create_app(llm: LLM | None = None) -> FastAPI:
                 rep = write_report(twin_results(b, customers, seed_), state.llm)
                 # Offline, the report is Muse Wonder's only if a live run recorded it; else the stand-in wrote it.
                 source = "recorded" if rep.recorded else "stand-in"
-                state.learned[k] = {**dataclasses.asdict(rep), "markdown": rep.markdown, "source": source}
+                out = dataclasses.asdict(rep)
+                # for the owner: the model's text in plain words (it may name an action or stage by its id)
+                out["headline"] = plain(out["headline"])
+                for part in ("findings", "caveats"):
+                    out[part] = [{**x, "text": plain(x["text"])} for x in out[part]]
+                state.learned[k] = {**out, "markdown": rep.markdown, "source": source}
             return state.learned[k]
+
+    @app.get("/evals")
+    def evals_view():
+        """How we know it's safe and right: the saved eval results, as measured (evals/scale), never re-run here.
+        Attacks stopped and labels per language on both models, the judge on planted claims, and defence in depth:
+        attacks run through the whole pipeline (guard, decide, verify, send) and what harm came of them."""
+        return eval_summary()
 
     # ---- for the web app: next steps, replies, which model runs ----
     def showcase(b: str) -> list[str]:
@@ -569,7 +609,8 @@ def create_app(llm: LLM | None = None) -> FastAPI:
                 "owner_offer": offer_view(b, k),
                 "attachments": (action or {}).get("payload", {}).get("attachments") or [],
                 "holding_reply": holding(b, k),
-                "customer": {"key": k, "name": cu.name, "company": cu.company, "town": cu.attrs.get("town"),
+                "customer": {"key": k, "ref": state.refs[b][k], "name": cu.name, "company": cu.company,
+                             "town": cu.attrs.get("town"),
                              "stage": state.stages[b][k].stage},
                 # why is for the owner: in plain words (the message itself is shown exactly as it was checked)
                 "decision": {**out["decision"], "why_this": plain(out["decision"].get("why_this")),
@@ -751,7 +792,8 @@ def create_app(llm: LLM | None = None) -> FastAPI:
                 g = e["details"]
                 esc = escalated.get(e["subject_id"])
                 out.append({"source_id": src.id, "kind": src.kind, "at": src.at, "text": src.text,
-                            "customer": {"key": cu.key, "name": cu.name, "company": cu.company},
+                            "customer": {"key": cu.key, "ref": state.refs[b][cu.key], "name": cu.name,
+                                         "company": cu.company},
                             "label": g["label"], "language": g["language"], "summary": plain(g["summary"]),
                             # the message's own language (its tag, else code's reading): Bhojpuri stays Bhojpuri
                             "written_in": src.lang or read_language(src.text or ""),
@@ -783,7 +825,8 @@ def create_app(llm: LLM | None = None) -> FastAPI:
                 checker = MemoryStore(b)
                 seed(checker, state.llm, by=DEMO_SETUP)
                 state.slop[b] = [slop.compare(state.data[b], k, checker, state.llm, CLOCKS[b][0]) for k in keys]
-            return [{**x, "pheri": card(b, x["customer"]["key"], state.decided[b][x["customer"]["key"]])}
+            return [{**x, "customer": {**x["customer"], "ref": state.refs[b][x["customer"]["key"]]},
+                     "pheri": card(b, x["customer"]["key"], state.decided[b][x["customer"]["key"]])}
                     for x in state.slop[b]]
 
     def timeline(b: str, cards: list[dict], night: list[dict]) -> list[dict]:

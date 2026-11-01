@@ -14,8 +14,8 @@ export function PageHead({ title, lead, right }: { title: string; lead?: ReactNo
   );
 }
 
-export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <section className={`rounded-2xl border border-line bg-surface p-5 lg:p-7 ${className}`}>{children}</section>;
+export function Card({ children, className = "", id }: { children: ReactNode; className?: string; id?: string }) {
+  return <section id={id} className={`scroll-mt-32 rounded-2xl border border-line bg-surface p-5 lg:p-7 ${className}`}>{children}</section>;
 }
 
 type Tone = "teal" | "amber" | "rose" | "slate" | "ink";

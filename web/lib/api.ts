@@ -108,7 +108,7 @@ export type MiddleStep = { thresholds: { money: number; nudge: number }; actions
 export type DecidedBy = { provider: string; model: string; source: "live" | "recorded" | "stand-in" };
 
 export type NextStep = {
-  customer: { key: string; name: string; company: string | null; town?: string | null; stage: string };
+  customer: { key: string; ref: string; name: string; company: string | null; town?: string | null; stage: string };
   decision: Decision;
   evidence: Evidence[];
   action: Action | null;
@@ -125,7 +125,7 @@ export type NextStep = {
   override: Override | null;
 };
 
-export type CustomerRow = { key: string; name: string; company: string | null; stage: string;
+export type CustomerRow = { key: string; ref: string; name: string; company: string | null; stage: string;
   because: { fact: string; value: unknown }[] };
 
 export type Insight = { label?: string; quote: string; source_id: string; code?: string };
@@ -138,7 +138,7 @@ export type Profile = {
   model: string | null;
 };
 
-export type CustomerDetail = { key: string; name: string; company: string | null; facts: Record<string, unknown>;
+export type CustomerDetail = { key: string; ref: string; name: string; company: string | null; facts: Record<string, unknown>;
   journey: { stage: string; because: { fact: string; value: unknown; refs: string[] }[] };
   do_not_contact: { at: string; source: string } | null };
 
@@ -152,7 +152,7 @@ export type RuleRow = { id: string; source_text: string; active: boolean; confir
 
 export type Reply = {
   source_id: string; kind: string; at: string | null; text: string;
-  customer: { key: string; name: string; company: string | null };
+  customer: { key: string; ref: string; name: string; company: string | null };
   label: string; language: string; summary: string; attack: boolean; stop: boolean;
   /** The message's own language (its tag, else code's reading): Bhojpuri stays Bhojpuri. */
   written_in?: string;
@@ -164,6 +164,15 @@ export type RunsOn = { steps: Record<"guard" | "profile" | "decide" | "rules", {
   label: string }>; full_private: boolean };
 
 export type Group = { n: number; responded: number; rate: number | null };
+/** A count out of a total with its 95% (Wilson) range, as the eval files store it. */
+export type Measured = { k: number; n: number; rate: number | null; ci: [number, number] | null };
+/** GET /evals: the saved eval results, as measured (evals/scale). */
+export type Evals = {
+  messages: number;
+  guard: Record<"meta" | "baseten", Record<string, { attacks_stopped: Measured; label: Measured; false_alarms: Measured }>>;
+  pipeline: Record<"meta" | "baseten", { run: number; of: number; past_guard: number; sent: number; harmful: number }>;
+  judge: { planted_caught: Measured; supported_passed: Measured };
+};
 export type StageResult = {
   stage: string; treated: Group; holdout: Group; lift_pp: number | null; ci_pp: [number, number] | null;
   verdict: "works" | "hurts" | "unclear"; best_action: string | null; runner_up: string | null;
@@ -231,12 +240,12 @@ export type Brief = {
   proof: { treated: number; holdout: number; lift_pp: number; ci_pp: [number, number]; verdict: string; customers: number;
            outcome: string } | null;
   public_demo: boolean; mode: string;
-  rule_moments: { customer: { key: string; name: string }; rule: string; refused: string | null; then: string }[];
+  rule_moments: { customer: { key: string; ref: string; name: string }; rule: string; refused: string | null; then: string }[];
   timeline: NightEvent[];
 };
 export type DraftStep = { attempt: number; passed: boolean; caught_by: string | null; reasons: string[] };
 export type NightEvent = {
-  at: string | null; customer: { key: string; name: string; town?: string | null; stage: string }; lang: string | null;
+  at: string | null; customer: { key: string; ref: string; name: string; town?: string | null; stage: string }; lang: string | null;
   kind: string; text: string; voice: string | null; outcome: string; action: string; sends_at_local: string | null;
   waits_for_owner: string | null; drafts: DraftStep[]; holding_reply?: HoldingReply | null;
 };
@@ -245,7 +254,7 @@ export type HoldingReply = { message: string; language: string | null; status: s
   checks: number | null };
 export type SlopSentence = { text: string; struck: boolean; reasons: string[] };
 export type Slop = {
-  customer: { key: string; name: string; stage: string };
+  customer: { key: string; ref: string; name: string; stage: string };
   plain: { text: string; model: string; recorded: boolean; sentences: SlopSentence[]; whole_draft: string[];
     structural?: string[]; judged?: number;
            failed: { check: string; hard: boolean; plain: string; detail: string }[]; passed: boolean };

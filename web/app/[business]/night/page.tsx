@@ -4,6 +4,7 @@ import { NightPlayback } from "@/components/night-playback";
 import { PrivateSwitch } from "@/components/private-switch";
 import { Badge, Card, Chip, Label, PageHead, Skeleton } from "@/components/ui";
 import { api, type Brief, type Reply, type RunsOn, words } from "@/lib/api";
+import { OUTCOME, screenLabel } from "@/lib/labels";
 
 const LANG: Record<string, string> = { en: "English", es: "Spanish", pt: "Portuguese", hi: "Hindi", ne: "Nepali", "ne-Latn": "Roman Nepali", bh: "Bhojpuri / Hindi", bho: "Bhojpuri" };
 const STEP: Record<string, string> = { guard: "Reading replies", profile: "Profiles", decide: "Decisions", rules: "Compiling rules" };
@@ -67,29 +68,28 @@ async function Night({ params }: { params: PageProps<"/[business]/night">["param
 
       <div className="space-y-6">
         <Card>
-          <h2 className="text-[1.45rem] font-medium">Which model reads your customers</h2>
+          <h2 className="text-[1.45rem] font-medium">Private mode</h2>
           <p className="mt-1 mb-5 text-ink-2">
-            Private mode runs every step on Muse Spark Open: Meta&rsquo;s open-weight model, served by a partner (Baseten),
-            self-hostable. Nothing goes to the Meta Model API; code refuses any call that would.
+            Runs on Meta&rsquo;s open model; customer messages never go to Meta&rsquo;s API.
           </p>
           <PrivateSwitch business={business} on={runs.full_private} />
-          <table className="mt-5 w-full text-[0.95rem]">
-            <tbody>
-              {Object.entries(runs.steps).map(([step, m]) => (
-                <tr key={step} className="border-t border-line">
-                  <td className="py-2.5 pr-3 whitespace-nowrap text-ink-2">{STEP[step] ?? step}</td>
-                  <td className="py-2.5 text-right" title={m.model}>
-                    <span className={`font-medium ${m.provider === "baseten" ? "text-teal-ink" : "text-ink"}`}>
-                      {m.provider === "baseten" ? "Muse Spark Open" : "Muse Spark"}
-                    </span>
-                    <span className="block text-[0.82rem] whitespace-nowrap text-muted">
-                      {m.provider === "baseten" ? "Baseten" : "Meta Model API"}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <details className="mt-4 text-[0.92rem]">
+            <summary className="cursor-pointer text-muted">Which model runs each step</summary>
+            <table className="mt-3 w-full">
+              <tbody>
+                {Object.entries(runs.steps).map(([step, m]) => (
+                  <tr key={step} className="border-t border-line">
+                    <td className="py-2 pr-3 whitespace-nowrap text-ink-2">{STEP[step] ?? step}</td>
+                    <td className="py-2 text-right" title={m.model}>
+                      <span className={m.provider === "baseten" ? "text-teal-ink" : "text-ink"}>
+                        {m.provider === "baseten" ? "Meta's open model (Muse Spark Open, on Baseten)" : "Muse Spark (Meta's API)"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </details>
         </Card>
         <Card>
           <Label>How a message is read</Label>
@@ -126,13 +126,13 @@ function ReplyCard({ business, r }: { business: string; r: Reply }) {
       <div className="flex flex-wrap items-center gap-2.5">
         <Badge tone={TONE[r.label] ?? "slate"}>{words(r.label)}</Badge>
         <Badge>{LANG[r.written_in ?? r.language] ?? r.written_in ?? r.language}</Badge>
-        <Link href={`/${business}/customers/${encodeURIComponent(r.customer.key)}`} className="ml-1 text-ink hover:text-teal-ink">
+        <Link href={`/${business}/customers/${r.customer.ref}`} className="ml-1 text-ink hover:text-teal-ink">
           {r.customer.name}
         </Link>
         {r.escalation && (
           <span className="ml-auto">
             <Badge tone={r.escalation.status === "awaiting_approval" ? "rose" : "slate"}>
-              {r.escalation.status === "awaiting_approval" ? "Stopped: waiting for you" : "Handled"}
+              {r.escalation.status === "awaiting_approval" ? `${OUTCOME.attack} · ${OUTCOME.waits.toLowerCase()}` : OUTCOME.attack}
             </Badge>
           </span>
         )}
@@ -146,12 +146,12 @@ function ReplyCard({ business, r }: { business: string; r: Reply }) {
         <div className="mt-3 flex flex-wrap gap-2">
           {r.screen_before.map((h) => (
             <Chip key={h} title="Caught by the code screen, before the model">
-              <span className="text-rose">code caught</span> {words(h)}
+              <span className="text-rose">code caught:</span> {screenLabel(h)}
             </Chip>
           ))}
           {r.screen_after.map((h) => (
             <Chip key={h} title="Corrected by code, after the model">
-              <span className="text-amber">code corrected</span> {words(h)}
+              <span className="text-amber">code corrected:</span> {screenLabel(h)}
             </Chip>
           ))}
         </div>

@@ -109,7 +109,7 @@ export function SpeakRule({ business }: { business: string }) {
                 <ul className="mt-1 space-y-0.5">
                   {blocked.map((x) => (
                     <li key={x.action_id}>
-                      <span className="text-rose">Blocked by your new rule:</span> {x.name}, {actionLabel(x.kind).toLowerCase()}
+                      <span className="text-rose">Blocked by your rule, your new one:</span> {x.name}, {actionLabel(x.kind).toLowerCase()}
                     </li>
                   ))}
                 </ul>

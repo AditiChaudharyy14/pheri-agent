@@ -10,7 +10,7 @@ export default function RulesPage({ params }: PageProps<"/[business]/rules">) {
     <>
       <PageHead
         title="Your rules"
-        lead="Write a rule in plain words. Muse Spark turns it into checks, code describes exactly what it will block, and you confirm. From then on code checks every action against it, before anything happens."
+        lead="Say or write a rule in plain words and confirm it. From then on, code checks every action against it before anything happens."
       />
       <Suspense fallback={<Skeleton rows={2} />}>
         <Rules params={params} />
@@ -32,7 +32,7 @@ async function Rules({ params }: { params: PageProps<"/[business]/rules">["param
       <div className="grid items-start gap-6 lg:grid-cols-[1fr_460px] lg:gap-8">
         <div className="min-w-0 space-y-6">
           {business === "birgunj" && (
-            <Card>
+            <Card id="speak">
               <SpeakRule business={business} />
             </Card>
           )}
@@ -89,19 +89,18 @@ const pctOf = (x: number) => `${Math.round(x * 100)}%`;
 function MiddleStepCard({ m }: { m: MiddleStep }) {
   return (
     <Card>
-      <div className="flex flex-wrap items-baseline justify-between gap-4">
-        <h2 className="text-[1.45rem] font-medium">Before Pheri writes a message: is the stage right, does the plan fit?</h2>
-        <div className="flex gap-2">
-          <Badge tone="amber">Money actions need {pctOf(m.thresholds.money)}</Badge>
-          <Badge tone="teal">Nudges need {pctOf(m.thresholds.nudge)}</Badge>
-        </div>
-      </div>
-      <p className="mt-2 max-w-4xl text-[0.95rem] text-ink-2">
-        Code scores its own journey stage and each plan against a labelled truth set: of the customers it puts in a stage,
-        how many truly are there, and how many the plan truly fits. A plan below the bar is refused in the loop, before the
-        message is written; the model hears why and picks another. Money actions (discount, upgrade, subscription) need
-        every case right.
+      <details>
+        <summary className="cursor-pointer text-[1.2rem] font-medium">How Pheri checks a plan before writing (details)</summary>
+      <p className="mt-3 max-w-4xl text-[0.95rem] text-ink-2">
+        Before Pheri writes a word, code asks two questions. Is this customer really in the stage Pheri thinks? And does
+        the plan suit customers in that stage? Both are scored against a test set where the right answer is known. A plan
+        that scores too low is turned down before any message is written, and Pheri is told why and picks another.
       </p>
+      <ul className="mt-3 max-w-4xl list-disc space-y-1 pl-5 text-[0.95rem] text-ink-2">
+        <li>Anything about money (a discount or an offer) must be right for every customer in the test set: {pctOf(m.thresholds.money)}.</li>
+        <li>A gentle nudge (a check-in, a reminder) must be right for {pctOf(m.thresholds.nudge)} of them.</li>
+        <li>✓ means the plan passed for that stage; ✗ means Pheri may not use it there.</li>
+      </ul>
       <ul className="mt-5 divide-y divide-line">
         {m.stages.map((st) => (
           <li key={st.stage} className="grid gap-2 py-3 sm:grid-cols-[14rem_1fr] sm:gap-4">
@@ -124,6 +123,7 @@ function MiddleStepCard({ m }: { m: MiddleStep }) {
           </li>
         ))}
       </ul>
+      </details>
     </Card>
   );
 }

@@ -92,11 +92,12 @@ def test_speak_a_rule_end_to_end_through_the_api(monkeypatch, tmp_path):
     assert done["active"] and isinstance(done["blocked"], list)
 
 
-def test_a_visitor_approves_the_15_percent_offer_then_speaks_the_10_percent_rule_and_the_offer_flips(monkeypatch,
-                                                                                                       tmp_path):
-    """The demo, in one visitor's sandbox: the seed rule allows up to 15%; the owner picks "Offer up to 15% off (your
-    limit)" on a money card, so a code-written 15% offer waits for 08:00; the owner's voice note (10%) is confirmed
-    and the offer is blocked by it. Reset demo puts it all back; another visitor's copy never changes."""
+def test_a_fresh_visitor_speaks_the_10_percent_rule_and_the_owners_15_percent_offer_flips(monkeypatch, tmp_path):
+    """The demo, in one visitor's sandbox, from the first visit: the seed rule allows up to 15%, and the demo starts with
+    the owner's answer to Salma Pandey's money question already given ("Offer up to 15% off (your limit)"), so a
+    code-written 15% offer waits for 08:00. The owner's voice note (10%) is confirmed and the offer is blocked by it.
+    Reset demo puts it all back (the offer waiting again); another visitor's copy never changes. A first-time judge
+    following the tour used to see "nothing changed": the offer only existed after someone chose it."""
     from fastapi.testclient import TestClient
 
     from pheri.app import create_app
@@ -109,26 +110,24 @@ def test_a_visitor_approves_the_15_percent_offer_then_speaks_the_10_percent_rule
     me, other = TestClient(app), TestClient(app)
     B = "/businesses/birgunj"
     offer = "Offer up to 15% off (your limit)"
-    card = next(c for c in me.get(f"{B}/next-steps").json() if offer in (c.get("owner_options") or []))
-    override = not card["verification"]["passed"]  # offline the stand-in writes English: a soft failure to override
-    done = me.post(f"{B}/approvals/{card['approval']['id']}/approve", json={"by": "x", "choice": offer,
-                                                                            "override": override})
-    assert done.status_code == 200
-    mine = lambda: next(c for c in me.get(f"{B}/next-steps").json()  # noqa: E731
-                        if c["customer"]["key"] == card["customer"]["key"])
-    o = mine()["owner_offer"]
+    salma = lambda c: next(x for x in c.get(f"{B}/next-steps").json() if x["customer"]["name"] == "Salma Pandey")  # noqa: E731
+    card = salma(me)
+    assert card["owner_choice"] == offer and card["approval"]["decision"] == "approved"
+    o = card["owner_offer"]
     assert o["status"] == "scheduled" and o["pct"] == 15 and "15%" in o["message"] and o["blocked_by_rule"] is None
+    setup = [e for e in me.get(f"{B}/audit").json() if e["event"] == "demo_owner_choice"]
+    assert len(setup) == 1 and setup[0]["actor"] == "demo setup (public demo, no login)"  # never a pretend owner
     spoken = me.post(f"{B}/rules/voice", json={"clip": "owner-rule-hi", "by": "x"}).json()
-    assert [x["name"] for x in spoken["would_block"]] == [card["customer"]["name"]]
+    assert [x["name"] for x in spoken["would_block"]] == ["Salma Pandey"]
     confirmed = me.post(f"{B}/rules/{spoken['id']}/confirm", json={"by": "x"}).json()
-    assert [x["name"] for x in confirmed["blocked"]] == [card["customer"]["name"]]
-    o = mine()["owner_offer"]
+    assert [x["name"] for x in confirmed["blocked"]] == ["Salma Pandey"]
+    o = salma(me)["owner_offer"]
     assert o["status"] == "blocked" and o["blocked_by_rule"]["text"] == spoken["transcript"]
     moments = me.get(f"{B}/brief").json()["rule_moments"]
-    assert any(m["rule"].startswith("Your new rule") and m["customer"]["name"] == card["customer"]["name"]
-               for m in moments)
-    theirs = next(c for c in other.get(f"{B}/next-steps").json() if c["customer"]["key"] == card["customer"]["key"])
-    assert theirs["owner_offer"] is None  # another visitor's sandbox: untouched
+    assert any(m["rule"].startswith("Your new rule") and m["customer"]["name"] == "Salma Pandey" for m in moments)
+    assert salma(other)["owner_offer"]["status"] == "scheduled"  # another visitor's sandbox: untouched
     me.post("/demo/reset")
-    assert mine()["owner_offer"] is None and mine()["approval"]["decision"] == "pending"
+    assert salma(me)["owner_offer"]["status"] == "scheduled" and salma(me)["owner_choice"] == offer
     assert not any(r["source_text"] == spoken["transcript"] for r in me.get(f"{B}/rules").json())
+    # Set up once per demo start: the visitor's own later choices are never overruled by it.
+    assert len([e for e in me.get(f"{B}/audit").json() if e["event"] == "demo_owner_choice"]) == 1

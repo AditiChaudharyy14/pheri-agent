@@ -3,6 +3,7 @@ import { MilestoneChart, RangeBar, sharedDomain } from "@/components/proof-chart
 import { Card, Label, PageHead, Skeleton } from "@/components/ui";
 import { api, type Evals, type Learned, type Measured, pct, pp, type TwinResults, type VerificationTotals } from "@/lib/api";
 import { actionLabel, LANGUAGE_NAME, stageLabel } from "@/lib/labels";
+import { TourNext } from "@/components/tour-next";
 
 const SMALL_SAMPLE = 120; // fewer customers held back than this in a stage: its likely range is wide, and we say so
 const EVAL_LANGS = ["ne", "ne-Latn", "hi", "bho", "en"] as const;
@@ -26,12 +27,32 @@ export default function ProofPage({ params }: PageProps<"/[business]/proof">) {
   );
 }
 
-/** Model text in the page's plain words: "holdout" is the customers Pheri deliberately didn't message. */
-const plainTwin = (t: string) =>
+/** Model text in the page's plain words (display only: the report code checked is unchanged). "Holdout" is the
+ * customers Pheri deliberately didn't message; "lift" is extra orders (or replies) per 100 customers; a "close call"
+ * is too close to call; an "action" is a kind of message; a "stage" is a kind of customer. */
+const plainTwin = (t: string, unit = "orders") =>
   t
     .replace(/\bin the holdout\b/g, "among customers Pheri didn't message")
     .replace(/\bthe holdout\b/g, "customers Pheri didn't message")
-    .replace(/\btreated\b/g, "followed up");
+    .replace(/\btreated\b/g, "followed up")
+    .replace(/\b[Tt]he lift was \+?([\d.]+) points\b/g, `That is $1 more ${unit} per 100 customers`)
+    .replace(/\blifting the rate by \+?([\d.]+) points\b/g, `adding $1 ${unit} per 100 customers`)
+    .replace(/\bthe lift\b/gi, `the extra ${unit}`)
+    .replace(/\bit is a close call with\b/g, "it is too close to call against")
+    .replace(/\bis a close call against\b/g, "is too close to call against")
+    .replace(/\bthe close calls\b/g, "the results too close to call")
+    .replace(/\ba close call\b/g, "too close to call")
+    .replace(/\bthe runner-up\b/g, "the second-best message")
+    .replace(/\bbest action\b/g, "best message")
+    .replace(/\baction groups\b/g, "messages")
+    .replace(/\bsample sizes\b/g, "few customers")
+    .replace(/\bhad small few customers\b/g, "were tried on few customers")
+    .replace(/\blisted in the findings\b/g, "named above")
+    .replace(/\bat some stages\b/g, "for some kinds of customer")
+    .replace(/\bthe overall stage results\b/g, "the overall result for each kind of customer")
+    .replace(/\bindividual actions\b/g, "messages")
+    .replace(/\bstages?\b/g, (m) => (m === "stage" ? "kind of customer" : "kinds of customer"))
+    .replace(/\bwas a clear call\b/g, "was clear");
 
 const range = (m: Measured) => (m.ci ? `likely ${Math.round(m.ci[0] * 100)}–${Math.round(m.ci[1] * 100)}%` : "");
 
@@ -55,7 +76,7 @@ async function Proof({ params }: { params: PageProps<"/[business]/proof">["param
       <Card>
         <p className="font-serif text-[1.9rem] leading-snug text-ink lg:text-[2.2rem]">
           <span className={o.verdict === "works" ? "text-teal-ink" : ""}>{pp(o.lift_pp)} points overall</span>{" "}
-          <span className="text-ink-2">(all stages combined).</span>
+          <span className="text-ink-2">(all kinds of customer combined).</span>
         </p>
         <p className="mt-3 max-w-[56rem] text-[1.08rem] text-ink">
           Customers Pheri followed up with {did} {pct(o.treated.rate)} of the time. Customers Pheri deliberately didn&rsquo;t
@@ -69,34 +90,34 @@ async function Proof({ params }: { params: PageProps<"/[business]/proof">["param
           </dd>
           <dt className="font-medium text-ink">Likely range</dt>
           <dd className="text-ink-2">
-            {pp(o.ci_pp?.[0])} to {pp(o.ci_pp?.[1])} points (a 95% interval): the true number is very likely in here.
+            {pp(o.ci_pp?.[0])} to {pp(o.ci_pp?.[1])} points: we are 95% sure the true number is in here.
           </dd>
           <dt className="font-medium text-ink">Not messaged</dt>
           <dd className="text-ink-2">
             {held}% of customers, picked at random, whom Pheri deliberately left alone, so there is something to compare
             with. Everyone else Pheri followed up with.
           </dd>
-          <dt className="font-medium text-ink">Why stages differ</dt>
+          <dt className="font-medium text-ink">Why groups differ</dt>
           <dd className="text-ink-2">
-            Each stage starts from its own baseline (a customer waiting on a fix rarely orders on their own; a loyal one
-            often does), so each has its own number, from {pp(Math.min(...lifts))} to {pp(Math.max(...lifts))}. The
-            overall number is the stages combined, weighted by how many customers each has.
+            Each kind of customer orders at its own rate anyway (a customer waiting on a fix rarely orders on their own;
+            a loyal one often does), so each has its own number, from {pp(Math.min(...lifts))} to{" "}
+            {pp(Math.max(...lifts))}. The overall number is all of them combined, with bigger groups counting more.
           </dd>
         </dl>
         <p className="mt-4 text-[0.9rem] text-muted">
-          {twin.customers.toLocaleString()} simulated customers whose behaviour comes from a hidden table (maths, no model).
+          {twin.customers.toLocaleString()} simulated customers who behave by fixed odds we set (maths, no model).
           Pheri sees each one only through its own journey rules, mistakes included, and learns what works over{" "}
           {orders ? `${twin.days} days` : `${twin.rounds} rounds`}.
         </p>
       </Card>
 
       <section aria-labelledby="stages">
-        <h2 id="stages" className="text-[1.45rem] font-medium lg:text-[1.7rem]">Every stage</h2>
+        <h2 id="stages" className="text-[1.45rem] font-medium lg:text-[1.7rem]">Every kind of customer</h2>
         <p className="mt-1 max-w-[56rem] text-ink-2">
-          Extra {unit} per 100 customers in each stage, with the likely range. The line marks zero; the further right,
+          Extra {unit} per 100 customers of each kind, with the likely range. The line marks zero; the further right,
           the more Pheri helped.
         </p>
-        <Report learned={learned} />
+        <Report learned={learned} unit={unit} />
         <ul className="mt-4 divide-y divide-line border-y border-line">
           {stages.map((s) => {
             const finding = learned.findings.find((f) => f.stage === s.stage);
@@ -131,7 +152,7 @@ async function Proof({ params }: { params: PageProps<"/[business]/proof">["param
                     />
                   </div>
                   {finding ? (
-                    <p className="mt-2 text-[0.95rem] text-ink-2">{plainTwin(finding.text)}</p>
+                    <p className="mt-2 text-[0.95rem] text-ink-2">{plainTwin(finding.text, unit)}</p>
                   ) : (
                     s.best_action && (
                       <p className="mt-2 text-[0.95rem] text-ink-2">Best so far: {actionLabel(s.best_action).toLowerCase()}.</p>
@@ -147,7 +168,7 @@ async function Proof({ params }: { params: PageProps<"/[business]/proof">["param
             <Label>Keep in mind</Label>
             <ul className="mt-1.5 list-disc space-y-1 pl-5 text-[0.93rem] text-ink-2">
               {learned.caveats.map((c) => (
-                <li key={c.text}>{plainTwin(c.text)}</li>
+                <li key={c.text}>{plainTwin(c.text, unit)}</li>
               ))}
             </ul>
           </div>
@@ -155,21 +176,22 @@ async function Proof({ params }: { params: PageProps<"/[business]/proof">["param
       </section>
 
       <Safe evals={evals} checked={checked} twin={twin} />
+      <TourNext business={business} step={5} />
     </div>
   );
 }
 
 /** Who wrote the stage notes: Muse Wonder (recorded from a live run) or the offline stand-in; code checked it. */
-function Report({ learned }: { learned: Learned }) {
+function Report({ learned, unit }: { learned: Learned; unit: string }) {
   const wonder = learned.source !== "stand-in";
   return (
     <div className="mt-4 rounded-xl bg-sunk px-4 py-3 text-[0.95rem]">
-      <p className="font-serif text-[1.12rem] leading-snug text-ink">&ldquo;{plainTwin(learned.headline)}&rdquo;</p>
+      <p className="font-serif text-[1.12rem] leading-snug text-ink">&ldquo;{plainTwin(learned.headline, unit)}&rdquo;</p>
       <p className="mt-1.5 text-[0.88rem] text-muted">
         {wonder
           ? `What Pheri learned, written by Muse Wonder${learned.source === "recorded" ? " in a live run (recorded)" : ""}.`
           : "Written by the offline stand-in; the Muse Wonder report is a deliberate, budgeted run."}{" "}
-        Code checked every number against the results and every verdict against its range:{" "}
+        Code checked every number against the results before it was shown:{" "}
         {learned.attempts
           .map((a) => (a.passed ? `attempt ${a.attempt} passed` : `attempt ${a.attempt} rejected (${a.rejected.join(", ")})`))
           .join(", then ")}
@@ -190,7 +212,7 @@ function Safe({ evals, checked, twin }: { evals: Evals; checked: VerificationTot
     <section aria-labelledby="safe">
       <h2 id="safe" className="text-[1.45rem] font-medium lg:text-[1.7rem]">How we know it&rsquo;s safe and right</h2>
       <p className="mt-1 max-w-[56rem] text-ink-2">
-        Measured once on {evals.messages} synthetic customer messages and attacks, read live by both models and saved;
+        Measured once on {evals.messages} synthetic customer messages, some of them trying to trick Pheri, read live by both models and saved;
         these numbers come straight from those saved results.
       </p>
 
@@ -198,12 +220,13 @@ function Safe({ evals, checked, twin }: { evals: Evals; checked: VerificationTot
         <li className="grid gap-x-6 gap-y-1 md:grid-cols-[13rem_1fr]">
           <p className="font-serif text-[2rem] leading-none text-teal-ink">{harmful}</p>
           <div>
-            <p className="font-medium text-ink">harmful actions caused by attacks</p>
+            <p className="font-medium text-ink">harmful things done because a message tried to trick Pheri</p>
             <p className="mt-1 text-[0.95rem] text-ink-2">
-              Every attack was run through the whole of Pheri (read, decide, check, send) with the code screen switched
-              off, so only the models and the later checks stood in the way. On Meta&rsquo;s open model all {open.run} of{" "}
+              Every trick message was run through the whole of Pheri (read, decide, check, send) with the word filter that
+              runs before any AI switched off, so only the AI and the later checks stood in the way. On Meta&rsquo;s open
+              model all {open.run} of{" "}
               {open.of}: {open.past_guard} got past the first reading, {open.sent} sent anything, {open.harmful} did harm. On
-              Muse Spark 1.3, {closed.run} of {closed.of} (a partial run, stopped there by choice): {closed.past_guard} got past,{" "}
+              Meta&rsquo;s hosted model, {closed.run} of {closed.of} (a partial run, stopped there by choice): {closed.past_guard} got past,{" "}
               {closed.sent} got an ordinary reply, {closed.harmful} did harm.
             </p>
           </div>
@@ -214,9 +237,9 @@ function Safe({ evals, checked, twin }: { evals: Evals; checked: VerificationTot
             {j.planted_caught.k}/{j.planted_caught.n}
           </p>
           <div>
-            <p className="font-medium text-ink">invented claims caught by the judge</p>
+            <p className="font-medium text-ink">invented claims caught by the judge, a second AI that checks each claim against the records</p>
             <p className="mt-1 text-[0.95rem] text-ink-2">
-              {j.planted_caught.n} drafts with one false claim planted in each, which pass every code check, so only the
+              {j.planted_caught.n} drafts with one false claim slipped in on purpose, which pass every code check, so only the
               judge could catch them ({range(j.planted_caught)}). It also let {j.supported_passed.k} of{" "}
               {j.supported_passed.n} true drafts through. In this demo&rsquo;s own night: {checked.drafts} drafts, code caught{" "}
               {checked.caught_by_code}, the judge {checked.caught_by_judge}, and nothing unchecked was ever sent.
@@ -225,19 +248,19 @@ function Safe({ evals, checked, twin }: { evals: Evals; checked: VerificationTot
         </li>
 
         <li>
-          <p className="font-medium text-ink">Attacks stopped, in the way each customer writes</p>
+          <p className="font-medium text-ink">Trick messages stopped, in the way each customer writes</p>
           <p className="mt-1 max-w-[56rem] text-[0.95rem] text-ink-2">
-            Muse Spark 1.3 is Meta&rsquo;s closed model; Muse Spark Open is Meta&rsquo;s open model, which a shop can run
-            privately. On the border&rsquo;s own way of writing (Bhojpuri, Roman Nepali) the open model stops more.
+            Meta&rsquo;s hosted model (Muse Spark 1.3) and Meta&rsquo;s open model (Muse Spark Open), which a shop can run
+            itself. Written the way people on the border write (Bhojpuri, Roman Nepali), the open model stops more.
           </p>
           <div className="mt-3 overflow-x-auto">
             <table className="w-full min-w-[34rem] text-[0.93rem]">
               <thead>
                 <tr className="text-left text-[0.85rem] text-muted">
                   <th className="py-2 pr-4 font-normal">Written in</th>
-                  <th className="py-2 pr-4 font-normal">Muse Spark 1.3 (closed)</th>
-                  <th className="py-2 pr-4 font-normal">Muse Spark Open (open)</th>
-                  <th className="py-2 font-normal">Messages labelled right (closed / open)</th>
+                  <th className="py-2 pr-4 font-normal">Hosted model</th>
+                  <th className="py-2 pr-4 font-normal">Open model</th>
+                  <th className="py-2 font-normal">Messages understood correctly (hosted / open)</th>
                 </tr>
               </thead>
               <tbody className="tabular-nums">
@@ -266,8 +289,8 @@ function Safe({ evals, checked, twin }: { evals: Evals; checked: VerificationTot
             </table>
           </div>
           <p className="mt-2 text-[0.85rem] text-muted">
-            Ranges are 95%: with 20 to 40 attacks per language they are wide. Harmless messages wrongly stopped:{" "}
-            {g.meta.all.false_alarms.k} of {g.meta.all.false_alarms.n} (closed), {g.baseten.all.false_alarms.k} of{" "}
+            Ranges are 95%: with 20 to 40 trick messages per language they are wide. Ordinary messages wrongly stopped:{" "}
+            {g.meta.all.false_alarms.k} of {g.meta.all.false_alarms.n} (hosted), {g.baseten.all.false_alarms.k} of{" "}
             {g.baseten.all.false_alarms.n} (open).
           </p>
         </li>

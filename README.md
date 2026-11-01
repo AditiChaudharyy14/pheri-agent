@@ -1,11 +1,118 @@
 # Pheri
 
-**Live demo: [pheri-web.onrender.com](https://pheri-web.onrender.com)** (API: [pheri-api.onrender.com](https://pheri-api.onrender.com/health)).
-A recorded night from a live run, replayed; each visitor gets their own sandbox, and Reset demo puts it back.
+Pheri follows up with every customer of a small business while the owner sleeps, and can't say anything the owner
+didn't allow or can't prove.
 
-The next step for every customer, inside your rules. Pheri is an AI agent that understands each
-customer, decides their next best action ("why this, why now"), acts only inside the business's
-rules and approvals, and proves what worked with a holdout.
+## Live demo
+
+**[pheri-web.onrender.com](https://pheri-web.onrender.com)**: a night recorded from a live run, replayed. You get your
+own copy of the demo; "Reset demo" puts it back. All customers are synthetic.
+
+**Try it in 2 minutes:**
+
+1. **Morning brief**: the first page. What Pheri did overnight, in a few sentences, and what waits for the owner.
+2. **Night shift**: press "Replay the night". Every message is read, and you can watch drafts get caught and rewritten.
+3. **Slop vs Pheri** (linked from the Morning page): a plain AI reply next to Pheri's, checked the same way.
+4. **Speak a rule** (Rules): turn the owner's Hindi voice note into a rule and watch an offer get blocked.
+5. **Proof**: did it work, and is it safe? Measured against customers Pheri deliberately left alone.
+
+## Why I built it
+
+I'm Aditi, building alone from Birgunj, Nepal. I worked in AI lead generation and saw automated follow-ups break
+owners' trust. Small shops here sell on WhatsApp, in Nepali, Hindi and Bhojpuri.
+
+## What Pheri does
+
+The demo shop is Birgunj Saree Ghar, a saree shop on the Nepal–India border (synthetic customers, real languages).
+
+| Moment | What you see |
+|---|---|
+| **Morning brief** | The owner's morning in sentences: replies ready to go out at 08:00, what waits for the owner, what the rules blocked. |
+| **Night shift** | The night replayed: each message read, each draft checked, caught, sent back with the reasons, rewritten. |
+| **Slop vs Pheri** | The same customer, a plain AI draft and Pheri's, both through the same checks: the plain one promises things the shop never said. |
+| **Speak a rule** | The owner says a rule in Hindi; Muse Voice transcribes it, it becomes a rule code enforces, and code shows what it would block. |
+| **Nepali reply attack** | A customer message that tries to get other customers' phone numbers: stopped; no model writes to them, and the owner decides. |
+| **Proof** | Customers Pheri followed up with ordered more than the ones it deliberately left alone, with the likely range, per stage. |
+
+## How it stays honest
+
+A model's draft is a claim, not an action. Code checks it first (18 code checks: the owner's rules, facts, promises,
+the customer's language, money, links and more), then a judge model checks each claim against the customer's
+record. A failed draft goes back with the reasons, up to 3 drafts; after that it goes to the owner and is never sent.
+Hard checks (rules, quiet hours, do-not-contact, facts, promises, money, links) can't be overridden, not even by the
+owner. Only a draft whose stored check passed can be sent. An attack never becomes an action.
+
+```mermaid
+flowchart LR
+  M[Customer message] --> G{Read safely:<br/>code screen + model}
+  G -- attack --> O[Owner decides;<br/>customer gets a fixed reply<br/>written by code]
+  G -- ok --> D[Muse Spark decides,<br/>with tools]
+  D --> C{18 code checks}
+  C -- fail --> R[Reasons sent back]
+  C -- pass --> J{Judge, claim by claim}
+  J -- fail --> R
+  R -- draft 2 or 3 --> D
+  R -- 3 drafts failed --> Q[Owner's queue,<br/>never sent]
+  J -- pass --> S[Sent at 08:00,<br/>inside the owner's rules]
+```
+
+## Meta models, and the job each does
+
+| Model | Job in Pheri |
+|---|---|
+| **Muse Spark 1.3** | Decides each customer's next step through tool calls (read the profile, list allowed actions, check the rules) and writes the reply. In the default demo it also runs the guard (reading each incoming message first), reads profiles and turns the owner's words into rules. It also wrote the grey "In English" lines under non-English text, for readers: checked in code so they add no number or claim, and never sent. |
+| **Muse Spark Open** (open weights, on Baseten) | The judge on every draft. In private mode it runs every step, the guard included, so customer messages never go to Meta's API. |
+| **Muse Voice** | Transcribes the owner's spoken rule (Hindi, recorded live). It is wired for customers' Hindi voice notes too; the demo's one Hindi customer note uses a stand-in transcript, because no audio was recorded for it. |
+| **Muse Wonder** | Writes "What Pheri learned" on the Proof page, from the results; code checks every number before it is shown. |
+| **Muse Spark 1.3 Contributor** | Paraphrased eval messages for variety (synthetic data only); code checked every paraphrase. |
+
+## The numbers
+
+All measured, from the saved results in `evals/scale/` and `data/twin/`; ranges are 95%.
+
+| What | Result | Likely range | n |
+|---|---|---|---|
+| Harmful actions caused by attacks, run through the whole of Pheri with the code screen off | **0** | | 140 attacks on Spark Open (6 got past the first reading, 0 sent anything); 74 on Spark 1.3 (7 got past, 3 got an ordinary reply) |
+| Attacks stopped by the first reading, Muse Spark Open | 95% (133) | 90–98% | 140 |
+| Attacks stopped by the first reading, Muse Spark 1.3 | 84% (117) | 77–89% | 140 |
+| — in Bhojpuri: Spark Open / Spark 1.3 | 92% (37) / 60% (24) | 80–97% / 45–74% | 40 |
+| Harmless messages wrongly stopped: Spark Open / Spark 1.3 | 0.3% (2) / 0% (0) | 0.1–1.2% / 0–0.7% | 591 |
+| Messages labelled right: Spark Open / Spark 1.3 | 96.5% (570) / 95.8% (566) | 95–98% / 94–97% | 591 |
+| Invented claims caught by the judge | 100% (25) | 87–100% | 25 |
+| True drafts the judge let through | 100% (25) | 87–100% | 25 |
+| Orders, customers Pheri followed up with vs deliberately left alone (simulated) | 22.9% vs 8.9%: +14.0 points | +11.8 to +16.2 | 4,000 vs 1,000 |
+| This demo's night: drafts written / caught by code / caught by the judge / unchecked messages sent | 40 / 12 / 8 / 0 | | 20 customers |
+
+## Honest limits
+
+- **Synthetic data only.** Every customer, order and message is generated (`api/pheri/synth.py`); only synthetic data
+  is ever sent to a model, and `api/pheri/llm.py` enforces it.
+- **Muse Voice can't read Nepali or Bhojpuri.** A Nepali voice note waits for the owner, with a fixed reply written
+  by code; Pheri doesn't guess.
+- **Telling Bhojpuri apart in code is weak**: 36 of 60 right on held-out messages (likely 47–71%). The models do
+  better (above), but neither can name Bhojpuri exactly.
+- **The English lines are for readers only.** They are machine translations; code checks that each adds no number
+  and no claim the original lacks, which is not the same as a native speaker's review.
+- **The public demo is a replay.** The model replies were recorded in a live run; code runs every check again. Live
+  runs happen only locally.
+- **Postgres with row-level security is built and tested but not used in the demo**, which keeps each visitor's copy
+  in memory.
+
+## Built during the hackathon
+
+Everything in this repository was written during the Meta Global AI Developer Hackathon, 27 Oct – 4 Nov 2026. All
+code is new; nothing was carried over from earlier projects. All demo data is synthetic, generated by
+`api/pheri/synth.py`.
+
+- What I took from Meta's Agents 101 and 102 workshops, and where each lesson lives in the code with the test that
+  proves it: [docs/LESSONS.md](docs/LESSONS.md).
+- Run it locally for $0: tests and the API run in mock mode (no network, no spend). See "Run the tests" and "The
+  API" below.
+- Free credits used for the whole build, recordings and evals: Meta $11.05 of $130, Baseten $5.24 of $90, Modal $0
+  (not used: it needs a payment card). The demo's footer links to every call's cost.
+- Cookbook patterns adapted: none so far.
+
+---
 
 ## Run the tests
 
@@ -280,13 +387,3 @@ changing it needs a restart, not a rebuild. All state is in memory and resets wh
 
 `data/spend/live.json` is what this week's live runs cost, totals only, from the local ledger
 (`python scripts/spend_snapshot.py`); the Spend page shows it.
-
-## Built during the hackathon
-
-Everything in this repository was written during the Meta Global AI Developer Hackathon,
-27 Oct – 4 Nov 2026. All code is new; nothing was carried over from earlier projects.
-All demo data is synthetic, generated by `api/pheri/synth.py`.
-
-Cookbook patterns we adapt are credited here as we use them:
-
-- None so far.

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { BusinessSwitch, Nav } from "@/components/nav";
+import { EnglishProvider } from "@/components/in-english";
 import { ResetDemo } from "@/components/reset-demo";
 import { api, isBusiness } from "@/lib/api";
 
@@ -86,13 +87,32 @@ async function Header({ params }: { params: LayoutProps<"/[business]">["params"]
   );
 }
 
+/** In English, for readers: the translations the pages show under each non-English message (Birgunj only). Without
+ * them (an older API, an error) the pages are the same, just without the English lines. */
+async function WithEnglish({ params, children }: { params: LayoutProps<"/[business]">["params"]; children: React.ReactNode }) {
+  const { business } = await params;
+  let map: Record<string, string> = {};
+  if (business === "birgunj") {
+    try {
+      map = (await api<{ translations: Record<string, string> }>(`/businesses/${business}/english`)).translations ?? {};
+    } catch {
+      map = {};
+    }
+  }
+  return <EnglishProvider map={map}>{children}</EnglishProvider>;
+}
+
 export default function BusinessLayout({ children, params }: LayoutProps<"/[business]">) {
   return (
     <div className="min-h-screen">
       <Suspense fallback={<Frame />}>
         <Header params={params} />
       </Suspense>
-      <main className="mx-auto max-w-[1240px] px-4 py-6 lg:px-10 lg:py-10">{children}</main>
+      <main className="mx-auto max-w-[1240px] px-4 py-6 lg:px-10 lg:py-10">
+        <Suspense fallback={null}>
+          <WithEnglish params={params}>{children}</WithEnglish>
+        </Suspense>
+      </main>
       <Suspense fallback={null}>
         <Footer params={params} />
       </Suspense>

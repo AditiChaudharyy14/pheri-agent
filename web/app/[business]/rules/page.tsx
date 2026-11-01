@@ -4,6 +4,7 @@ import { SpeakRule } from "@/components/speak-rule";
 import { Badge, Card, PageHead, Skeleton } from "@/components/ui";
 import { api, BUSINESSES, type Business, type MiddleStep, type RuleRow } from "@/lib/api";
 import { actionLabel, stageLabel } from "@/lib/labels";
+import { TourNext } from "@/components/tour-next";
 
 export default function RulesPage({ params }: PageProps<"/[business]/rules">) {
   return (
@@ -34,6 +35,7 @@ async function Rules({ params }: { params: PageProps<"/[business]/rules">["param
           {business === "birgunj" && (
             <Card id="speak">
               <SpeakRule business={business} />
+              <TourNext business={business} step={4} className="mt-5 border-t border-line pt-4" />
             </Card>
           )}
           <Card>

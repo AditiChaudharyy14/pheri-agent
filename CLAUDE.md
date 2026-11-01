@@ -208,7 +208,7 @@ Read this before every task. These rules are not optional.
   length, links, money); no judge (the text claims nothing about the customer), stated in the stored verification;
   sent only through the sha gate, at 08:00 their time. Shown under Stopped (brief) and on the Night shift timeline.
   Recorder: same request twice in a run reuses its reply; refusals recorded; the pruned file
-  is re-checked in a fresh process and restored if anything misses. Recording 697 replies (pruning kept all: the voice compile key failed the re-check; harmless, to look at).
+  is re-checked in a fresh process and restored if anything misses. Recording 730 replies (pruning kept all: the voice compile key failed the re-check; harmless, to look at).
 - Final polish (1 Nov, judge walkthrough; tests in test_final_polish.py): Proof leads with "+14.0 points overall (all
   stages combined)", plain words (points = extra orders per 100 customers, likely range, "customers Pheri deliberately
   didn't message"), why stages differ (weighted by customers: 14.03), every stage with its counts (wholesale 442/105)
@@ -222,12 +222,26 @@ Read this before every task. These rules are not optional.
   table folded ("How Pheri checks a plan before writing (details)"), examples a list, Speak a rule above the fold
   (390 px too). Morning: dismissible "Start here" (5 steps; localStorage, hidden until read). Brightdesk tab: "Also
   works for software companies" ("Also for software" on phones).
+- Judge audit round (1 Nov; tests in test_translate.py, test_speak_rule.py): (1) the demo starts with the owner's
+  "Offer up to 15% off (your limit)" already chosen for Salma Pandey (app.DEMO_OWNER_CHOICES, seed_owner_choice in
+  warm: code only, audited "demo_owner_choice" by demo setup, once per demo start), so the spoken 10% rule flips her
+  offer on a first visit (it said "nothing changed" before). Not "yesterday evening": the card exists only from the
+  06:15 run. (2) In English for readers (translate.py, GET /english): Muse Spark 1.3 translates every non-English
+  message, quote, reply and offer the pages show, one call per customer, recorded (28 calls + 5 profiles, $0.137);
+  code check: no number or claim the translation adds (claims read strictly in the English, loosely in the original:
+  translate.TOPICS), length; one retry with reasons, else withheld. 95 shown, 0 withheld. Grey line "In English (a
+  translation for readers, never sent)"; never in any payload. record_demo.py drives /english and stops past 50 new
+  calls (--max-calls). (3) Context line above Good morning (labels.BUSINESS_INTRO), "Tour, step N of 5 · Next →"
+  (components/tour-next.tsx), Slop verdict per pair + page line, Proof plain words (plainTwin for Wonder's text,
+  display only). LESSONS.md 18 named checks; the count test reads LESSONS and "named checks". README: guard on
+  Spark 1.3 by default; Spark Open = judge always, every step in private mode; "Why I built it" in Aditi's facts only
+  (her own text still to paste). Waiting: Amit Ansari's Hindi voice clip (replace the stand-in transcript).
 - Live on Render (1 Nov): https://pheri-web.onrender.com + https://pheri-api.onrender.com; .github/workflows/keepalive.yml GETs both every 10 min until 9 Nov 2026 23:59 UTC (every push to main deploys).
 - Waiting on Aditi: native review of Birgunj strings.
   Screenshots: uvicorn :8000 (replay), then `npm run build && npm start` (not the dev server), then
   `node scripts/evidence.mjs evidence [state]`; one heavy process at a time; restart the API before retaking
   (approving changes its state; the script approves last).
-- Live spend: Meta $10.9173 of $130, Baseten $5.2373 of $90, Modal $0 of $25. Tests: 464 + 15 skipped (Postgres tests run when
+- Live spend: Meta $11.0537 of $130, Baseten $5.2373 of $90, Modal $0 of $25. Tests: 472 + 15 skipped (Postgres tests run when
   PHERI_TEST_DATABASE_URL is set).
 
 ## What we are building

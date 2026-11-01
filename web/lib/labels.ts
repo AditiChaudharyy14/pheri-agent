@@ -33,6 +33,14 @@ export const CHANNEL_NAME: Record<string, string> = {
 export const langOf = (code: string | null | undefined) =>
   ({ ne: "ne", "ne-Latn": "ne-Latn", hi: "hi", bho: "bho", en: "en" } as Record<string, string>)[code ?? ""] ?? undefined;
 
+/** One line above "Good morning": who the visitor is in this demo, so the page makes sense on a first look. */
+export const BUSINESS_INTRO: Record<string, string> = {
+  birgunj:
+    "You own Birgunj Saree Ghar, a saree shop in Birgunj, Nepal. Overnight, Pheri answered your customers on WhatsApp, inside your rules.",
+  brightdesk:
+    "You run Brightdesk, a small software company. Pheri has worked out the next step for each customer, inside your rules.",
+};
+
 /** Where a step ended up: one set of words on every page (Morning, Night shift, Slop vs Pheri, a customer). */
 export const OUTCOME = {
   scheduled: "Goes out at 08:00",

@@ -5,6 +5,8 @@ import { PrivateSwitch } from "@/components/private-switch";
 import { Badge, Card, Chip, Label, PageHead, Skeleton } from "@/components/ui";
 import { api, type Brief, type Reply, type RunsOn, words } from "@/lib/api";
 import { OUTCOME, screenLabel } from "@/lib/labels";
+import { InEnglish } from "@/components/in-english";
+import { TourNext } from "@/components/tour-next";
 
 const LANG: Record<string, string> = { en: "English", es: "Spanish", pt: "Portuguese", hi: "Hindi", ne: "Nepali", "ne-Latn": "Roman Nepali", bh: "Bhojpuri / Hindi", bho: "Bhojpuri" };
 const STEP: Record<string, string> = { guard: "Reading replies", profile: "Profiles", decide: "Decisions", rules: "Compiling rules" };
@@ -16,6 +18,7 @@ export default function NightPage({ params }: PageProps<"/[business]/night">) {
         title="Night shift"
         lead="What came in overnight and how Pheri read it. Code reads every message before and after the model; an attack never becomes an action, it comes to you."
       />
+      <NightTour params={params} />
       <Suspense fallback={<Skeleton rows={2} />}>
         <Timeline params={params} />
       </Suspense>
@@ -24,6 +27,11 @@ export default function NightPage({ params }: PageProps<"/[business]/night">) {
       </Suspense>
     </>
   );
+}
+
+async function NightTour({ params }: { params: PageProps<"/[business]/night">["params"] }) {
+  const { business } = await params;
+  return <TourNext business={business} step={2} className="-mt-2 mb-6" />;
 }
 
 /** Tonight, message by message, replayed: what came in, every draft Pheri wrote (caught, sent back, rewritten), and
@@ -36,6 +44,7 @@ async function Timeline({ params }: { params: PageProps<"/[business]/night">["pa
     <section aria-labelledby="tonight" className="mb-10">
       <h2 id="tonight" className="mb-3 text-[1.45rem] font-medium lg:text-[1.7rem]">Tonight, message by message</h2>
       <NightPlayback business={business} events={b.timeline} />
+      <TourNext business={business} step={2} className="mt-6" />
     </section>
   );
 }
@@ -170,6 +179,9 @@ function Message({ text, kind, lang }: { text: string; kind: string; lang?: stri
       <p className="mt-1 font-serif text-[1.12rem] leading-snug text-ink">&ldquo;{body}&rdquo;</p>
     </div>
   ) : (
-    <p lang={lang} className="mt-3 font-serif text-[1.12rem] leading-snug text-ink">&ldquo;{text}&rdquo;</p>
+    <p lang={lang} className="mt-3 font-serif text-[1.12rem] leading-snug text-ink">
+      &ldquo;{text}&rdquo;
+      <InEnglish text={text} />
+    </p>
   );
 }

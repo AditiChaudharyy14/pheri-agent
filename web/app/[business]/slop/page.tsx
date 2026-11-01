@@ -5,6 +5,8 @@ import { EvidenceChips } from "@/components/evidence";
 import { PageHead, Skeleton } from "@/components/ui";
 import { api, type Slop } from "@/lib/api";
 import { actionLabel, stageLabel } from "@/lib/labels";
+import { InEnglish } from "@/components/in-english";
+import { TourNext } from "@/components/tour-next";
 
 /** The same customer, two drafts: what a plain AI writes from their messages, and what Pheri writes. The plain one
  * is a real model reply, run through exactly the checks Pheri's own drafts go through. */
@@ -26,7 +28,15 @@ async function Pairs({ params }: { params: PageProps<"/[business]/slop">["params
   const { business } = await params;
   const rows = await api<Slop[]>(`/businesses/${business}/slop`);
   if (!rows.length) return <p className="text-ink-2">No customers to compare yet.</p>;
+  const stopped = rows.filter((r) => r.plain.failed.length > 0).length;
+  const passed = rows.filter((r) => r.pheri.verification?.passed).length;
   return (
+    <>
+    <p className="mb-2 font-serif text-[1.3rem] leading-snug text-ink lg:text-[1.5rem]">
+      <b className="font-semibold text-rose">{stopped} of {rows.length}</b> plain AI drafts would be stopped by Pheri&rsquo;s
+      checks. <b className="font-semibold text-teal-ink">{passed} of {rows.length}</b> of Pheri&rsquo;s own passed every check.
+    </p>
+    <TourNext business={business} step={3} className="mb-8" />
     <ol className="space-y-10">
       {rows.map((r) => (
         <li key={r.customer.key} aria-label={r.customer.name}>
@@ -36,6 +46,7 @@ async function Pairs({ params }: { params: PageProps<"/[business]/slop">["params
             </Link>
             <span className="text-[0.95rem] font-normal text-muted">{stageLabel(r.customer.stage)}</span>
           </h2>
+          <Verdict r={r} />
           <div className="mt-3 grid gap-4 lg:grid-cols-2 lg:gap-6">
             <Plain r={r} />
             <PheriSide business={business} r={r} />
@@ -43,6 +54,27 @@ async function Pairs({ params }: { params: PageProps<"/[business]/slop">["params
         </li>
       ))}
     </ol>
+    <TourNext business={business} step={3} className="mt-10" />
+    </>
+  );
+}
+
+/** One line, before the drafts: what happened to each, so the point lands before anyone reads the details. */
+function Verdict({ r }: { r: Slop }) {
+  const p = r.plain;
+  const hard = p.failed.filter((f) => f.hard).length;
+  const v = r.pheri.verification;
+  return (
+    <p className="mt-1 text-[1rem]">
+      <span className="font-medium text-rose">
+        Plain AI: {p.failed.length} {p.failed.length === 1 ? "problem" : "problems"}
+        {hard ? `, ${hard} that could never be sent` : ""}
+      </span>
+      <span className="text-muted"> · </span>
+      <span className={`font-medium ${v?.passed ? "text-teal-ink" : "text-amber"}`}>
+        Pheri: {v?.passed ? "passed every check" : "waits for you"}
+      </span>
+    </p>
   );
 }
 
@@ -67,6 +99,7 @@ function Plain({ r }: { r: Slop }) {
           ),
         )}
       </div>
+      <InEnglish text={p.text} className="mt-3" />
       {p.whole_draft.length > 0 && (
         <ul className="mt-4 space-y-1 border-t border-line pt-3 text-[0.9rem] text-rose">
           {p.whole_draft.map((why) => (
@@ -95,7 +128,14 @@ function PheriSide({ business, r }: { business: string; r: Slop }) {
     <section className="rounded-2xl border border-line border-l-4 border-l-teal bg-surface p-4 lg:p-6">
       <h3 className="text-[0.8rem] font-medium tracking-[0.08em] text-muted uppercase">Pheri</h3>
       <p className="mt-3 font-medium text-teal-ink">{actionLabel(d.action)}</p>
-      {d.message ? <p className="mt-2 leading-relaxed text-ink">{d.message}</p> : <p className="mt-2 text-ink-2">Nothing to send.</p>}
+      {d.message ? (
+        <p className="mt-2 leading-relaxed text-ink">
+          {d.message}
+          <InEnglish text={d.message} />
+        </p>
+      ) : (
+        <p className="mt-2 text-ink-2">Nothing to send.</p>
+      )}
       <p className="mt-3 text-[0.92rem] text-ink-2">
         <span className="text-muted">Why: </span>
         {d.why_this}

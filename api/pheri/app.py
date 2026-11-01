@@ -90,6 +90,12 @@ class ApproveIn(By):
 
 
 OFFER_CHOICE = "Offer up to"  # autonomy.owner_options' discount choice: it makes a code-written offer
+# The demo starts with the owner's answer to one money question already given: Salma Pandey asked for 25% off for
+# Tihar, and the owner chose "Offer up to 15% off (your limit)". So a code-written 15% offer waits for 08:00 from the
+# first visit, and the owner's spoken 10% rule (Speak a rule) visibly blocks it. Set up once per demo start, by code
+# (no model), and recorded in the audit log as the demo's setup; a visitor's later choices are their own.
+DEMO_OWNER_CHOICES = {"birgunj": "Salma Pandey"}
+DEMO_CHOICE_EVENT = "demo_owner_choice"
 
 
 class VoiceRuleIn(By):
@@ -173,6 +179,7 @@ class State:
         self.by_ref = {b: {r: k for k, r in refs.items()} for b, refs in self.refs.items()}
         self.learned: dict[tuple[str, int, int], dict] = {}  # the same for everyone: written from the twin's results
         self.slop: dict[str, list[dict]] = {}  # Slop vs Pheri: the same for everyone, made once
+        self.english: dict[str, dict] = {}  # In English, for readers: the same for everyone, made once (translate.py)
         self.lock = threading.RLock()  # the memory store is not thread-safe: one request at a time touches it
         self.public_demo = self.settings.public_demo
         if self.public_demo and self.settings.database_url:
@@ -578,6 +585,7 @@ def create_app(llm: LLM | None = None) -> FastAPI:
             if k not in state.decided[b]:
                 state.decided[b][k] = dataclasses.asdict(decide_customer(state.data[b], k, state.stores[b], state.llm,
                                                                         CLOCKS[b][0]))  # the night shift's clock
+        seed_owner_choice(b)
         # The Safety screen reads replies in every language the data has: the first one in each other language.
         seen_langs = {"en"}
         for cu in state.data[b].customers.values():
@@ -634,6 +642,31 @@ def create_app(llm: LLM | None = None) -> FastAPI:
         when = local_time(datetime.fromisoformat(at), CheckContext(b, {"country": cu.attrs.get("country")}, CLOCKS[b][1]))             if at and a["status"] == "scheduled" else None
         return {"message": a["payload"]["message"], "language": a["payload"].get("language"), "status": a["status"],
                 "sends_at_local": when, "checks": (a["payload"].get("verification") or {}).get("code_checks")}
+
+    def seed_owner_choice(b: str) -> None:
+        """The demo's one owner choice already made (DEMO_OWNER_CHOICES): approve that customer's money question with
+        the offer at the owner's limit, exactly as the owner would on the card. Once per demo start: the audit log
+        marks it, so a visitor who later rejects or changes it is never overruled, and Reset demo sets it up again."""
+        name = DEMO_OWNER_CHOICES.get(b)
+        store = state.stores[b]
+        if not name or any(e["event"] == DEMO_CHOICE_EVENT for e in store.audit_log()):
+            return
+        by = DEMO_SETUP if state.public_demo else "owner:demo"
+        store.audit(by, DEMO_CHOICE_EVENT, "customer", None, {"customer": name, "choice": OFFER_CHOICE})
+        for p in queue(store):
+            a = p["action"]
+            cu = state.data[b].customers.get(a["customer_key"])
+            pick = next((o for o in (a["payload"] or {}).get("owner_options") or [] if o.startswith(OFFER_CHOICE)), None)
+            if cu is None or cu.name != name or pick is None:
+                continue
+            v = (a["payload"] or {}).get("verification") or {}
+            try:  # offline (mock) the stand-in's draft may fail a soft check: the owner may send it, as on the card
+                done = approve(store, p["id"], by, context_for=lambda k: ctx_for(b, k), choice=pick,
+                               override=bool(v) and not v.get("passed"))
+            except ValueError:
+                return  # a hard failure: nothing to set up (never overridden)
+            owner_offer(b, done, by)
+            return
 
     def owner_offer(b: str, action: dict, by: str) -> dict | None:
         """The owner chose "Offer up to N% (your limit)": a fixed offer written by code, at the owner's limit, out when
@@ -803,6 +836,47 @@ def create_app(llm: LLM | None = None) -> FastAPI:
             return out
 
     SLOP_STAGES = {"birgunj": ("complaint", "festival", "wholesale"), "brightdesk": ("stuck", "at_risk_renewal", "quiet")}
+
+    @app.get("/businesses/{b}/english")
+    def english(b: str = Depends(business)):
+        """In English, for readers who don't read the customer's language: a translation of every non-English customer
+        message, quote and reply the demo's pages show, keyed by the exact text. Labelled a translation for readers on
+        the page; never sent, and nothing else reads it. Muse Spark 1.3 translates (recorded, replayed); code checks
+        each one (translate.check) and withholds any that adds a number or a claim. Made once, from the demo's start."""
+        from . import translate
+
+        with state.lock:
+            if b not in state.english:
+                token = _visitor.set(None)  # the demo's start, never one visitor's changes
+                try:
+                    reps = replies(b)
+                    texts: dict[str, list[str]] = {}  # customer -> what the pages show of theirs
+                    for k in list(dict.fromkeys(showcase(b) + [r["customer"]["key"] for r in reps])):
+                        cu = state.data[b].customers[k]
+                        mine = [src.text for src in cu.sources if src.text]
+                        if k in state.decided[b]:
+                            c = card(b, k, state.decided[b][k])
+                            mine += [c["decision"].get("message") or ""]
+                            mine += [e["value"] for e in c["evidence"] if e["kind"] == "quote"]
+                            mine += [(c.get("holding_reply") or {}).get("message") or "",
+                                     (c.get("owner_offer") or {}).get("message") or ""]
+                            mine += [i.get("quote") or "" for group in profile_of(b, k).insights.values()
+                                     if isinstance(group, list) for i in group if isinstance(i, dict)]
+                        texts[k] = mine
+                    out: dict[str, dict] = {}
+                    for k, mine in texts.items():  # one call per customer: their texts together, in context
+                        out.update(translate.translate(mine, state.llm, data_class=state.data[b].data_class))
+                    plain = [x["plain"]["text"] for x in slop_view(b)]
+                    out.update(translate.translate(plain, state.llm, data_class=state.data[b].data_class))
+                finally:
+                    _visitor.reset(token)
+                state.english[b] = {
+                    "translations": {t: x["english"] for t, x in out.items() if x["english"]},
+                    "withheld": {t: x["problems"] for t, x in out.items() if not x["english"]},
+                    "recorded": any(x["english"] for x in out.values())
+                    and all(x["recorded"] for x in out.values() if x["english"]),
+                }
+            return state.english[b]
 
     @app.get("/businesses/{b}/slop")
     def slop_view(b: str = Depends(business)):

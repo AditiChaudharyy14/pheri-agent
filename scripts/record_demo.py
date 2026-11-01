@@ -49,6 +49,8 @@ def run() -> dict:
             cards.update({card["customer"]["key"]: card for card in r.json()})
         # Slop vs Pheri: the plain drafts are model replies too, recorded with the cards (Birgunj, the hero).
         client.get("/businesses/birgunj/slop").raise_for_status()
+        # In English, for readers: Muse Spark 1.3's translations of what the pages show, checked in code (translate.py).
+        client.get("/businesses/birgunj/english").raise_for_status()
         client.get("/businesses/birgunj/brief").raise_for_status()  # no model: it must not need one either
         # Speak a rule: the owner's recorded voice note -> Muse Voice -> the rule compiler (recorded, so a visitor's
         # sandbox replays it). Proposed only, never confirmed here: the decisions above stay as they are.
@@ -91,6 +93,7 @@ def main() -> None:
     ap.add_argument("--live", action="store_true")
     ap.add_argument("--budget", type=float, default=0.60, help="USD on the Meta Model API")
     ap.add_argument("--baseten-budget", type=float, default=0.30, help="USD on Baseten (the judge)")
+    ap.add_argument("--max-calls", type=int, default=50, help="new (paid) model calls at most; then the run stops")
     args = ap.parse_args()
 
     os.environ["DATABASE_URL"] = ""
@@ -114,6 +117,15 @@ def main() -> None:
                       PHERI_META_CAP_USD=f"{spent + args.budget:.6f}",
                       PHERI_BASETEN_CAP_USD=f"{spent_b + args.baseten_budget:.6f}")
     before = len(RECORDING.read_text(encoding="utf-8").splitlines()) if RECORDING.exists() else 0
+    paid = []
+
+    def at_most(purpose, r, messages, kw):  # CLAUDE.md: a live run over 50 calls is asked for first
+        if not r.recorded:
+            paid.append(purpose)
+            if len(paid) > args.max_calls:
+                raise SystemExit(f"Stopped: more than {args.max_calls} new model calls ({len(paid)}). What was recorded "
+                                 "is kept; ask before going on.")
+    watch_calls(at_most)
     cards = run()
     rows = [json.loads(x) for x in RECORDING.read_text(encoding="utf-8").splitlines()[before:]]
     print(f"Recorded {len(rows)} new replies, ${sum(r['cost_usd'] for r in rows):.4f}: " +

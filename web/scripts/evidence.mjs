@@ -101,16 +101,11 @@ if (state === "main") {
     console.log(`${out}/success-${vp}.png`);
     await page.close();
   }
-  // Speak a rule, the demo's flow: approve "Offer up to 15%" on a money card (a code-written offer waits for 8:00),
-  // play the owner's voice note into a rule (10%), confirm it, and the offer flips to "Blocked by your new rule".
+  // Speak a rule, as a first-time visitor meets it: the demo starts with the owner's "Offer up to 15% off" already
+  // chosen for Salma Pandey (a code-written offer waits for 08:00). Straight to the rules, nothing approved first:
+  // play the owner's voice note into a rule (10%), confirm it, and the offer flips to "Blocked by your rule".
   const page = await browser.newPage({ viewport: VIEWPORTS["1440x900"], deviceScaleFactor: 1 });
-  await page.goto(BASE + "/birgunj", { waitUntil: "networkidle" });
-  const offer = page.getByRole("button", { name: /^Offer up to 15% off \(your limit\)$/ }).first();
-  if (!(await offer.count())) problems.push("speak a rule: no money card offers 'Offer up to 15% off (your limit)'");
-  else {
-    await offer.click();
-    await page.waitForLoadState("networkidle");
-    await page.waitForTimeout(500);
+  {
     await page.goto(BASE + "/birgunj/rules", { waitUntil: "networkidle" });
     await page.getByRole("button", { name: "Turn this voice note into a rule" }).click();
     await page.getByText("What code will enforce:").waitFor({ timeout: 60_000 });

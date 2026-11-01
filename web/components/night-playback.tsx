@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useReducer, useState, useSyncExternalStore } from "react";
 import type { NightEvent } from "@/lib/api";
 import { actionLabel, clockNPT, LANGUAGE_NAME, OUTCOME } from "@/lib/labels";
+import { InEnglish } from "@/components/in-english";
 
 /** Replays the recorded night. Messages arrive on a clock that ticks from 21:00 to 06:00 (Nepal time), at the time
  * each one came in; at 06:15 the night shift runs (as it really does) and each row ticks through its steps: read,
@@ -218,7 +219,10 @@ export function NightPlayback({ business, events }: { business: string; events: 
                 {e.kind === "voice_note" ? " · voice note" : ""}
               </p>
               {e.text ? (
-                <p lang={e.lang ?? undefined} className="mt-0.5 font-serif text-[1.05rem] leading-snug text-ink">&ldquo;{e.text}&rdquo;</p>
+                <p lang={e.lang ?? undefined} className="mt-0.5 font-serif text-[1.05rem] leading-snug text-ink">
+                  &ldquo;{e.text}&rdquo;
+                  <InEnglish text={e.text} />
+                </p>
               ) : (
                 <p className="mt-0.5 text-[0.95rem] text-amber">{e.voice}</p>
               )}
@@ -230,6 +234,7 @@ export function NightPlayback({ business, events }: { business: string; events: 
                       {s.note && (
                         <span lang={s.lang} className="mt-1 block border-l-2 border-line-2 pl-3 font-normal text-ink-2">
                           {s.note}
+                          <InEnglish text={s.note} />
                         </span>
                       )}
                     </li>

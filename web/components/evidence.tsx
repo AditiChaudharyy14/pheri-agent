@@ -1,5 +1,6 @@
 import type { Evidence, Receipt } from "@/lib/api";
 import { CHANNEL_NAME, factLabel, factValue, langOf } from "@/lib/labels";
+import { InEnglish } from "@/components/in-english";
 
 /** Every claim carries its receipt: the customer's own words (in their script) with where and when they wrote it,
  * or the shop's order numbers a fact was counted from. The model picked the evidence by id; code filled it in. */
@@ -15,6 +16,7 @@ export function EvidenceChips({ evidence }: { evidence: Evidence[] }) {
           <blockquote lang={e.receipt?.kind === "message" ? langOf(e.receipt.lang) : undefined}
                       className="font-serif text-[1.05rem] leading-snug text-ink">
             &ldquo;{e.value}&rdquo;
+            <InEnglish text={e.value} />
           </blockquote>
           <figcaption className="mt-1 text-[0.8rem] text-muted">{receiptText(e.receipt)}</figcaption>
         </figure>

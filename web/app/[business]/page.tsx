@@ -6,7 +6,9 @@ import { EvidenceChips } from "@/components/evidence";
 import { StartHere } from "@/components/start-here";
 import { Skeleton } from "@/components/ui";
 import { api, pct, type Brief, type NextStepWithTime, type HoldingReply, type OwnerOffer } from "@/lib/api";
-import { actionLabel, clockNPT, dayNPT, LANGUAGE_NAME, OUTCOME, stageLabel } from "@/lib/labels";
+import { actionLabel, BUSINESS_INTRO, clockNPT, dayNPT, LANGUAGE_NAME, OUTCOME, stageLabel } from "@/lib/labels";
+import { InEnglish } from "@/components/in-english";
+import { TourNext } from "@/components/tour-next";
 
 /** The owner's morning check, usually on a phone: what the night shift did, in sentences, then what needs them. */
 export default function MorningPage({ params }: PageProps<"/[business]">) {
@@ -26,6 +28,9 @@ async function Morning({ params }: { params: PageProps<"/[business]">["params"] 
   return (
     <div className="mx-auto max-w-[56rem] space-y-8">
       <header>
+        {BUSINESS_INTRO[business] && (
+          <p className="mb-3 max-w-[46rem] text-[1.02rem] leading-snug text-ink-2">{BUSINESS_INTRO[business]}</p>
+        )}
         <p className="text-[0.9rem] text-muted">
           {dayNPT(b.morning)} · {clockNPT(b.morning)}
           {night && nightShift && <> · the night shift finished at {clockNPT(b.night)}</>}
@@ -96,6 +101,8 @@ async function Morning({ params }: { params: PageProps<"/[business]">["params"] 
           )}
         </section>
       )}
+
+      {night && <TourNext business={business} step={1} />}
 
       {b.unreadable_voice.length > 0 && (
         <aside role="status" className="rounded-xl border-l-4 border-marigold bg-amber-soft px-4 py-3 text-[0.98rem] text-ink">
@@ -186,6 +193,7 @@ async function Morning({ params }: { params: PageProps<"/[business]">["params"] 
                 </p>
                 <p lang={r.written_in ?? r.language} className="mt-1 font-serif text-[1.05rem] leading-snug text-ink">
                   &ldquo;{r.text}&rdquo;
+                  <InEnglish text={r.text} />
                 </p>
                 {r.holding_reply && <HoldingLine h={r.holding_reply} />}
               </li>
@@ -280,7 +288,10 @@ function NeedYou({ business, step }: { business: string; step: NextStepWithTime 
       </p>
       {why && <p className="mt-1 text-[0.95rem] text-ink-2">{why}</p>}
       {d.message && !task && (
-        <blockquote className="mt-3 border-l-2 border-line-2 pl-3 leading-relaxed text-ink">{d.message}</blockquote>
+        <blockquote className="mt-3 border-l-2 border-line-2 pl-3 leading-relaxed text-ink">
+          {d.message}
+          <InEnglish text={d.message} />
+        </blockquote>
       )}
       <div className="mt-3">
         <EvidenceChips evidence={step.evidence} />
@@ -309,6 +320,7 @@ function HoldingLine({ h }: { h: HoldingReply }) {
         {" "}· a fixed reply written by code, not by a model{h.checks ? ` · ${h.checks} checks passed` : ""}
       </p>
       <p lang={h.language ?? undefined} className="mt-0.5 text-[0.95rem] leading-snug text-ink-2">{h.message}</p>
+      <InEnglish text={h.message} />
     </div>
   );
 }
@@ -324,6 +336,7 @@ function OfferLine({ o }: { o: OwnerOffer }) {
     <span className="mt-1 block text-[0.88rem] text-ink-2">
       <span className="text-teal-ink">+ your {o.pct}% offer, written by code, {o.status === "scheduled" ? "goes out at 08:00" : o.status}:</span>{" "}
       <span lang={o.language ?? undefined}>{o.message}</span>
+      <InEnglish text={o.message} />
     </span>
   );
 }
@@ -332,7 +345,7 @@ function Ready({ business, step, sent = false }: { business: string; step: NextS
   const d = step.decision;
   return (
     <details className="group py-3">
-      <summary className="flex cursor-pointer list-none items-baseline justify-between gap-3">
+      <summary className="flex cursor-pointer list-none flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 sm:flex-nowrap">
         <span className="min-w-0">
           <span className="font-medium text-ink">{step.customer.name}</span>{" "}
           <span className="text-[0.92rem] text-ink-2">· {actionLabel(d.action)}</span>
@@ -348,13 +361,16 @@ function Ready({ business, step, sent = false }: { business: string; step: NextS
             </span>
           )}
         </span>
-        <span className="shrink-0 text-[0.85rem] text-teal-ink">
+        <span className="min-w-0 text-[0.85rem] text-teal-ink sm:max-w-[45%] sm:shrink-0 sm:text-right">
           {step.approval?.decision === "approved" ? `✓ approved by you${step.owner_choice ? ` (${step.owner_choice.toLowerCase()})` : ""}, ` : ""}
           {sent ? (step.approval?.decision === "approved" ? "sent" : "✓ sent") : `${step.sends_at_local ?? "08:00"} their time`}
         </span>
       </summary>
       <div className="mt-2 space-y-3 pl-0">
-        <p className="leading-relaxed text-ink">{d.message}</p>
+        <p className="leading-relaxed text-ink">
+          {d.message}
+          <InEnglish text={d.message} />
+        </p>
         <p className="text-[0.92rem] text-ink-2">
           <span className="text-muted">Why: </span>
           {d.why_this}

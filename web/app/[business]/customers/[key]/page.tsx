@@ -6,6 +6,7 @@ import { EvidenceChips } from "@/components/evidence";
 import { Badge, Card, Chip, Label, ModeBadge, Skeleton, StageBadge } from "@/components/ui";
 import { api, customerPath, type CustomerDetail, type Insight, type NextStep, type Profile } from "@/lib/api";
 import { actionLabel, CHANNEL_LABEL, factLabel, factValue, STATUS_LABEL } from "@/lib/labels";
+import { InEnglish } from "@/components/in-english";
 
 type Params = PageProps<"/[business]/customers/[key]">["params"];
 
@@ -118,6 +119,7 @@ async function Customer({ params }: { params: Params }) {
             {step.decision.message && (
               <blockquote className="mt-3 border-l-2 border-teal/40 pl-4 leading-relaxed text-ink-2">
                 {step.decision.message}
+                <InEnglish text={step.decision.message} />
               </blockquote>
             )}
             <div className="mt-4 space-y-3">
@@ -193,7 +195,10 @@ function Quotes({ profile }: { profile: Profile }) {
             ) : null}
             {title === "Language" && i.code ? <span className="block text-ink-2">{i.code}</span> : null}
           </span>
-          <span className="font-serif text-[1.08rem] leading-snug text-ink">&ldquo;{i.quote}&rdquo;</span>
+          <span className="font-serif text-[1.08rem] leading-snug text-ink">
+            &ldquo;{i.quote}&rdquo;
+            <InEnglish text={i.quote} />
+          </span>
         </li>
       ))}
     </ul>

@@ -406,10 +406,10 @@ def test_only_the_send_step_marks_a_message_executed():
 def test_every_doc_that_states_the_number_of_code_checks_states_len_code_checks():
     """One constant, CODE_CHECKS: the code reads it; the prose that states the number is pinned to it here."""
     stated = []
-    for doc in ("README.md", "CLAUDE.md", "docs/DEPLOY.md", "api/pheri/app.py", "web/lib/api.ts",
+    for doc in ("README.md", "CLAUDE.md", "docs/DEPLOY.md", "docs/LESSONS.md", "api/pheri/app.py", "web/lib/api.ts",
                 "web/components/decided-by.tsx"):
         text = (REPO_ROOT / doc).read_text(encoding="utf-8")
-        stated += [(doc, int(n)) for n in re.findall(r"\b(\d+) (?:code )?checks\b", text)]
+        stated += [(doc, int(n)) for n in re.findall(r"\b(\d+) (?:code |named )?checks\b", text)]
     assert stated and all(n == len(CODE_CHECKS) for _, n in stated), stated
 
 

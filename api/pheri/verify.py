@@ -580,6 +580,9 @@ def claims(d: Draft) -> list[str]:
 # A sentence ends at . ? ! (then a space), or at the Devanagari danda । or double danda ॥ (a space or not): one
 # claim per sentence in Nepali, Hindi and Bhojpuri too, so one false sentence fails alone.
 CLAIM_END = re.compile(r"(?<=[.!?])\s+|(?<=[।॥])\s*")
+LOTS_HOW = ("A lot (lot, लट, लॉट) holds the number of pieces in its name (a lot of 20 sarees). Stock of a lot is "
+            "counted in lots, stock of an item in pieces. A claim is false if it says a lot is ready and gives a "
+            "number that was pieces, or mixes lots and pieces in any way the cited facts don't.")
 UNASKED_CLAIM = "The message adds nothing the customer didn't ask about and nothing the cited facts don't require."
 UNASKED_HOW = ("Claim x is true only if every sentence answers what customer_question asks, or is needed by a cited "
                "fact (a greeting and a sign-off count as nothing added). It is false if the message brings up a topic "
@@ -611,6 +614,9 @@ def _judge(d: Draft, vc: VerifyContext, evidence: list[dict]) -> tuple[list[dict
         data["how_to_judge_x"] = UNASKED_HOW
         # Seen live: without the whole message the judge could not tell whether it answers ("no message provided").
         data["message"] = d.action.message
+    lots = ("lot", "लट", "लॉट", "bundle")
+    if any(w in " ".join(map(str, data["cited_facts"].values())).casefold() for w in lots):
+        data["lots_and_pieces"] = LOTS_HOW
     if d.action.kind == "send_photos":  # seen live: "photos sent" judged unsupported; code attaches them, say which
         from .shop import photos_for
 
@@ -717,6 +723,15 @@ def verify_draft(d: Draft, vc: VerifyContext) -> Verification:
         sents = [x.strip() for x in CLAIM_END.split(body) if len(re.findall(r"[^\W\d_]", x)) >= 3]
         words = [{w for w in re.findall(r"[\w\u0900-\u097F]+", x.casefold()) if len(w) > 2} for x in sents]
         out = []
+        # the same two-word phrase in two sentences ("स्टकमा छ" twice) is said twice too
+        pairs = [{" ".join(p) for p in zip(ws, ws[1:])} for ws in
+                 ([w for w in re.findall(r"[^\W\d_][\w\u0900-\u097F]*", x.casefold()) if len(w) > 1] for x in sents)]
+        seen: dict[str, int] = {}
+        for i, ps in enumerate(pairs):
+            for p_ in ps:
+                if p_ in seen and seen[p_] != i:
+                    out.append(f"says \u201c{p_}\u201d twice: say it once")
+                seen.setdefault(p_, i)
         owner = [x for x in sents if OWNER.search(x)]
         if len(owner) >= 2:
             out.append(f"says twice that the owner will answer (\u201c{owner[0]}\u201d / \u201c{owner[1]}\u201d): say it once")

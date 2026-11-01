@@ -224,3 +224,42 @@ def test_every_style_rule_is_one_line_so_the_brief_reads_all_of_it():
     lines = (REPO_ROOT / "api" / "pheri" / "style_ne_hi.md").read_text(encoding="utf-8").splitlines()
     first_rule = next(i for i, x in enumerate(lines) if x.startswith("- "))
     assert all(x.startswith("- ") or not x.strip() for x in lines[first_rule:])
+
+
+# ---- round 3: lots counted in lots, phrases said once, India's prices in ₹ by code ---------------------------------
+def test_a_wholesale_buyer_is_quoted_the_lot_counted_in_lots_and_pieces_carry_their_unit():
+    from pheri.shop import facts_for
+
+    lot, _ = facts_for("अर्को लटमा बीसवटा कटन साडी चाहियो, पहिलेकै जस्तो।", "Birgunj", "NP", "tihar", wholesale=True)
+    assert lot["shop_stock"] == "२० वटा कटन साडीको लट: स्टकमा 3 लट, रु 26000"  # lots, never pieces next to a lot
+    pieces, _ = facts_for("यो बनारसी साडी अझै छ?", "Birgunj", "NP", "tihar", wholesale=True)
+    assert "स्टकमा 4 वटा" in pieces["shop_stock"]  # no lot of it: pieces, with the unit
+
+
+def test_the_judge_is_told_how_lots_and_pieces_relate_when_a_lot_is_cited(birgunj, llm, monkeypatch):
+    from pheri import llm as llm_module
+
+    seen = []
+    real = llm_module._mock_responders["judge"]
+    monkeypatch.setitem(llm_module._mock_responders, "judge",
+                        lambda m, s: seen.append(json.loads(m[-1]["content"])) or real(m, s))
+    sanjay = next(k for k, c in birgunj.customers.items() if c.name == "Sanjay Karna")
+    check(birgunj, llm, sanjay, "offer_reorder", "नमस्ते सञ्जय जी, २० वटा कटन साडीको लट स्टकमा 3 लट छ, रु 26000।",
+          facts=("journey_stage", "shop_stock"))
+    assert seen and "counted in lots" in seen[-1]["lots_and_pieces"]
+
+
+def test_the_same_phrase_twice_in_one_message_fails(birgunj, llm):
+    _, v = check(birgunj, llm, DINESH, "send_photos",
+                 "नमस्ते दिनेश जी, तिहार कलेक्सन स्टकमा छ। फोटो पठाएका छौं। ढाका साडी स्टकमा छ।",
+                 facts=("journey_stage", "shop_collection"))
+    assert "repeats" in failed(v) and "स्टकमा छ" in " ".join(v.reasons)
+
+
+def test_customers_in_india_see_rupees_too_converted_by_code_at_1_6():
+    from pheri.shop import facts_for, money
+
+    assert money(2400, "hi", india=True) == "रु 2400 (₹1500)" and money(2400, "en", india=True) == "Rs 2400 (₹1500)"
+    assert money(2400, "ne") == "रु 2400"  # Nepal: no ₹
+    f, _ = facts_for("पिछली बार वाली साड़ी बहुत अच्छी थी। वैसी और है?", "Raxaul", "IN", "tihar", last_item="Georgette saree")
+    assert "रु 2400 (₹1500)" in f["shop_stock"]

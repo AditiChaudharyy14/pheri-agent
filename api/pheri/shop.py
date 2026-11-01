@@ -78,8 +78,13 @@ def _category(text: str | None) -> str | None:
 # wholesale buyer is told how many. No photo id is ever in a fact: code attaches the photos (photos_for).
 DEVANAGARI = ("ne", "hi", "bho")
 STOCK_WORDS = {"en": "in stock", "ne-Latn": "stock ma chha", "ne": "स्टकमा छ", "hi": "स्टॉक में है", "bho": "स्टॉक में बा"}
-COUNT_WORDS = {"en": "{n} in stock", "ne-Latn": "stock ma {n}", "ne": "स्टकमा {n}", "hi": "स्टॉक में {n}",
-               "bho": "स्टॉक में {n} गो"}
+# Counts always carry their unit: pieces for an item, lots for a wholesale lot (a lot holds N pieces), so a reply
+# never says "the lot is ready" next to a smaller number that was really pieces.
+COUNT_WORDS = {"en": "{n} pieces in stock", "ne-Latn": "stock ma {n} wota", "ne": "स्टकमा {n} वटा",
+               "hi": "स्टॉक में {n} पीस", "bho": "स्टॉक में {n} गो"}
+LOT_WORDS = {"en": "{n} lots in stock", "ne-Latn": "stock ma {n} lot", "ne": "स्टकमा {n} लट",
+             "hi": "स्टॉक में {n} लॉट", "bho": "स्टॉक में {n} लॉट"}
+INR_PER_NPR = 1 / 1.6  # the fixed rate for customers in India: रु 2400 (₹1500). Code converts; the model copies.
 COLLECTION = {"en": "{f} collection: {items}; from {money}", "ne-Latn": "{f} collection: {items}; {money} dekhi",
               "ne": "{f} कलेक्सन: {items}; {money} देखि", "hi": "{f} कलेक्शन: {items}; {money} से",
               "bho": "{f} कलेक्शन: {items}; {money} से"}
@@ -93,8 +98,10 @@ LAST_ORDER = {"en": "Last order on record: {items}, {money}", "ne-Latn": "Pachhi
               "bho": "पिछला ऑर्डर: {items}, {money}"}
 
 
-def money(n: int | float, lang: str) -> str:
-    return f"रु {n:g}" if lang in DEVANAGARI else f"Rs {n:g}"
+def money(n: int | float, lang: str, india: bool = False) -> str:
+    """रु in Devanagari, Rs in Roman letters; for a customer in India the rupee amount too, converted here."""
+    npr = f"रु {n:g}" if lang in DEVANAGARI else f"Rs {n:g}"
+    return f"{npr} (₹{round(n * INR_PER_NPR)})" if india and n else npr
 
 
 def _lang(lang: str) -> str:
@@ -105,19 +112,27 @@ def _name(it: dict, lang: str) -> str:
     return (it.get("names") or {}).get(lang) or it["name"]
 
 
-def _item_line(it: dict, lang: str, wholesale: bool) -> str:
+def _item_line(it: dict, lang: str, wholesale: bool, india: bool = False) -> str:
     lang = _lang(lang)
+    lot = it["id"].startswith("BSG-W")  # a wholesale lot: counted in lots
     stock = "" if it["stock"] is None else (
-        COUNT_WORDS[lang].format(n=it["stock"]) if wholesale else STOCK_WORDS[lang]) + ", "
-    return f"{_name(it, lang)}: {stock}{money(it['price_npr'], lang)}"
+        (LOT_WORDS if lot else COUNT_WORDS)[lang].format(n=it["stock"]) if wholesale else STOCK_WORDS[lang]) + ", "
+    return f"{_name(it, lang)}: {stock}{money(it['price_npr'], lang, india)}"
 
 
-def _collection_line(s: dict, fest: str, lang: str) -> str:
+def _lot_for(it: dict, s: dict) -> dict | None:
+    """The wholesale lot of this item, if the shop sells one ("Cotton saree" -> "Cotton saree bundle x20")."""
+    base = it["name"].casefold()
+    names = [n.casefold() for n in (it.get("order_names") or [])] + [base]
+    return next((b for b in s.get("bundles", []) if any(b["name"].casefold().startswith(n) for n in names)), None)
+
+
+def _collection_line(s: dict, fest: str, lang: str, india: bool = False) -> str:
     lang = _lang(lang)
     items = [it for it in s["catalog"] if it["id"] in s["collections"][fest]]
     fest_name = (s.get("festival_names", {}).get(fest) or {}).get(lang) or fest.title()
     return COLLECTION[lang].format(f=fest_name, items=", ".join(_name(it, lang) for it in items),
-                                   money=money(min(it["price_npr"] for it in items), lang))
+                                   money=money(min(it["price_npr"] for it in items), lang, india))
 
 
 def _by_order_name(s: dict, name: str) -> dict | None:
@@ -168,12 +183,16 @@ def facts_for(text: str | None, town: str | None, country: str | None, festival:
         items = [it for it in last if named is None or it["category"] == named]
     facts, prov = {}, {}
     where = asked_town(text) or town
+    india = (s["delivery"].get(where, {}).get("country") or country) == "IN"  # prices in ₹ too, converted by code
+    if wholesale:  # a wholesale buyer is quoted the lot, counted in lots, not the pieces
+        items = [_lot_for(it, s) or it for it in items]
+        items = list({it["id"]: it for it in items}.values())
     if ("delivery" in on or asked_town(text)) and where in s["delivery"]:
         d = s["delivery"][where]
         t = s.get("town_names", {}).get(where, where) if lang in DEVANAGARI else where
         paid, free = DELIVERY[lang]
         facts["shop_delivery"] = (paid if d["charge_npr"] else free).format(
-            t=t, d=d["days"], s="s" if d["days"] > 1 else "", money=money(d["charge_npr"], lang))
+            t=t, d=d["days"], s="s" if d["days"] > 1 else "", money=money(d["charge_npr"], lang, india))
         prov["shop_delivery"] = ["shop:delivery"]
     if "cod" in on:
         rule = s["cod"].get(s["delivery"].get(where, {}).get("country", country or "NP"), s["cod"]["NP"])
@@ -181,13 +200,13 @@ def facts_for(text: str | None, town: str | None, country: str | None, festival:
     if "size" in on:
         facts["shop_size_guide"], prov["shop_size_guide"] = s["size_guide"].get(lang, s["size_guide"]["en"]),             ["shop:size_guide"]
     if items and on & {"stock", "price", "photos", "designs", "size"}:
-        facts["shop_stock"] = "; ".join(_item_line(it, lang, wholesale) for it in items)
+        facts["shop_stock"] = "; ".join(_item_line(it, lang, wholesale, india) for it in items)
         prov["shop_stock"] = ["shop:catalog:" + ",".join(it["id"] for it in items)]
     if on & {"designs", "photos"}:
         fests = s["collections"]
         fest = next((f for f in fests if f in (text or "").casefold() or _alias(text, f)), None) or festival
         if fest in fests:
-            facts["shop_collection"] = _collection_line(s, fest, lang)
+            facts["shop_collection"] = _collection_line(s, fest, lang, india)
             prov["shop_collection"] = ["shop:collections:" + ",".join(fests[fest])]
     if "returns" in on:
         facts["shop_returns"], prov["shop_returns"] = s["returns"].get(lang, s["returns"]["en"]), ["shop:returns"]
@@ -195,9 +214,10 @@ def facts_for(text: str | None, town: str | None, country: str | None, festival:
         lines = [_by_order_name(s, n) for n in last_order["items"].split(";")]
         known = [it for it in lines if it]
         names = ", ".join(_name(it, lang) for it in known) or last_order["items"]
-        facts["shop_last_order"] = LAST_ORDER[lang].format(items=names, money=money(last_order["total_npr"], lang))
+        facts["shop_last_order"] = LAST_ORDER[lang].format(items=names,
+                                                           money=money(last_order["total_npr"], lang, india))
         if known:
-            facts["shop_last_order"] += "; " + "; ".join(_item_line(it, lang, wholesale) for it in known)
+            facts["shop_last_order"] += "; " + "; ".join(_item_line(it, lang, wholesale, india) for it in known)
         prov["shop_last_order"] = ["shop:last_order:" + ",".join(it["id"] for it in known)]
     return facts, prov
 

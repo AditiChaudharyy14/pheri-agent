@@ -121,6 +121,25 @@ HINDI = {"है", "हैं", "के", "की", "का", "में", "स�
          "आए", "वाली", "वाला", "बहुत", "अच्छी", "जैसा", "मेरा", "आपका", "मिल", "गया", "गई", "कर", "कब", "तक", "हफ्ते"}
 
 
+# Words that belong to one language only (native review, 1 Nov: a Bhojpuri customer got "स्टकमा छ", Nepali). A
+# Bhojpuri or Hindi reply with a Nepali-only word, or a Nepali reply with a Hindi/Bhojpuri-only word, fails the
+# language check. Whole words only; the code-set sign-off is not counted. Wait for a native review like every list.
+NEPALI_ONLY = {"छ", "छन्", "छैन", "छौं", "छौँ", "हुन्छ", "हुनुहुन्छ", "दिनुहुन्छ", "दिनुहुनेछ", "गर्नुहोस्", "पठाएका",
+               "पठाएको", "पठाउनुहोस्", "मिल्छ", "सक्नुहुन्छ", "भयो", "थियो", "हजुर", "हजुरको", "तपाईं", "तपाईँ", "तपाईंको",
+               "हामी", "स्टकमा", "साडी", "देखि", "लागि", "पनि", "अनि", "चाहन्छौं", "बुझेका", "नेपालभित्र", "आफैं",
+               "आफैँ", "बिहान", "जवाफ"}
+HINDI_BHOJPURI_ONLY = {"है", "हैं", "बा", "बानी", "बाड़न", "में", "से", "और", "नहीं", "आप", "आपका", "आपकी", "आपके",
+                       "रउआ", "रउरा", "देंगे", "दिहें", "भेजिहें", "साड़ी", "होगा", "होगी", "करेंगे", "जाएगा", "सुबह",
+                       "जवाब", "भोरे", "स्टॉक"}
+
+
+def foreign_words(message: str, want: str) -> list[str]:
+    """Words of the other language in a reply meant for `want` (ne, hi or bho), in the order they appear."""
+    words = re.findall(r"[\u0900-\u0963\u0966-\u097F]+", message or "")
+    other = NEPALI_ONLY if want in ("hi", "bho") else HINDI_BHOJPURI_ONLY if want == "ne" else set()
+    return list(dict.fromkeys(w for w in words if w in other))
+
+
 def read_language(text: str) -> str:
     """Code's reading of a message's language and script: ne-Latn (Nepali in Latin letters), bho, ne, hi, en, es,
     pt. Script first, then marker words."""

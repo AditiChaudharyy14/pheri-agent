@@ -22,8 +22,9 @@ here reaches the next draft. Aditi adds more rules after her native review.
 - Never leave a product name in English: use the shop file's own name in their language ("छठ खातिर पियर कॉटन साड़ी").
 - Answer only what they asked: no cash on delivery if they asked about stock, no festival they never named.
 - Money: "रु" in Devanagari, "Rs" in Roman letters, never "NPR".
-- A retail customer hears "स्टकमा छ" (in stock) without a count; counts are for wholesale buyers only.
+- A retail customer hears it is in stock, without a count, in their language: Nepali "स्टकमा छ", Hindi "स्टॉक में है", Bhojpuri "स्टॉक में बा". Counts are for wholesale buyers only.
+- Never mix languages: no Nepali word (छ, हुन्छ, साडी, हजुर) in a Hindi or Bhojpuri reply, no Hindi or Bhojpuri word (है, बा, साड़ी, में, से) in a Nepali one.
 - The greeting is in the reply's script: never a Latin "Namaste" or "Hi" in a Devanagari reply.
 - In Nepali, the size line is: "छातीको सबैभन्दा फराकिलो भाग नापेर १ इन्च थप्नुहोस्".
-- To send photos, use the send photos step and say "फोटो पठाएका छौं" ("photo pathayeka chhau"); never write a photo id.
+- To send photos, use the send photos step and say so in their language: Nepali "फोटो पठाएका छौं", Roman Nepali "photo pathayeka chhau", Hindi "फोटो भेज दी हैं", Bhojpuri "फोटो भेज देले बानी"; never write a photo id.
 - A late delivery: the reply starts with an apology ("देरी के लिए माफ़ी चाहते हैं"; Bhojpuri "देरी खातिर माफी चाहत बानी").

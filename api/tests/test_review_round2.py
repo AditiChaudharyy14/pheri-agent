@@ -194,3 +194,33 @@ def test_the_judge_is_told_which_photos_code_attaches(birgunj, llm, monkeypatch)
     check(birgunj, llm, DINESH, "send_photos", "नमस्ते दिनेश जी, तिहारका नयाँ डिजाइनको फोटो पठाएका छौं।",
           facts=("journey_stage", "shop_collection"))
     assert seen[-1]["photos_attached_by_code"] and all("PH-" not in x for x in seen[-1]["photos_attached_by_code"])
+
+
+# ---- the customer's language, not a neighbour's (1 Nov: Sita Shrestha, Bhojpuri, got "स्टकमा छ") ------------------
+def test_nepali_words_in_a_bhojpuri_or_hindi_reply_fail_the_language_check_and_the_reverse():
+    from pheri.words import foreign_words
+
+    assert foreign_words("छठ खातिर पियर कॉटन साड़ी स्टकमा छ। फोटो पठाएका छौं।", "bho") == ["स्टकमा", "छ", "पठाएका", "छौं"]
+    assert foreign_words("छठ की पीली कॉटन साड़ी स्टकमा छ।", "hi") == ["स्टकमा", "छ"]
+    assert foreign_words("रातो बनारसी साडी स्टॉक में है।", "ne") == ["स्टॉक", "में", "है"]
+    assert foreign_words("छठ खातिर पियर कॉटन साड़ी स्टॉक में बा। फोटो भेज देले बानी।", "bho") == []
+    assert foreign_words("रातो बनारसी सिल्क साडी स्टकमा छ। फोटो पठाएका छौं।", "ne") == []
+
+
+def test_a_bhojpuri_reply_with_nepali_words_fails_and_the_sign_off_never_counts(birgunj, llm):
+    sita = next(k for k, c in birgunj.customers.items() if c.name == "Sita Shrestha")
+    _, v = check(birgunj, llm, sita, "send_photos",
+                 "नमस्ते सीता जी, छठ खातिर पियर कॉटन साड़ी स्टकमा छ। फोटो पठाएका छौं। – बिरगंज साड़ी घर",
+                 facts=("journey_stage", "shop_stock"))
+    assert "language" in failed(v) and "Nepali words (स्टकमा, छ" in " ".join(v.reasons)
+    _, v = check(birgunj, llm, sita, "send_photos",
+                 "नमस्ते सीता जी, छठ खातिर पियर कॉटन साड़ी स्टॉक में बा। फोटो भेज देले बानी। – बिरगंज साड़ी घर",
+                 facts=("journey_stage", "shop_stock"))
+    assert "language" not in failed(v)
+
+
+def test_every_style_rule_is_one_line_so_the_brief_reads_all_of_it():
+    """The brief takes the guide's "- " lines; a rule wrapped onto a second line would lose that line."""
+    lines = (REPO_ROOT / "api" / "pheri" / "style_ne_hi.md").read_text(encoding="utf-8").splitlines()
+    first_rule = next(i for i, x in enumerate(lines) if x.startswith("- "))
+    assert all(x.startswith("- ") or not x.strip() for x in lines[first_rule:])

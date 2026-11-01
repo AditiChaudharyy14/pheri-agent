@@ -57,8 +57,8 @@ from .actions import BUSINESS_ACTIONS, CATALOG, CHANNELS, REACTIVE_ACTIONS, Prop
 from .journey import Journey
 from .llm import LLM, ModelOutputError, register_mock
 from .rules import CheckContext, active_rules, check, next_send_time
-from .words import (FACT_WORDS, LANGUAGE_NAMES, SIGN_OFF, _OWNER as OWNER, festivals_named, internal_ids, promises,
-                    read_language)
+from .words import (FACT_WORDS, LANGUAGE_NAMES, SIGN_OFF, _OWNER as OWNER, festivals_named, foreign_words, internal_ids,
+                    promises, read_language)
 
 # ---- settings ---------------------------------------------------------------------
 MAX_MESSAGE_CHARS = 420  # two or three short sentences and a sign-off
@@ -672,6 +672,13 @@ def verify_draft(d: Draft, vc: VerifyContext) -> Verification:
         got = read_language(msg)
         if want == "ne-Latn" and re.search(r"[ऀ-ॿ]", msg):
             return [f"written in Devanagari, but {first} writes Nepali in Latin letters: reply in Roman Nepali too"]
+        body = msg
+        for sign in SIGN_OFF.values():  # the shop's sign-off is code's, in the reply's own language
+            body = body[:-len(sign)].rstrip() if body.endswith(sign) else body
+        if mixed := foreign_words(body, want):
+            other = "Nepali" if want in ("hi", "bho") else "Hindi or Bhojpuri"
+            return [f"uses {other} words ({', '.join(mixed[:4])}) in a reply to {first}, who writes in "
+                    f"{LANGUAGE_NAMES[want]}: write all of it in {LANGUAGE_NAMES[want]}"]
         if got == want or (want == "bho" and got == "hi"):
             return []
         return [f"written in {LANGUAGE_NAMES.get(got, got)}, but {first} writes in {LANGUAGE_NAMES[want]}"]

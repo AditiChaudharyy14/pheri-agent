@@ -183,6 +183,10 @@ Read this before every task. These rules are not optional.
   Recorded (Meta $1.33, Baseten $0.48 of $2/$1, judge evals included): every drafted card verified; Dinesh, Sita
   Shrestha, Bimala get send_photos with photos attached (the judge is told which photos code attaches); late
   deliveries wait for the owner with the apology first. Judge evals unchanged (20: 10/10, 9/10 S04; 50: 25/25).
+- Language mix (1 Nov, committed locally, NOT pushed: waits for the next re-record): words.foreign_words +
+  NEPALI_ONLY / HINDI_BHOJPURI_ONLY; the language check fails Nepali-only words in a Hindi/Bhojpuri reply and the
+  reverse (sign-off excluded). Style guide: in-stock and photo wording per language, every rule on one line (the
+  brief reads only "- " lines; a test guards it). Until re-recorded, 2 Birgunj replay tests fail.
   Data bug fixed: 28 old messages were dated after the night started (synth._before_night moves them a day back;
   only their timestamps changed); Pooja Ansari's night message was hidden by one, so the brief counted 22, not 23.
 - Attack moment (Step 5, Glimmer cut: Modal needs a card): an attacker gets no word from any model. The owner gets

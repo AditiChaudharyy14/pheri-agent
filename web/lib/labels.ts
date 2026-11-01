@@ -83,6 +83,14 @@ export const FACT_LABEL: Record<string, string> = {
   days_since_enquiry: "days since they asked",
   next_festival: "next festival",
   days_to_next_festival: "days to the festival",
+  shop_delivery: "delivery",
+  shop_cod: "cash on delivery",
+  shop_size_guide: "size guide",
+  shop_stock: "in stock",
+  shop_collection: "festival collection",
+  shop_returns: "exchanges",
+  open_question: "asked a question",
+  asks_about_money: "asked about money",
 };
 
 export const STAGE_LABEL: Record<string, string> = {

@@ -376,6 +376,14 @@ def compute_facts(c: Customer, business: str, today: date = TODAY) -> tuple[dict
             d, k = upcoming[0]
             facts["next_festival"], facts["days_to_next_festival"] = k.split("_")[0], (d - today).days
             prov["next_festival"] = prov["days_to_next_festival"] = [f"calendar:{k}"]
+        # What the shop's own file says about what they asked (delivery to their town, stock, sizes...): facts an
+        # answer may cite. Only for what the newest message is about.
+        from .shop import facts_for
+
+        sf, sp = facts_for(newest.text if newest else None, facts.get("town"), facts.get("country"),
+                           facts.get("next_festival"), business, facts.get("last_order_items"))
+        facts.update(sf)
+        prov.update(sp)
     return facts, prov
 
 
@@ -562,6 +570,7 @@ class Profile:
     money_ask: str | None = None  # refund | discount | rate: for the owner's choices; never shown to the model
     writes_in: str | None = None  # code's reading of their newest message: ne-Latn, bho, ne, hi, en (words.read_language)
     question: str | None = None  # their newest message, when it asks something (for the judge's question claim)
+    festival_word: str | None = None  # their own word for a festival (words.festival_word): Diwali, Tihar...
 
     def as_dict(self) -> dict:
         return dataclasses.asdict(self)
@@ -599,8 +608,11 @@ def build_profile(ds: Dataset, key: str, llm: LLM, today: date = TODAY, private:
     said = sorted((s for s in c.sources if s.kind in CUSTOMER_WRITTEN and s.text), key=lambda x: x.at or "")
     writes_in = read_language(said[-1].text) if said else None
     question = newest.text if facts.get("open_question") and newest else None
+    from .words import festival_word
+
+    fest = festival_word([x.text for x in said])
     return Profile(ds.business, c.key, c.name, c.company, facts, insights, provenance, model, c.pronouns, money,
-                   writes_in, question)
+                   writes_in, question, fest)
 
 
 def build_profiles(ds: Dataset, llm: LLM, keys: list[str] | None = None, limit: int = 20,

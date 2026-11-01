@@ -572,6 +572,8 @@ def create_app(llm: LLM | None = None) -> FastAPI:
                     r = {"kind": "calendar", "name": cal.split(":", 1)[1].split("_")[0]}
                 elif any(x.startswith("events.jsonl") for x in refs):
                     r = {"kind": "activity"}
+                elif shop_ref := next((x for x in refs if x.startswith("shop:")), None):
+                    r = {"kind": "shop", "section": shop_ref.split(":", 1)[1]}
             elif e["kind"] == "quote" and (src := sources.get(e.get("ref"))):
                 r = {"kind": "message", "channel": src.channel or ("email" if src.kind == "ticket" else None),
                      "at": src.at, "lang": src.lang, "from_staff": src.kind == "sales_note"}
@@ -729,6 +731,8 @@ def create_app(llm: LLM | None = None) -> FastAPI:
                 outcome = "stopped"
             elif c["skipped"] == "do_not_contact":
                 outcome = "blocked"
+            elif c["skipped"] == "voice_note":
+                outcome = "voice_note"
             else:
                 outcome = (c["action"] or {}).get("status") or "no_action"
             note = state.voice[b].get(src.id)
@@ -737,6 +741,30 @@ def create_app(llm: LLM | None = None) -> FastAPI:
                         "sends_at_local": c.get("sends_at_local"), "waits_for_owner": c.get("waits_for_owner"),
                         "drafts": c.get("drafts") or [], "holding_reply": c.get("holding_reply")})
         return sorted(out, key=lambda x: x["at"] or "")
+
+    def questions(b: str, cards: list[dict]) -> dict:
+        """Tonight's questions: how many Pheri answered from the shop's facts, and how many it handed to the owner (a
+        deferral). Deferring is right for money decisions, refunds and complaints; anything else is counted as a
+        deferral the shop's facts could have avoided."""
+        from .words import _OWNER
+
+        asked = answered = deferred = owners = 0
+        for c in cards:
+            if c["decided_by"] is None:
+                continue
+            cu = state.data[b].customers[c["customer"]["key"]]
+            f, _ = compute_facts(cu, b)
+            if not f.get("open_question"):
+                continue
+            asked += 1
+            cites_shop = any(str(e.get("ref", "")).startswith("shop_") for e in c["evidence"])
+            hands_over = bool(_OWNER.search(c["decision"].get("message") or "")) and not cites_shop
+            owners_call = bool(f.get("asks_about_money")) or c["customer"]["stage"] == "complaint"
+            answered += not hands_over
+            deferred += hands_over
+            owners += hands_over and owners_call
+        return {"asked": asked, "answered": answered, "deferred": deferred, "deferred_owners_call": owners,
+                "deferral_rate": round(deferred / asked, 3) if asked else None}
 
     def rule_moments(b: str, cards: list[dict]) -> list[dict]:
         """Where the owner's rules stopped something tonight: a customer who asked not to be contacted, or a step a
@@ -749,7 +777,9 @@ def create_app(llm: LLM | None = None) -> FastAPI:
                             "then": "Pheri sent nothing and asked no model."})
                 continue
             for pre in state.decided[b][k].get("prechecks") or []:
-                said = [v for v in pre.get("violations") or [] if "truth set" not in v and "code's stage" not in v]
+                # the owner's rules only: never the middle step's bar (its stage, its plan, a question to answer first)
+                said = [v for v in pre.get("violations") or [] if "truth set" not in v and "code's stage" not in v
+                        and not v.startswith("they asked")]
                 if not pre.get("allowed") and said:
                     out.append({"customer": c["customer"], "rule": said[0], "refused": pre["action"],
                                 "then": c["decision"]["action"]})
@@ -799,6 +829,7 @@ def create_app(llm: LLM | None = None) -> FastAPI:
                 "rule_moments": rule_moments(b, cards),
                 "timeline": timeline(b, cards, truth.get("night") or []),
                 "stopped": stopped,
+                "questions": questions(b, talking),
                 "unreadable_voice": [{"customer": v["customer"], "name": state.data[b].customers[v["customer"]].name,
                                       "lang": v["lang"], "says": v["says"]}
                                      for v in voice if v["status"] == voice_module.UNREADABLE],

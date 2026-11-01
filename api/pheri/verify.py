@@ -57,7 +57,8 @@ from .actions import BUSINESS_ACTIONS, CATALOG, CHANNELS, REACTIVE_ACTIONS, Prop
 from .journey import Journey
 from .llm import LLM, ModelOutputError, register_mock
 from .rules import CheckContext, active_rules, check, next_send_time
-from .words import FACT_WORDS, LANGUAGE_NAMES, internal_ids, promises, read_language
+from .words import (FACT_WORDS, LANGUAGE_NAMES, SIGN_OFF, _OWNER as OWNER, festivals_named, internal_ids, promises,
+                    read_language)
 
 # ---- settings ---------------------------------------------------------------------
 MAX_MESSAGE_CHARS = 420  # two or three short sentences and a sign-off
@@ -75,10 +76,10 @@ JUDGE_EFFORT = "low"
 JUDGE_MAX_OUTPUT_TOKENS = 2500  # Muse Spark Open always reasons; the guard needed about 600 at low
 MAX_CLAIMS = 12
 
-CODE_CHECKS = ("rules", "schema", "evidence", "facts", "promises", "pronouns", "address", "one_problem", "language",
-               "length", "links", "money", "plain_words", "private_stats", "middle_step", "tools")
-SOFT_CHECKS = ("address", "one_problem", "length", "language", "plain_words", "private_stats", "middle_step",
-               "judge")  # an owner may override these
+CODE_CHECKS = ("rules", "schema", "evidence", "facts", "promises", "answers", "pronouns", "address", "one_problem",
+               "language", "length", "links", "money", "plain_words", "private_stats", "middle_step", "tools")
+SOFT_CHECKS = ("answers", "address", "one_problem", "length", "language", "plain_words", "private_stats",
+               "middle_step", "judge")  # an owner may override these
 # Counts that describe a customer's behaviour: they belong in why, for the owner; a message that quotes them back
 # ("108 days since your last order") reads like surveillance. A date or a festival is not one of them.
 STAT_FACTS = {
@@ -566,6 +567,8 @@ def claims(d: Draft) -> list[str]:
     out = []
     for text in (d.action.message if d.action.kind != "no_action" else "", d.why_this, d.why_now):
         text = _SIGNOFF.sub("", _GREETING.sub("", text.strip()))
+        for sign in SIGN_OFF.values():  # the shop's sign-off, set by code: not a claim
+            text = text[:-len(sign)].rstrip() if text.endswith(sign) else text
         for s in CLAIM_END.split(text):
             s = s.strip()
             if len(re.findall(r"[^\W\d_]", s)) >= 3:
@@ -599,6 +602,9 @@ def _judge(d: Draft, vc: VerifyContext, evidence: list[dict]) -> tuple[list[dict
             "claims": [{"id": i, "text": s} for i, s in zip(ids, said)]}
     if question:
         data["customer_question"] = question
+    named = festivals_named(" ".join([*said, *map(str, data["cited_facts"].values())]))
+    if named:  # Tihar is Diwali is Deepawali: a claim that uses another name for a cited festival is the same claim
+        data["festival_names_that_mean_the_same"] = named
     messages = [{"role": "system", "content": JUDGE_SYSTEM},
                 {"role": "user", "content": json.dumps(data, ensure_ascii=False)}]
     key = hashlib.sha256(messages[1]["content"].encode("utf-8")).hexdigest()
@@ -654,9 +660,22 @@ def verify_draft(d: Draft, vc: VerifyContext) -> Verification:
             return []
         return [f"written in {LANGUAGE_NAMES.get(got, got)}, but {first} writes in {LANGUAGE_NAMES[want]}"]
 
+    cited = {e["ref"] for e in kept if e["kind"] == "fact"}
+
     def promise() -> list[str]:
         return [f"{does} ({said!r}), which no fact or allowed action backs: leave it out, or say the owner will confirm"
-                for _, does, said in promises(d.action.message, backed, d.action.kind)]
+                for _, does, said in promises(d.action.message, backed, d.action.kind, cited)]
+
+    def answers() -> list[str]:
+        """A question the shop's own facts answer is answered, not handed to the owner. The owner keeps money
+        decisions, refunds and complaints (and voice notes Pheri can't read, which never reach a draft)."""
+        shop = [k for k in p.facts if k.startswith("shop_")]
+        if not (p.facts.get("open_question") and shop) or p.facts.get("asks_about_money") or j.stage == "complaint"                 or getattr(p, "money_ask", None) == "refund" or cited & set(shop):
+            return []
+        if OWNER.search(d.action.message):
+            return ["hands the question to the owner, but the shop's facts answer it ("
+                    + ", ".join(FACT_WORDS.get(k, k) for k in shop) + "): answer from them, and cite them"]
+        return []
 
     def plain_words() -> list[str]:
         ids = internal_ids(" ".join((d.action.message, d.why_this, d.why_now)))
@@ -667,6 +686,9 @@ def verify_draft(d: Draft, vc: VerifyContext) -> Verification:
             return f"{float(v):g}" if isinstance(v, (int, float)) and not isinstance(v, bool) else None
         stats = {num(p.facts[k]): k for k in STAT_FACTS.get(business, ()) if num(p.facts.get(k)) is not None}
         other = {num(v) for k, v in p.facts.items() if k not in STAT_FACTS.get(business, ())} - {None}
+        # A number a cited fact that is not a count about them holds ("add 1 inch", from the size guide) is not theirs.
+        other |= {f"{float(n.replace(',', '.')):g}" for e in kept if e["kind"] == "fact"
+                  and e["ref"] not in STAT_FACTS.get(business, ()) for n in _NUMBER.findall(str(e["value"]))}
         msg = d.action.message.translate(str.maketrans("०१२३४५६७८९", "0123456789"))
         out = []
         for n in _NUMBER.findall(msg):
@@ -683,6 +705,7 @@ def verify_draft(d: Draft, vc: VerifyContext) -> Verification:
         ("evidence", d.action.kind != "no_action" or bool(d.fact_keys), evidence),
         ("facts", True, facts),
         ("promises", facing, promise),
+        ("answers", facing, answers),
         ("pronouns", True, lambda: pronoun_problems(d, p)),
         ("address", facing, lambda: signature_problems(d, p) + _address(d, p)),
         ("one_problem", facing, lambda: _one_problem(d, p, j)),

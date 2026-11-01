@@ -44,6 +44,9 @@ FACT_WORDS = {
     "next_festival": "next festival", "days_to_next_festival": "days to the festival",
     "asks_about_money": "asked about money", "open_question": "asked a question",
     "return_requested": "asked to return it", "wrong_colour": "wrong colour", "wrong_size": "wrong size",
+    "shop_delivery": "delivery (shop file)", "shop_cod": "cash on delivery (shop file)",
+    "shop_size_guide": "size guide (shop file)", "shop_stock": "stock and price (shop file)",
+    "shop_collection": "festival collection (shop file)", "shop_returns": "exchanges (shop file)",
 }
 CHECK_WORDS = {
     "one_problem": "one problem", "middle_step": "the plan check", "plain_words": "plain words",
@@ -70,7 +73,7 @@ def plain(text: str | None) -> str | None:
     return _ID.sub(lambda m: PLAIN.get(m.group(0), m.group(0).replace("_", " ")), out)
 
 
-CHECK_NAMES = {"rules": "Your rules", "schema": "Form", "evidence": "Evidence", "facts": "Facts",
+CHECK_NAMES = {"answers": "Answers", "rules": "Your rules", "schema": "Form", "evidence": "Evidence", "facts": "Facts",
                "promises": "Promises", "pronouns": "Pronouns", "address": "How it talks to them",
                "one_problem": "One problem", "language": "Language", "length": "Length", "links": "Links",
                "money": "Money", "plain_words": "Plain words", "private_stats": "Private numbers",
@@ -176,11 +179,16 @@ PROMISES: dict[str, tuple[str, re.Pattern]] = {
 _SENTENCES = re.compile(r"(?<=[.!?।])\s+")
 
 
-def promises(message: str, backed: str, action_kind: str) -> list[tuple[str, str, str]]:
+BACKED_BY = {"delivery": ("shop_delivery",), "stock": ("shop_stock", "shop_collection")}
+
+
+def promises(message: str, backed: str, action_kind: str, cited: tuple | list | set = ()) -> list[tuple[str, str, str]]:
     """(kind, what it does, the words) for each claim or promise no fact or action backs. `backed`: the cited facts'
-    values, lowercased. A discount is backed by an offer_discount (the money check and the owner's rules do the
-    rest); a price by a cited fact holding that amount; stock, delivery times and photos by nothing Pheri has."""
+    values, lowercased; `cited`: their keys. A discount is backed by an offer_discount (the money check and the
+    owner's rules do the rest); a price by a cited fact holding that amount; a delivery time or stock by a cited shop
+    fact (shop_delivery; shop_stock or shop_collection); photos by a cited photo id from the shop file."""
     out = []
+    cited = set(cited)
     for sentence in _SENTENCES.split(message or ""):
         if _OWNER.search(sentence):  # handed to the owner: "the owner will confirm the date" promises nothing
             continue
@@ -192,5 +200,86 @@ def promises(message: str, backed: str, action_kind: str) -> list[tuple[str, str
                 continue
             if kind == "price" and re.sub(r"\D", "", m.group(0)) and re.sub(r"\D", "", m.group(0)) in backed:
                 continue
+            if cited & set(BACKED_BY.get(kind, ())) or (kind == "photos" and re.search(r"ph-\d+", backed)):
+                continue
             out.append((kind, does, m.group(0).strip()))
     return list(dict.fromkeys(out))
+
+
+# ---- festivals: the same festival has more than one name -------------------------------------------
+FESTIVAL_ALIASES = {
+    "tihar": ("Tihar", "Diwali", "Deepawali", "Dipawali", "Deepavali", "तिहार", "दिवाली", "दीपावली", "दिपावली", "दीवाली"),
+    "dashain": ("Dashain", "Dussehra", "Dasara", "Dashera", "Vijayadashami", "Bijaya Dashami", "दशैं", "दसैं", "दशहरा",
+                "दशैँ", "विजयादशमी", "बिजयादशमी"),
+    "chhath": ("Chhath", "छठ"),
+}
+
+
+def festival_word(texts: list[str]) -> str | None:
+    """The customer's own word for a festival, from their newest message that names one (Diwali, not Tihar, if
+    that is what they wrote)."""
+    for text in reversed(texts):
+        low = (text or "").casefold()
+        for names in FESTIVAL_ALIASES.values():
+            for name in sorted(names, key=len, reverse=True):
+                if name.casefold() in low:
+                    return name
+    return None
+
+
+def festivals_named(text: str) -> dict[str, list[str]]:
+    """For the judge: every festival a text names, with all its names (they mean the same festival)."""
+    low = (text or "").casefold()
+    return {k: list(v) for k, v in FESTIVAL_ALIASES.items() if any(n.casefold() in low for n in v)}
+
+
+# ---- the shop's sign-off and the customer's name: set by code -----------------------------------------
+SIGN_OFF = {"ne": "– बिरगंज साडी घर", "hi": "– बिरगंज साड़ी घर", "bho": "– बिरगंज साड़ी घर",
+            "ne-Latn": "– Birgunj Saree Ghar", "en": "– Birgunj Saree Ghar"}
+_ANY_SIGN_OFF = re.compile(
+    r"\s*(?:[-–—]+\s*|(?:thanks|thank you|dhanyabad|धन्यवाद)[ ,]*(?:from\s+)?)?(?:the\s+)?"
+    r"(?:birgunj saree ghar|बिरगंज साडी घर|बिरगंज साड़ी घर|बीरगंज साडी घर|बीरगंज साड़ी घर)"
+    r"(?:\s*(?:की|को|ko|ki))?(?:\s*(?:team|टिम|टीम|परिवार))?\s*[.।!]?\s*$", re.I)
+NAMES_DEVANAGARI = {
+    "Sunita": "सुनिता", "Rekha": "रेखा", "Pooja": "पूजा", "Anita": "अनिता", "Sarita": "सरिता", "Manju": "मन्जु",
+    "Kiran": "किरण", "Rajesh": "राजेश", "Sanjay": "सञ्जय", "Ramesh": "रमेश", "Dinesh": "दिनेश", "Sita": "सीता",
+    "Gita": "गीता", "Laxmi": "लक्ष्मी", "Priyanka": "प्रियंका", "Nisha": "निशा", "Bimala": "बिमला", "Rita": "रीता",
+    "Kamala": "कमला", "Suman": "सुमन", "Bikash": "बिकास", "Rohit": "रोहित", "Amit": "अमित", "Anjali": "अञ्जली",
+    "Ranju": "रञ्जु", "Babita": "बबिता", "Sabina": "सबिना", "Mamata": "ममता", "Shanti": "शान्ति", "Fatima": "फातिमा",
+    "Salma": "सलमा", "Imran": "इमरान", "Rubina": "रुबिना", "Saroj": "सरोज", "Usha": "उषा", "Meena": "मीना",
+}
+_GREET = re.compile(r"^\s*(नमस्ते|नमस्कार|प्रणाम|राम राम|(?:namaste|namaskar|pranam|hi|hello|dear)\b)[\s,!]*",
+                    re.I)  # no \b after a Devanagari greeting: it ends in a vowel sign
+_HONORIFIC = re.compile(r"^\s*(?:जी|ज्यू)|^\s*(?:ji|jyu|jee)\b", re.I)  # no \b after a Devanagari vowel sign
+_DEVANAGARI_LANGS = ("ne", "hi", "bho")
+
+
+def name_for(first: str, lang: str | None) -> str:
+    """The customer's first name in the reply's script, with the honorific: "सीता जी" (Devanagari), "Sita ji"."""
+    if lang in _DEVANAGARI_LANGS:
+        return f"{NAMES_DEVANAGARI.get(first, first)} जी"
+    return f"{first} ji"
+
+
+def sign_and_greet(message: str, first: str, lang: str | None) -> str:
+    """Code's edit to a shop reply, before it is verified: the shop's sign-off for the reply's language (any sign-off
+    the model wrote is replaced) and the customer's name, right after the greeting, in the reply's script with the
+    honorific. A message that opens without a greeting keeps its opening."""
+    lang = lang if lang in SIGN_OFF else "en"
+    body = _ANY_SIGN_OFF.sub("", (message or "").rstrip())
+    body = re.sub(r"\s*[-–—]+\s*(?:the\s+)?(?:team|टीम|टिम)\s*[.।]?\s*$", "", body, flags=re.I).rstrip(" ,-–—")
+    m = _GREET.match(body)
+    if m:
+        rest = body[m.end():]
+        names = [first, NAMES_DEVANAGARI.get(first, "\0")]
+        # The model may spell the name another way in Devanagari (रन्जु for रञ्जु): one Devanagari word right after
+        # the greeting, then a comma, a danda or an honorific, is their name too.
+        variant = re.match(r"[ऀ-ॿ]+(?=\s*(?:जी|ज्यू)|[,।!])", rest)
+        if variant and variant.group(0) not in names and _DEVANAGARI.search(names[1]):
+            names.append(variant.group(0))
+        for n in names:
+            if rest[:len(n)].casefold() == n.casefold():
+                rest = _HONORIFIC.sub("", rest[len(n):])
+                body = f"{m.group(1)} {name_for(first, lang)}{rest if rest[:1] in ',।!.' else ', ' + rest.lstrip()}"
+                break
+    return f"{body} {SIGN_OFF[lang]}"

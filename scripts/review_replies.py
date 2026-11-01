@@ -29,7 +29,7 @@ def main(out: Path) -> int:
 
     from pheri.app import create_app
     from pheri.config import Settings
-    from pheri.holding import TEMPLATES
+    from pheri.holding import TEMPLATES, VOICE_TEMPLATES
     from pheri.llm import LLM
     from pheri.words import ACTION_WORDS, LANGUAGE_NAMES, read_language
 
@@ -63,7 +63,13 @@ def main(out: Path) -> int:
         n += 1
         who = f" · sent tonight to {got[lang]}" if lang in got else ""
         lines += [f"{n}. Template, {LANGUAGE_NAMES[lang]}{who}",
-                  f"   Text:        {TEMPLATES[lang].format(first='<first name>', shop='Birgunj Saree Ghar')}",
+                  f"   Text:        {TEMPLATES[lang].format(name='<name> जी' if lang != 'ne-Latn' else '<name> ji')}",
+                  "   Your review: ", ""]
+    lines += ["== Voice note Pheri can't read: the fixed reply, written by code (no model is asked) ==", ""]
+    for lang in REVIEWED:
+        n += 1
+        lines += [f"{n}. Voice-note template, {LANGUAGE_NAMES[lang]}",
+                  f"   Text:        {VOICE_TEMPLATES[lang].format(name='<name> जी' if lang != 'ne-Latn' else '<name> ji')}",
                   "   Your review: ", ""]
     out.write_text("\n".join(lines), encoding="utf-8")
     print(f"{out}: {n} replies")

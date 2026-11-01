@@ -1,0 +1,40 @@
+{
+  "_about": "Birgunj Saree Ghar's own shop file: synthetic, like every row in this folder. What the shop sells and has in stock, its size guide, where and when it delivers, cash on delivery, returns, and the festival collections. Pheri cites it as facts (pheri/shop.py); an answer may say only what it says. Counted as of 30 Oct 2026.",
+  "currency": "NPR",
+  "catalog": [
+    {"id": "BSG-S01", "name": "Red Banarasi silk saree", "category": "saree", "price_npr": 8500, "stock": 4, "photo": "PH-101", "collections": ["tihar", "dashain"], "match": ["banarasi", "बनारसी", "red", "rato", "rato", "रातो", "लाल", "silk", "सिल्क"]},
+    {"id": "BSG-S02", "name": "Maroon Banarasi silk saree", "category": "saree", "price_npr": 9200, "stock": 2, "photo": "PH-102", "collections": ["tihar"], "match": ["banarasi", "बनारसी", "maroon", "मरुन", "silk"]},
+    {"id": "BSG-S03", "name": "Dhaka saree, new pattern", "category": "saree", "price_npr": 3500, "stock": 7, "photo": "PH-103", "collections": ["tihar", "dashain"], "match": ["dhaka", "ढाका", "naya design", "नयाँ डिजाइन"]},
+    {"id": "BSG-S04", "name": "Cotton saree", "category": "saree", "price_npr": 1500, "stock": 25, "photo": "PH-104", "collections": [], "match": ["cotton", "कटन", "कॉटन", "सूती", "suti"]},
+    {"id": "BSG-S05", "name": "Chhath yellow cotton saree", "category": "saree", "price_npr": 1800, "stock": 12, "photo": "PH-105", "collections": ["chhath"], "match": ["chhath", "छठ", "yellow", "पहेंलो", "पीला", "पियर"]},
+    {"id": "BSG-S06", "name": "Georgette saree", "category": "saree", "price_npr": 2400, "stock": 9, "photo": "PH-106", "collections": ["tihar"], "match": ["georgette", "जर्जेट"]},
+    {"id": "BSG-L01", "name": "Lehenga choli", "category": "lehenga", "price_npr": 14000, "stock": 3, "photo": "PH-201", "collections": ["dashain"], "match": ["lehenga", "लहंगा", "लेहेंगा"]},
+    {"id": "BSG-K01", "name": "Kurta set", "category": "kurta", "price_npr": 2800, "stock": 11, "photo": "PH-301", "collections": ["tihar"], "match": ["kurta", "कुर्ता", "कुर्ता सेट"]},
+    {"id": "BSG-P01", "name": "Pashmina shawl", "category": "shawl", "price_npr": 3200, "stock": 6, "photo": "PH-401", "collections": [], "match": ["pashmina", "पश्मिना", "shawl", "सल"]},
+    {"id": "BSG-B01", "name": "Blouse stitching", "category": "blouse", "price_npr": 600, "stock": null, "photo": "PH-501", "collections": [], "match": ["blouse", "ब्लाउज", "stitching", "सिलाई"]}
+  ],
+  "size_guide": "Blouse sizes 32 to 44, in inches round the chest; measure round the fullest part and add 1 inch. A saree is 5.5 m with a 0.8 m blouse piece. Blouse stitching takes 3 days.",
+  "delivery": {
+    "Birgunj":    {"days": 1, "charge_npr": 0,   "country": "NP"},
+    "Parwanipur": {"days": 1, "charge_npr": 50,  "country": "NP"},
+    "Simara":     {"days": 1, "charge_npr": 100, "country": "NP"},
+    "Kalaiya":    {"days": 2, "charge_npr": 100, "country": "NP"},
+    "Hetauda":    {"days": 2, "charge_npr": 150, "country": "NP"},
+    "Janakpur":   {"days": 3, "charge_npr": 150, "country": "NP"},
+    "Kathmandu":  {"days": 3, "charge_npr": 250, "country": "NP"},
+    "Raxaul":     {"days": 1, "charge_npr": 100, "country": "IN"},
+    "Motihari":   {"days": 2, "charge_npr": 200, "country": "IN"},
+    "Bettiah":    {"days": 3, "charge_npr": 250, "country": "IN"},
+    "Sitamarhi":  {"days": 3, "charge_npr": 250, "country": "IN"}
+  },
+  "cod": {
+    "NP": "Cash on delivery in Nepal for orders up to NPR 15000.",
+    "IN": "Across the border (India): pay first by UPI or bank transfer; no cash on delivery."
+  },
+  "returns": "Exchange within 7 days if unworn with the tag on; a size exchange is free. A refund is the owner's decision.",
+  "festivals": {
+    "tihar":  "Tihar collection: Red Banarasi silk saree, Maroon Banarasi silk saree, Dhaka saree new pattern, Georgette saree, Kurta set; from NPR 2400; photos PH-101, PH-102, PH-103, PH-106, PH-301.",
+    "chhath": "Chhath collection: Chhath yellow cotton saree, NPR 1800, 12 in stock; photo PH-105.",
+    "dashain": "Dashain collection: Red Banarasi silk saree, Dhaka saree new pattern, Lehenga choli; from NPR 3500; photos PH-101, PH-103, PH-201."
+  }
+}

@@ -73,6 +73,17 @@ async function Morning({ params }: { params: PageProps<"/[business]">["params"] 
             )}
             .
           </p>
+          {b.questions && b.questions.asked > 0 && (
+            <p className="mt-3">
+              Of <b className="font-semibold">{b.questions.asked}</b> {b.questions.asked === 1 ? "question" : "questions"},
+              Pheri answered <Count tone="teal" n={b.questions.answered} one="" many="" /> from the shop&rsquo;s own facts
+              and handed <Count tone="marigold" n={b.questions.deferred} one="" many="" /> to you
+              {b.questions.deferred_owners_call > 0
+                ? ` (${b.questions.deferred_owners_call} of them money, refunds or complaints, which are yours)`
+                : ""}
+              . Deferral rate: {Math.round((b.questions.deferral_rate ?? 0) * 100)}%.
+            </p>
+          )}
           {b.stopped.length > 0 && (
             <p className="mt-3">
               <Count tone="vermilion" n={b.stopped.length} one="message" many="messages" /> tried to trick Pheri into

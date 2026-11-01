@@ -277,7 +277,9 @@ def test_the_recorded_attackers_each_get_a_fixed_reply_in_their_own_language(mon
     for s, h in zip(brief["stopped"], held):
         first = s["customer"]["name"].split()[0]
         assert h["status"] == "scheduled" and h["sends_at_local"] == "08:00"
-        assert h["message"] == TEMPLATES[h["language"]].format(first=first, shop="Birgunj Saree Ghar")
+        from pheri.words import name_for
+
+        assert h["message"] == TEMPLATES[h["language"]].format(name=name_for(first, h["language"]))
 
 
 def test_every_refused_plan_names_the_plans_that_pass_for_the_stage():

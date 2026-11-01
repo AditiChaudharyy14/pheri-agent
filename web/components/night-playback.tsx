@@ -37,7 +37,7 @@ function clockText(minute: number): string {
 
 function tone(e: NightEvent): Tone {
   if (e.outcome === "stopped" || e.outcome === "blocked") return "vermilion";
-  if (e.outcome === "awaiting_approval" || e.action === "task_for_owner") return "marigold";
+  if (e.outcome === "awaiting_approval" || e.outcome === "voice_note" || e.action === "task_for_owner") return "marigold";
   if (e.outcome === "scheduled" || e.outcome === "executed") return "teal";
   return "slate";
 }
@@ -48,6 +48,8 @@ function outcome(e: NightEvent): string {
       ? `Stopped: it tried to trick Pheri. No model writes to them: a fixed reply written by code goes out at ${e.holding_reply.sends_at_local ?? "08:00"} their time, and the rest waits for you.`
       : "Stopped: it tried to trick Pheri. Nothing was done; it waits for you.";
   if (e.outcome === "blocked") return "Blocked by your rule: they asked not to be contacted. Nothing sent, no model asked.";
+  if (e.outcome === "voice_note")
+    return `A voice note Pheri can't read: no model was asked. A fixed reply by code says you will listen${e.holding_reply ? `; out at ${e.holding_reply.sends_at_local ?? "08:00"} their time` : ""}.`;
   if (e.outcome === "awaiting_approval") return `Waits for you: ${actionLabel(e.action).toLowerCase()}. ${e.waits_for_owner ?? ""}`;
   if (e.outcome === "scheduled") return `${actionLabel(e.action)}, checked, goes out at ${e.sends_at_local ?? "08:00"} their time.`;
   if (e.action === "task_for_owner") return "A task for you.";

@@ -39,7 +39,8 @@ export type Receipt =
   | { kind: "order"; ids: string[]; more: number }
   | { kind: "message"; channel: string | null; at: string | null; lang: string | null; from_staff: boolean }
   | { kind: "calendar"; name: string }
-  | { kind: "activity" };
+  | { kind: "activity" }
+  | { kind: "shop"; section: string };
 export type Evidence = { kind: "fact" | "quote"; ref: string; value: string; quote_id?: string; receipt?: Receipt | null };
 
 export type Action = {
@@ -216,6 +217,9 @@ export type Brief = {
   customers: number;
   scheduled: NextStepWithTime[]; sent: NextStepWithTime[]; need_you: NextStepWithTime[]; blocked: NextStepWithTime[];
   stopped: (Reply & { holding_reply?: HoldingReply | null })[];
+  /** Tonight's questions: answered from the shop's facts, or handed to the owner (a deferral). */
+  questions?: { asked: number; answered: number; deferred: number; deferred_owners_call: number;
+    deferral_rate: number | null };
   unreadable_voice: { customer: string; name: string; lang: string; says: string }[];
   voice_stand_in: boolean;
   proof: { treated: number; holdout: number; lift_pp: number; ci_pp: [number, number]; verdict: string; customers: number;

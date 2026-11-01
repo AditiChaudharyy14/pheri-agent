@@ -37,7 +37,8 @@ from pydantic import BaseModel, ValidationError, create_model, field_validator
 
 from .actions import ALL_CHANNELS, BUSINESS_ACTIONS, CATALOG, CHANNELS, CODE_ACTIONS, ESCALATE, ProposedAction
 from .autonomy import escalate, modes, open_escalation, owner_options, owner_reason, sent_messages, submit
-from .words import LANGUAGE_NAMES
+from .shop import shop as shop_file
+from .words import LANGUAGE_NAMES, read_language, sign_and_greet
 from .verify import (FEEDBACK_HEAD, NO_QUOTES, Draft, attach_evidence, fact_names, feedback,  # noqa: F401
                      message_problems, middle_step, quote_index, unsupported_numbers, verify_draft)
 from .verify import context as verify_context
@@ -133,8 +134,15 @@ TOOLS = [
 ]
 ALLOWED_TOOLS = tuple(t["name"] for t in TOOLS)  # anything else the model calls is discarded and logged
 
+SIGNED_BY_CODE = ("birgunj",)  # shops whose sign-off and greeting name code sets (words.sign_and_greet)
 STYLE_GUIDE = Path(__file__).with_name("style_ne_hi.md")
 STYLE_GUIDES = {"birgunj": "STYLE_GUIDE"}  # business -> the module attribute naming its guide (tests can swap it)
+ANSWER_POLICY = ("A question is answered from the facts, the shop's own facts (shop_...) included, and the answer cites "
+                 "them. Say that the owner will answer only for a money decision, a refund or a complaint, or when no "
+                 "fact answers it.")
+MONEY_POLICY = ("They asked about money, which the owner decides: still reply to them now, with a step that fits "
+                "(a holding reply), saying the owner will answer this morning; code gives the owner the two choices. "
+                "Never make it a task_for_owner, and promise no price, discount or refund.")
 STYLE_WHEN = "the shop's own rules: follow every one whenever you write in Nepali, Hindi or Bhojpuri"
 
 
@@ -219,6 +227,8 @@ def _profile_view(p: Profile, j: Journey, latest: GuardResult | None = None) -> 
     if p.writes_in:  # code's reading of their newest message: language and script
         view["writes_in"] = LANGUAGE_NAMES.get(p.writes_in, p.writes_in) + (
             " (Nepali in Latin letters)" if p.writes_in == "ne-Latn" else "")
+    if p.festival_word:  # their own word for the festival (Diwali, not Tihar, if that is what they wrote)
+        view["their_word_for_the_festival"] = p.festival_word
     if latest is not None and latest.provider is not None:
         # What the guard made of their newest reply: its label and a safe summary, never the raw text.
         view["latest_reply"] = {"label": latest.label, "language": latest.language, "summary": latest.summary}
@@ -416,6 +426,12 @@ def decide(p: Profile, store, llm: LLM, now: datetime = NOW, data_class: str = "
         if answer is None:
             break  # no usable draft this time: keep the last one (it goes to the owner) or fall back
         decision, draft = answer, Draft.of(answer, now)  # Draft.of tidies the message: "Hi Maya, your ..."
+        t = CATALOG.get(draft.action.kind)
+        if p.business in SIGNED_BY_CODE and t and t.customer_facing and draft.action.message:
+            # Code's edit, before it is checked: the shop's sign-off for the reply's language, and their name in the
+            # reply's script with the honorific ("सीता जी"). What is verified is exactly what would go out.
+            draft.action.message = sign_and_greet(draft.action.message, (p.name or "").split()[0],
+                                                  read_language(draft.action.message))
         v = verify_draft(draft, vc)
         run.attempts.append({"attempt": attempt, "decision": _as_sent(decision, draft), "verification": v.as_dict(),
                              "turns": [t["turn"] for t in run.turn_log if t.get("attempt") == attempt]})
@@ -505,6 +521,10 @@ class _ToolLoop:
                  "business_name": BUSINESS_NAMES[p.business], "today": now.date().isoformat()}
         if rules := style_rules(p.business):  # the shop's own style guide: part of its brief, not of Pheri's behaviour
             brief["style_guide"] = {"follow_when": STYLE_WHEN, "rules": rules}
+        if shop_file(p.business):  # a shop with its own facts: answer from them; the owner keeps what they can't settle
+            brief["answer_policy"] = ANSWER_POLICY
+            if p.facts.get("asks_about_money"):  # seen live: the policy alone made a money question an owner task
+                brief["money_question"] = MONEY_POLICY
         user = json.dumps(brief, ensure_ascii=False)
         # Stateless replay: the whole conversation goes out every turn, so nothing depends on Meta keeping a
         # stored response (live, ~1 in 8 chains failed with "referenced response not found or expired").
@@ -606,6 +626,10 @@ class _PrivateLoop:
                    "allowed": _allowed_view(store), "dry_run": dry}
         if rules := style_rules(business):
             payload["style_guide"] = {"follow_when": STYLE_WHEN, "rules": rules}
+        if shop_file(business):
+            payload["answer_policy"] = ANSWER_POLICY
+            if run.profile.facts.get("asks_about_money"):
+                payload["money_question"] = MONEY_POLICY
         self.messages = [{"role": "system", "content": PRIVATE_SYSTEM},
                          {"role": "user", "content": json.dumps(payload, ensure_ascii=False, default=str)}]
         self.sent = [{"kind": "instructions", "text": PRIVATE_SYSTEM}, {"kind": "brief", "data": payload}]
@@ -647,6 +671,21 @@ def decide_customer(ds, key: str, store, llm: LLM, now: datetime = NOW) -> Outco
     c = ds.customers[norm_email(key)]
     said = sorted((s for s in c.sources if s.kind in CUSTOMER_WRITTEN and s.text), key=lambda s: s.at or "")
     language = said[-1].lang if said else None
+    heard = sorted((s for s in c.sources if s.kind in CUSTOMER_WRITTEN or s.kind == "voice_note"),
+                   key=lambda s: s.at or "")
+    if heard and heard[-1].kind == "voice_note" and not (heard[-1].text or "").strip()             and "holding_reply" in CODE_ACTIONS.get(store.business, ()):
+        # Their newest message is a voice note no model can read: no model is asked and nothing is claimed about
+        # what it says. A fixed reply by code says the owner will listen; the owner hears it first.
+        from .holding import VOICE_TEMPLATES, holding_reply_for, send_holding_reply
+
+        if holding_reply_for(store, c.key) is None:
+            ctx = CheckContext(store.business, {"country": c.attrs.get("country")}, now, sent_messages(store, c.key),
+                               do_not_contact=store.do_not_contact(c.key) is not None)
+            send_holding_reply(store, ctx, c.key, c.name.split()[0], heard[-1].lang, templates=VOICE_TEMPLATES,
+                               why="A voice note Pheri can't read: the owner listens and replies.")
+        thin = Profile(ds.business, c.key, c.name, c.company, {}, {}, {}, None)
+        return _no_model(thin, store, "Their newest message is a voice note Pheri can't read; the owner listens.",
+                         "voice_note")
     with private_fence(store, llm):
         guarded = screen_history(store, llm, c.key, [s for s in c.sources if s.kind in CUSTOMER_WRITTEN],
                                  ds.data_class)
@@ -797,6 +836,8 @@ def _mock_answer(prof: dict, kind: str, channel: str | None, pct: float | None, 
             b["fact"] != "renewal_in_days" for b in because):
         because.append({"fact": "renewal_in_days", "value": renewal})
     fact_keys = ["journey_stage"] + [b["fact"] for b in because]
+    shop = [k for k in prof["facts"] if k.startswith("shop_")] if kind == "answer_question" else []
+    fact_keys += shop[:3]  # an answer cites the shop's facts it gives
     blocker = _main_blocker(prof["insights"].get("blockers") or [], because)
     goals = prof["insights"].get("goals") or []
     quote_ids = [x["quote_id"] for x in (blocker, goals[0] if goals else None) if x]
@@ -830,8 +871,10 @@ def _mock_answer(prof: dict, kind: str, channel: str | None, pct: float | None, 
                                     f"The owner can share photos this morning. - The {team} team",
                "send_reminder": f"Hi {first}, following up on the item you asked about. The owner will confirm what "
                                 f"is available this morning. - The {team} team",
-               "answer_question": f"Hi {first}, thank you for asking. The owner will answer your question this "
-                                  f"morning. - The {team} team",
+               "answer_question": (f"Hi {first}, " + " ".join(f"{prof['facts'][k]}." for k in shop[:2])
+                                   + f" - The {team} team") if shop else
+                                  (f"Hi {first}, thank you for asking. The owner will answer your question this "
+                                   f"morning. - The {team} team"),
                "offer_reorder": f"Hi {first}, it is about time for your next order. The same as last time? "
                                 f"- The {team} team",
                "offer_subscription": f"Hi {first}, want your favourite tea delivered every month, no reordering? "

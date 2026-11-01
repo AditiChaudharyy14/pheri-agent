@@ -39,6 +39,7 @@ function receiptText(r: Receipt | null | undefined): string {
   if (r.kind === "order") return `order ${r.ids.join(", ")}${r.more ? ` +${r.more} more` : ""}`;
   if (r.kind === "calendar") return "festival calendar";
   if (r.kind === "activity") return "activity log";
+  if (r.kind === "shop") return "shop file";
   if (r.from_staff) return "a note by the team";
   const when = r.at ? new Date(r.at).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "Asia/Kathmandu" }) : "";
   return [r.channel ? `on ${CHANNEL_NAME[r.channel] ?? r.channel}` : "their message", when].filter(Boolean).join(", ");

@@ -25,6 +25,7 @@ from .llm import LLM, register_mock
 from .profile import CUSTOMER_WRITTEN, build_profile
 from .rules import CheckContext
 from .synth import BUSINESS_NAMES
+from .words import plain as in_plain_words
 from .verify import Draft, _judge, attach_evidence, context, fact_names, quote_index, verify_draft
 
 PURPOSE = "plain_draft"
@@ -144,8 +145,9 @@ def compare(ds, key: str, store, llm: LLM, now: datetime) -> dict:
     # The judge, for display: claims nothing in the record supports, on the sentence that makes them.
     judged = judge_plain(p, j, d, vc)
     for r in judged:
-        line = (f"Doesn't answer what they asked: {r['reason']}." if r["claim_id"] == "q"
-                else f"The judge: “{r['claim']}” isn't supported by anything in the record ({r['reason']}).")
+        why = in_plain_words(r["reason"])  # the judge's words, with any internal name in plain words
+        line = (f"Doesn't answer what they asked: {why}." if r["claim_id"] == "q"
+                else f"The judge: “{r['claim']}” isn't supported by anything in the record ({why}).")
         failed.append({"check": "judge", "hard": False, "plain": line, "detail": r["reason"]})
         hits = [i for i, s in enumerate(sentences) if r["claim"].casefold().rstrip(".!?") in s.casefold()
                 or s.casefold().rstrip(".!?") in r["claim"].casefold()] if r["claim_id"] != "q" else []

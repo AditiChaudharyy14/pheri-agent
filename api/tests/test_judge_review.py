@@ -270,10 +270,10 @@ def test_a_devanagari_draft_is_judged_sentence_by_sentence_and_one_false_claim_f
                                          "reason": "no cited fact says it was sent" if c["text"] == false else "ok"}
                                         for c in data["claims"]]})
     monkeypatch.setitem(llm_module._mock_responders, "judge", judge)
-    msg = f"नमस्ते निशा, सोध्नुभएकोमा धन्यवाद। {false} साहुजीले आज बिहान साइजको जवाफ दिनुहुन्छ। - Birgunj Saree Ghar टिम"
-    _, v = check(birgunj, llm, NISHA, "answer_question", msg)
+    msg = f"नमस्ते निशा जी, ब्लाउजको साइज 32 देखि 44 सम्म छ। {false} नाप लिँदा 1 इन्च थप्नुहोस्। – बिरगंज साडी घर"
+    _, v = check(birgunj, llm, NISHA, "answer_question", msg, facts=("journey_stage", "shop_size_guide"))
     said = [c["text"] for c in seen[-1] if c["id"] != "q"]
-    assert said[:3] == ["नमस्ते निशा, सोध्नुभएकोमा धन्यवाद।", false, "साहुजीले आज बिहान साइजको जवाफ दिनुहुन्छ।"]
+    assert said[:3] == ["नमस्ते निशा जी, ब्लाउजको साइज 32 देखि 44 सम्म छ।", false, "नाप लिँदा 1 इन्च थप्नुहोस्।"]
     flagged = [r["claim"] for r in v.judge if not r["supported"]]
     assert flagged == [false] and v.caught_by == "judge" and not v.passed
 

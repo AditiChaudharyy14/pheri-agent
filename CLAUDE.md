@@ -183,12 +183,17 @@ Read this before every task. These rules are not optional.
   Recorded (Meta $1.33, Baseten $0.48 of $2/$1, judge evals included): every drafted card verified; Dinesh, Sita
   Shrestha, Bimala get send_photos with photos attached (the judge is told which photos code attaches); late
   deliveries wait for the owner with the apology first. Judge evals unchanged (20: 10/10, 9/10 S04; 50: 25/25).
-- Language mix (1 Nov, committed locally, NOT pushed: waits for the next re-record): words.foreign_words +
+- Language mix (1 Nov): words.foreign_words +
   NEPALI_ONLY / HINDI_BHOJPURI_ONLY; the language check fails Nepali-only words in a Hindi/Bhojpuri reply and the
   reverse (sign-off excluded). Style guide: in-stock and photo wording per language, every rule on one line (the
   brief reads only "- " lines; a test guards it). Until re-recorded, 2 Birgunj replay tests fail.
   Data bug fixed: 28 old messages were dated after the night started (synth._before_night moves them a day back;
   only their timestamps changed); Pooja Ansari's night message was hidden by one, so the brief counted 22, not 23.
+- Round 3 (1 Nov): lots counted in lots (shop LOT_WORDS; a wholesale buyer is quoted the lot; units carry
+  their unit; the judge gets LOTS_HOW when a lot is cited); repeats also fails a two-word phrase said twice;
+  customers in India see 'रु 2400 (₹1500)', converted by code at 1.6 (shop.money). Gold examples: 9 of Aditi's
+  corrected replies in style_ne_hi.md ('* lang | they wrote | reply'); decide.gold_examples passes the ones in
+  the customer's language into the brief (copy tone, never facts).
 - Attack moment (Step 5, Glimmer cut: Modal needs a card): an attacker gets no word from any model. The owner gets
   the escalation; the customer gets a fixed holding reply written by code (pheri/holding.py, TEMPLATES ne, ne-Latn,
   hi, bho, en; native review pending, Aditi), in the language of their message, once, from decide_customer.

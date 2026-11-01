@@ -180,6 +180,9 @@ Read this before every task. These rules are not optional.
   message's language and script: रु / Rs (never NPR), retail without counts (wholesale with), Nepali size line;
   code also fixes NPR and a Latin greeting in a Devanagari reply. synth.repair_histories: 21 orders made to match
   the messages about them (history_check; 0 mismatches over 300 customers). 18 code checks.
+  Recorded (Meta $1.33, Baseten $0.48 of $2/$1, judge evals included): every drafted card verified; Dinesh, Sita
+  Shrestha, Bimala get send_photos with photos attached (the judge is told which photos code attaches); late
+  deliveries wait for the owner with the apology first. Judge evals unchanged (20: 10/10, 9/10 S04; 50: 25/25).
   Data bug fixed: 28 old messages were dated after the night started (synth._before_night moves them a day back;
   only their timestamps changed); Pooja Ansari's night message was hidden by one, so the brief counted 22, not 23.
 - Attack moment (Step 5, Glimmer cut: Modal needs a card): an attacker gets no word from any model. The owner gets
@@ -190,12 +193,12 @@ Read this before every task. These rules are not optional.
   length, links, money); no judge (the text claims nothing about the customer), stated in the stored verification;
   sent only through the sha gate, at 08:00 their time. Shown under Stopped (brief) and on the Night shift timeline.
   Recorder: same request twice in a run reuses its reply; refusals recorded; the pruned file
-  is re-checked in a fresh process and restored if anything misses. Recording 334 replies (pruning kept all: the voice compile key failed the re-check; harmless, to look at).
+  is re-checked in a fresh process and restored if anything misses. Recording 579 replies (pruning kept all: the voice compile key failed the re-check; harmless, to look at).
 - Waiting on Aditi: Nepali + Hindi clips; native review of Birgunj strings; Render clicks.
   Screenshots: uvicorn :8000 (replay), then `npm run build && npm start` (not the dev server), then
   `node scripts/evidence.mjs evidence [state]`; one heavy process at a time; restart the API before retaking
   (approving changes its state; the script approves last).
-- Live spend: Meta $8.8663 of $130, Baseten $4.5334 of $90, Modal $0 of $25. Tests: 437 + 15 skipped (Postgres tests run when
+- Live spend: Meta $10.196 of $130, Baseten $5.0144 of $90, Modal $0 of $25. Tests: 449 + 15 skipped (Postgres tests run when
   PHERI_TEST_DATABASE_URL is set).
 
 ## What we are building

@@ -53,6 +53,8 @@ PLAIN = {
     "tools": "Tries to use a tool Pheri doesn't have.",
     "promises": "{what}",
     "plain_words": "Uses the shop's internal names.",
+    "answers": "Doesn't answer from the shop's own facts (or hands you a question the shop file answers).",
+    "repeats": "Says the same thing twice.",
     "private_stats": "Quotes the customer's own numbers back at them.",
 }
 SPECIFIC = ("promises", "facts", "money", "rules", "links", "pronouns")  # pinned to a sentence: shown first
@@ -133,7 +135,7 @@ def compare(ds, key: str, store, llm: LLM, now: datetime) -> dict:
                 if not hits:
                     whole.append(line)
             continue
-        plain = PLAIN.get(c["name"], reason).format(what=nums, why=reason)
+        plain = PLAIN.get(c["name"], in_plain_words(reason)).format(what=nums, why=in_plain_words(reason))
         failed.append({"check": c["name"], "hard": c["name"] not in ("address", "one_problem", "length", "language",
                                                                       "middle_step", "plain_words", "private_stats"),
                        "plain": plain, "detail": reason})

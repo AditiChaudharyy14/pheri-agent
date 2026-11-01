@@ -55,7 +55,7 @@ def main(out: Path) -> int:
                   f"{LANGUAGE_NAMES[lang]} · {ACTION_WORDS.get(c['decision']['action'], c['decision']['action'])}"
                   f" · {status}",
                   f"   They wrote ({LANGUAGE_NAMES.get(e['lang'] or '', e['lang'] or '?')}): {e['text'] or e['voice']}",
-                  f"   Pheri:       {msg}",
+                  "   Pheri:       " + " ".join(msg.split()),  # one line, even when the reply has line breaks
                   "   Your review: ", ""]
     lines += ["== Fixed holding replies, written by code (an attacker gets one; no model writes to them) ==", ""]
     got = {s["holding_reply"]["language"]: s["customer"]["name"] for s in brief["stopped"] if s.get("holding_reply")}

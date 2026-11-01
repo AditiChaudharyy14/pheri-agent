@@ -326,7 +326,8 @@ def test_replay_serves_birgunjs_recorded_night(monkeypatch, tmp_path):
             continue
         assert card["decided_by"]["source"] == "recorded", card["customer"]["name"]
         assert card["verification"]["judge_recorded"], card["customer"]["name"]
-    assert sum(c["action"]["status"] == "scheduled" for c in cards if c["action"]) >= 15  # out at 08:00, not at night
+    # out at 08:00, not at night; since 1 Nov every late delivery waits for the owner, so a few fewer go out alone
+    assert sum(c["action"]["status"] == "scheduled" for c in cards if c["action"]) >= 14
     slop = api.get("/businesses/birgunj/slop").json()
     assert len(slop) == 3 and all(x["plain"]["recorded"] and not x["plain"]["passed"] for x in slop)
     # The night has every kind of moment, and the rewrites shown are drafts the checks really caught on the live run.

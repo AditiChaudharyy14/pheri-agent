@@ -173,7 +173,7 @@ def test_someone_who_asks_for_photos_gets_the_send_photos_step_and_the_judge_see
 
     p, v = check(birgunj, llm, DINESH, "answer_question", "नमस्ते दिनेश जी, तिहार कलेक्सन स्टकमा छ।",
                  facts=("journey_stage", "shop_collection"))
-    assert p.facts["asks_photos"] and "answers" in failed(v) and "send photos" in " ".join(v.reasons)
+    assert p.facts["asks_photos"] and "answers" in failed(v) and "send_photos" in " ".join(v.reasons)
     seen = []
     real = llm_module._mock_responders["judge"]
     monkeypatch.setitem(llm_module._mock_responders, "judge",
@@ -181,3 +181,16 @@ def test_someone_who_asks_for_photos_gets_the_send_photos_step_and_the_judge_see
     msg = "नमस्ते दिनेश जी, तिहारका नयाँ डिजाइनको फोटो पठाएका छौं।"
     check(birgunj, llm, DINESH, "send_photos", msg, facts=("journey_stage", "shop_collection"))
     assert seen[-1]["message"].startswith("नमस्ते दिनेश जी")
+
+
+def test_the_judge_is_told_which_photos_code_attaches(birgunj, llm, monkeypatch):
+    """Seen live: "फोटो पठाएका छौं" was judged unsupported, because nothing told the judge code sends the photos."""
+    from pheri import llm as llm_module
+
+    seen = []
+    real = llm_module._mock_responders["judge"]
+    monkeypatch.setitem(llm_module._mock_responders, "judge",
+                        lambda m, s: seen.append(json.loads(m[-1]["content"])) or real(m, s))
+    check(birgunj, llm, DINESH, "send_photos", "नमस्ते दिनेश जी, तिहारका नयाँ डिजाइनको फोटो पठाएका छौं।",
+          facts=("journey_stage", "shop_collection"))
+    assert seen[-1]["photos_attached_by_code"] and all("PH-" not in x for x in seen[-1]["photos_attached_by_code"])

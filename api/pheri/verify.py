@@ -611,6 +611,13 @@ def _judge(d: Draft, vc: VerifyContext, evidence: list[dict]) -> tuple[list[dict
         data["how_to_judge_x"] = UNASKED_HOW
         # Seen live: without the whole message the judge could not tell whether it answers ("no message provided").
         data["message"] = d.action.message
+    if d.action.kind == "send_photos":  # seen live: "photos sent" judged unsupported; code attaches them, say which
+        from .shop import photos_for
+
+        prov = (vc.profile.provenance or {}).get("facts") or {}
+        attached = photos_for([r for k in d.fact_keys if k.startswith("shop_") for r in prov.get(k, [])],
+                              vc.ctx.business)
+        data["photos_attached_by_code"] = [x["item"] for x in attached]
     named = festivals_named(" ".join([*said, *map(str, data["cited_facts"].values())]))
     if named:  # Tihar is Diwali is Deepawali: a claim that uses another name for a cited festival is the same claim
         data["festival_names_that_mean_the_same"] = named
@@ -685,8 +692,9 @@ def verify_draft(d: Draft, vc: VerifyContext) -> Verification:
             or p.facts.get("complaint_kind") in OWNERS_COMPLAINTS
         photo_facts = {"shop_stock", "shop_collection", "shop_last_order"} & set(shop)
         if p.facts.get("asks_photos") and photo_facts and not owners and d.action.kind != "send_photos":
-            return ["they asked for photos and the shop has them: use the send photos step (code attaches the "
-                    "photos of the items in the facts you cite), and say the photos are sent"]
+            # names the action id: the model maps feedback to its actions by id (the owner sees it in plain words)
+            return ["they asked for photos and the shop has them: answer with the send_photos action (code attaches "
+                    "the photos of the items in the facts you cite), and say the photos are sent"]
         if not (asked and shop) or owners or cited & set(shop):
             return []
         if OWNER.search(d.action.message):

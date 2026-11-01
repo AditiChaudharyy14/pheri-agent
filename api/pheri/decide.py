@@ -54,7 +54,7 @@ from .synth import BUSINESS_NAMES, NOW
 PURPOSE = "decide"
 MAX_TURNS = 5  # tool rounds + the answer; live decisions took four
 # Per turn, reasoning included. Live, effort medium spent all of 1500 reasoning before the JSON answer.
-MAX_OUTPUT_TOKENS = 4000
+MAX_OUTPUT_TOKENS = 6000  # 1 Nov: with the gold examples in the brief, two decisions reasoned through all 4000
 
 
 # ---- what the model returns ----------------------------------------------------

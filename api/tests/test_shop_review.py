@@ -220,3 +220,9 @@ def test_code_fixes_the_misspellings_the_model_wrote():
 
     assert fix_spelling("साहुजी आफैं जवाफ दिनुहुछ आज बिहान। रङ्गको विषयमा कुरा हुछ।") ==         "साहुजी आफैं जवाफ दिनुहुन्छ आज बिहान। रङ्गको विषयमा कुरा हुन्छ।"
     assert sign_and_greet("नमस्ते अमित, साहुजी दिनुहछ।", "Amit", "ne").startswith("नमस्ते अमित जी, साहुजी दिनुहुन्छ।")
+
+
+def test_code_fixes_the_pha_turned_bha_slip():
+    from pheri.words import fix_spelling
+
+    assert fix_spelling("पैसा भिर्ताबारे साहुजीले आज बिहान आभैं जवाभ दिनुहुन्छ।") ==         "पैसा फिर्ताबारे साहुजीले आज बिहान आफैं जवाफ दिनुहुन्छ।"

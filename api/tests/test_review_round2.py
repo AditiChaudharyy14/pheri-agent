@@ -286,3 +286,29 @@ def test_the_owners_gold_examples_reach_the_brief_in_the_customers_language_only
     seed(store, llm, by="test")
     decide.decide(build_profile(birgunj, sita, llm), store, llm, NIGHT_RUN)
     assert briefs["b"]["style_guide"]["examples"]["replies"] == bho
+
+
+def test_the_reasons_sent_back_to_the_model_are_the_same_in_every_process():
+    """Seen in the round-3 recording: the repeated-phrase check walked a set, so the reasons came out in a different
+    order in each process (str hashing is randomised), the feedback differed, and a fresh replay missed Shanti Sah's
+    conversation. Two processes with different hash seeds must send the same words."""
+    import subprocess
+    import sys
+
+    code = ("import sys; sys.stdout.reconfigure(encoding='utf-8'); sys.path[:0] = ['.', 'tests'];"
+            "from test_review_round2 import _repeat_reasons; print(_repeat_reasons())")
+    outs = [subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, encoding="utf-8",
+                           env={**__import__("os").environ, "PYTHONHASHSEED": seed}, cwd=str(REPO_ROOT / "api")).stdout
+            for seed in ("1", "2", "3")]
+    assert outs[0] and outs[0] == outs[1] == outs[2]
+
+
+def _repeat_reasons() -> list[str]:
+    from pheri.config import Settings as S
+
+    llm = LLM(S(llm_mode="mock", record_path=None, database_url=None,
+                ledger_path=str(REPO_ROOT / ".pheri" / "hashseed.sqlite")))
+    _, v = check(load("birgunj"), llm, DINESH, "send_photos",
+                 "नमस्ते दिनेश जी, तिहार कलेक्सन स्टकमा छ। नयाँ डिजाइन आएका छन्। ढाका साडी स्टकमा छ। नयाँ डिजाइन आएका छन्।",
+                 facts=("journey_stage", "shop_collection"))
+    return v.reasons

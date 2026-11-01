@@ -580,6 +580,7 @@ def claims(d: Draft) -> list[str]:
 # A sentence ends at . ? ! (then a space), or at the Devanagari danda । or double danda ॥ (a space or not): one
 # claim per sentence in Nepali, Hindi and Bhojpuri too, so one false sentence fails alone.
 CLAIM_END = re.compile(r"(?<=[.!?])\s+|(?<=[।॥])\s*")
+SHOP_NAME = re.compile(r"birgunj saree ghar|बिरगंज साडी घर|बिरगंज साड़ी घर|brightdesk", re.I)
 LOTS_HOW = ("A lot (lot, लट, लॉट) holds the number of pieces in its name (a lot of 20 sarees). Stock of a lot is "
             "counted in lots, stock of an item in pieces. A claim is false if it says a lot is ready and gives a "
             "number that was pieces, or mixes lots and pieces in any way the cited facts don't.")
@@ -717,15 +718,19 @@ def verify_draft(d: Draft, vc: VerifyContext) -> Verification:
 
     def repeats() -> list[str]:
         """One message, each thing once: no sentence or idea said twice (handing it to the owner twice counts)."""
-        body = d.action.message
+        body = _SIGNOFF.sub("", d.action.message.strip())  # any sign-off ("- The Birgunj Saree Ghar team") is not a repeat
         for sign in SIGN_OFF.values():
             body = body[:-len(sign)].rstrip() if body.endswith(sign) else body
+        body = SHOP_NAME.sub(" ", body)  # nor is the shop's own name, said in a welcome
         sents = [x.strip() for x in CLAIM_END.split(body) if len(re.findall(r"[^\W\d_]", x)) >= 3]
         words = [{w for w in re.findall(r"[\w\u0900-\u097F]+", x.casefold()) if len(w) > 2} for x in sents]
         out = []
-        # the same two-word phrase in two sentences ("स्टकमा छ" twice) is said twice too
-        pairs = [{" ".join(p) for p in zip(ws, ws[1:])} for ws in
-                 ([w for w in re.findall(r"[^\W\d_][\w\u0900-\u097F]*", x.casefold()) if len(w) > 1] for x in sents)]
+        # the same two-word Devanagari phrase in two sentences ("स्टकमा छ" twice) is said twice too (Nepali, Hindi,
+        # Bhojpuri; short words such as छ count, the danda doesn't; English keeps the sentence-level check below, where
+        # "you like" or "your last" twice is ordinary). Ordered, never a set: str hashing changes per process, and the
+        # reasons go back to the model word for word.
+        pairs = [list(dict.fromkeys(" ".join(p) for p in zip(ws, ws[1:]))) for ws in
+                 (re.findall(r"[\u0900-\u0963\u0966-\u097F]+", x) for x in sents)]
         seen: dict[str, int] = {}
         for i, ps in enumerate(pairs):
             for p_ in ps:

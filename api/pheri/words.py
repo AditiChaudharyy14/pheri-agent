@@ -297,7 +297,9 @@ def name_for(first: str, lang: str | None) -> str:
 
 
 # Misspellings the model has written, fixed by code (native review, 1 Nov). Whole words only.
-SPELLING = {"दिनुहुछ": "दिनुहुन्छ", "दिनुहछ": "दिनुहुन्छ", "हुछ": "हुन्छ"}
+SPELLING = {"दिनुहुछ": "दिनुहुन्छ", "दिनुहछ": "दिनुहुन्छ", "हुछ": "हुन्छ",
+            # round 3: a rewrite turned every फ into भ (फिर्ता, आफैं, जवाफ)
+            "भिर्ता": "फिर्ता", "भिर्ताबारे": "फिर्ताबारे", "आभैं": "आफैं", "आभैँ": "आफैँ", "जवाभ": "जवाफ"}
 
 
 def fix_spelling(message: str) -> str:

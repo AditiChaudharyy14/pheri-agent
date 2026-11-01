@@ -194,6 +194,12 @@ Read this before every task. These rules are not optional.
   customers in India see 'रु 2400 (₹1500)', converted by code at 1.6 (shop.money). Gold examples: 9 of Aditi's
   corrected replies in style_ne_hi.md ('* lang | they wrote | reply'); decide.gold_examples passes the ones in
   the customer's language into the brief (copy tone, never facts).
+  Recorded once (Meta $0.62, Baseten $0.21) + fixes: (a) repeats walked a set, so its reasons differed per
+  process (str hash seed) and a fresh replay missed Shanti Sah: now ordered, guarded by a 3-seed test; (b) its
+  phrase rule hit the shop name/sign-off and English 'you like' twice (50-case eval fell to 18/25): now Devanagari
+  phrases only, sign-offs and the shop name ignored; (c) two decisions were cut off at 4000 output tokens (Rajesh,
+  Pooja): MAX_OUTPUT_TOKENS 6000, re-asked ($0.07); (d) a rewrite turned फ into भ in Amit Shrestha's reply:
+  added to words.SPELLING. Evals as pinned (20: 10/10, 9/10 S04; 50: 25/25, 25/25).
 - Attack moment (Step 5, Glimmer cut: Modal needs a card): an attacker gets no word from any model. The owner gets
   the escalation; the customer gets a fixed holding reply written by code (pheri/holding.py, TEMPLATES ne, ne-Latn,
   hi, bho, en; native review pending, Aditi), in the language of their message, once, from decide_customer.
@@ -202,13 +208,13 @@ Read this before every task. These rules are not optional.
   length, links, money); no judge (the text claims nothing about the customer), stated in the stored verification;
   sent only through the sha gate, at 08:00 their time. Shown under Stopped (brief) and on the Night shift timeline.
   Recorder: same request twice in a run reuses its reply; refusals recorded; the pruned file
-  is re-checked in a fresh process and restored if anything misses. Recording 579 replies (pruning kept all: the voice compile key failed the re-check; harmless, to look at).
+  is re-checked in a fresh process and restored if anything misses. Recording 696 replies (pruning kept all: the voice compile key failed the re-check; harmless, to look at).
 - Live on Render (1 Nov): https://pheri-web.onrender.com + https://pheri-api.onrender.com; .github/workflows/keepalive.yml GETs both every 10 min until 9 Nov 2026 23:59 UTC (every push to main deploys).
 - Waiting on Aditi: native review of Birgunj strings.
   Screenshots: uvicorn :8000 (replay), then `npm run build && npm start` (not the dev server), then
   `node scripts/evidence.mjs evidence [state]`; one heavy process at a time; restart the API before retaking
   (approving changes its state; the script approves last).
-- Live spend: Meta $10.196 of $130, Baseten $5.0144 of $90, Modal $0 of $25. Tests: 449 + 15 skipped (Postgres tests run when
+- Live spend: Meta $10.8616 of $130, Baseten $5.2373 of $90, Modal $0 of $25. Tests: 459 + 15 skipped (Postgres tests run when
   PHERI_TEST_DATABASE_URL is set).
 
 ## What we are building

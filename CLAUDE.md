@@ -234,8 +234,8 @@ Read this before every task. These rules are not optional.
   calls (--max-calls). (3) Context line above Good morning (labels.BUSINESS_INTRO), "Tour, step N of 5 · Next →"
   (components/tour-next.tsx), Slop verdict per pair + page line, Proof plain words (plainTwin for Wonder's text,
   display only). LESSONS.md 18 named checks; the count test reads LESSONS and "named checks". README: guard on
-  Spark 1.3 by default; Spark Open = judge always, every step in private mode; "Why I built it" in Aditi's facts only
-  (her own text still to paste). Waiting: Amit Ansari's Hindi voice clip (replace the stand-in transcript).
+  Spark 1.3 by default; Spark Open = judge always, every step in private mode; "Why I built it" is Aditi's own text
+  (1 Nov). Waiting: Amit Ansari's Hindi voice clip (replace the stand-in transcript).
 - Live on Render (1 Nov): https://pheri-web.onrender.com + https://pheri-api.onrender.com; .github/workflows/keepalive.yml GETs both every 10 min until 9 Nov 2026 23:59 UTC (every push to main deploys).
 - Waiting on Aditi: native review of Birgunj strings.
   Screenshots: uvicorn :8000 (replay), then `npm run build && npm start` (not the dev server), then

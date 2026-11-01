@@ -18,8 +18,10 @@ own copy of the demo; "Reset demo" puts it back. All customers are synthetic.
 
 ## Why I built it
 
-I'm Aditi, building alone from Birgunj, Nepal. I worked in AI lead generation and saw automated follow-ups break
-owners' trust. Small shops here sell on WhatsApp, in Nepali, Hindi and Bhojpuri.
+I worked in AI lead generation for businesses. I watched owners guess each customer's next step, and I watched AI
+follow-ups say things nobody approved, so owners stopped trusting them. Here in Birgunj, small shops sell on WhatsApp
+in Nepali, Hindi and Bhojpuri. No tool speaks their language or respects their rules. I built Pheri alone, from my
+room in Birgunj.
 
 ## What Pheri does
 

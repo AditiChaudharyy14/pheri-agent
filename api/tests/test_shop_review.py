@@ -50,12 +50,13 @@ def failed(v):
 # ---- 1. the shop's own facts ------------------------------------------------------------------------------
 def test_the_shop_file_answers_what_the_message_asks_and_nothing_else():
     shop = json.loads((REPO_ROOT / "data" / "synth" / "birgunj" / "shop.json").read_text(encoding="utf-8"))
-    assert {"catalog", "size_guide", "delivery", "cod", "returns", "festivals"} <= set(shop)
+    assert {"catalog", "size_guide", "delivery", "cod", "returns", "collections", "festival_names"} <= set(shop)
+    assert all({"ne", "hi", "bho"} <= set(it["names"]) for it in shop["catalog"])  # a name in every language
     assert {"Birgunj", "Kalaiya", "Janakpur", "Hetauda", "Bettiah", "Raxaul"} <= set(shop["delivery"])
     f, prov = facts_for("First time ordering here. Do you deliver to Hetauda?", "Birgunj", "NP", "tihar")
     assert f == {"shop_delivery": "Hetauda: 2 days, delivery charge NPR 150"} and prov["shop_delivery"] == ["shop:delivery"]
     f, _ = facts_for("यो बनारसी साडी अझै छ? क्यास अन डेलिभरी हुन्छ?", "Birgunj", "NP", "tihar")
-    assert f["shop_stock"].startswith("Red Banarasi silk saree: 4 in stock, NPR 8500, photo PH-101")
+    assert f["shop_stock"].startswith("रातो बनारसी सिल्क साडी: स्टकमा 4, NPR 8500, फोटो PH-101")  # their language
     assert f["shop_cod"].startswith("Cash on delivery in Nepal")
     f, _ = facts_for("cash on delivery milega?", "Raxaul", "IN", "tihar")
     assert "no cash on delivery" in f["shop_cod"]  # across the border: pay first
@@ -197,3 +198,24 @@ def test_a_devanagari_spelling_variant_of_the_name_still_gets_the_honorific():
     assert sign_and_greet("नमस्ते रन्जु, रातो साडी स्टकमा छ।", "Ranju", "ne") == \
         "नमस्ते रञ्जु जी, रातो साडी स्टकमा छ। – बिरगंज साडी घर"
     assert sign_and_greet("नमस्ते, तपाईंको अर्डर आयो।", "Ranju", "ne") == "नमस्ते, तपाईंको अर्डर आयो। – बिरगंज साडी घर"
+
+
+def test_product_names_come_in_the_customers_language_never_english():
+    f, _ = facts_for("छठ खातिर नया डिजाइन आइल बा? फोटो भेजीं।", "Birgunj", "NP", "chhath")
+    assert f["shop_stock"] == "छठ खातिर पियर कॉटन साड़ी: स्टॉक में 12, NPR 1800, फोटो PH-105"
+    assert f["shop_collection"].startswith("छठ कलेक्शन: छठ खातिर पियर कॉटन साड़ी")
+    f, _ = facts_for("छठ के लिए नए डिज़ाइन आए हैं? फोटो भेजिए।", "Birgunj", "NP", "chhath")
+    assert f["shop_stock"].startswith("छठ की पीली कॉटन साड़ी")
+    f, _ = facts_for("Is the red saree still in stock?", "Birgunj", "NP", "tihar")
+    assert f["shop_stock"].startswith("Red Banarasi silk saree: 4 in stock")
+    import re
+    for lang_text in ("यो बनारसी साडी अझै छ?", "छठ के लिए नए डिज़ाइन आए हैं?", "छठ खातिर नया डिजाइन आइल बा?"):
+        values = " ".join(facts_for(lang_text, "Birgunj", "NP", "chhath")[0].values())
+        assert not re.search(r"(saree|silk|cotton|Banarasi|in stock|photo)", values, re.I), values
+
+
+def test_code_fixes_the_misspellings_the_model_wrote():
+    from pheri.words import fix_spelling
+
+    assert fix_spelling("साहुजी आफैं जवाफ दिनुहुछ आज बिहान। रङ्गको विषयमा कुरा हुछ।") ==         "साहुजी आफैं जवाफ दिनुहुन्छ आज बिहान। रङ्गको विषयमा कुरा हुन्छ।"
+    assert sign_and_greet("नमस्ते अमित, साहुजी दिनुहछ।", "Amit", "ne").startswith("नमस्ते अमित जी, साहुजी दिनुहुन्छ।")

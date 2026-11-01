@@ -261,12 +261,20 @@ def name_for(first: str, lang: str | None) -> str:
     return f"{first} ji"
 
 
+# Misspellings the model has written, fixed by code (native review, 1 Nov). Whole words only.
+SPELLING = {"दिनुहुछ": "दिनुहुन्छ", "दिनुहछ": "दिनुहुन्छ", "हुछ": "हुन्छ"}
+
+
+def fix_spelling(message: str) -> str:
+    return re.sub(r"[ऀ-ॣ०-ॿ]+", lambda m: SPELLING.get(m.group(0), m.group(0)), message or "")  # not the danda
+
+
 def sign_and_greet(message: str, first: str, lang: str | None) -> str:
     """Code's edit to a shop reply, before it is verified: the shop's sign-off for the reply's language (any sign-off
     the model wrote is replaced) and the customer's name, right after the greeting, in the reply's script with the
     honorific. A message that opens without a greeting keeps its opening."""
     lang = lang if lang in SIGN_OFF else "en"
-    body = _ANY_SIGN_OFF.sub("", (message or "").rstrip())
+    body = _ANY_SIGN_OFF.sub("", fix_spelling(message).rstrip())
     body = re.sub(r"\s*[-–—]+\s*(?:the\s+)?(?:team|टीम|टिम)\s*[.।]?\s*$", "", body, flags=re.I).rstrip(" ,-–—")
     m = _GREET.match(body)
     if m:

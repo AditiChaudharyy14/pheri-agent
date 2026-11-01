@@ -160,6 +160,16 @@ Read this before every task. These rules are not optional.
   card verified; 10 of 14 questions answered from the shop file, 4 to the owner (2 money/complaint), deferral 29%;
   Rohit Ansari's unreadable voice note: no model, fixed reply. 20-case judge 10/10 planted, 9/10 supported (S04
   strict again); 50-case 25/25, 25/25. Rule moments count owner rules only (plan-check refusals were miscounted).
+- Speak a rule (1 Nov): Aditi's Hindi clip (data/voice/owner-rule-hi.wav, 16 kHz mono PCM16, 7.8 s; copy in
+  web/public/voice) -> Muse Voice (live once, $0.0004, recorded by audio hash): "किसी भी ग्राहक को दस परसेंट से
+  ज्यादा डिस्काउंट मत देना।" (her words, up to the nukta in ज़्यादा). POST /rules/voice (recorded clips only:
+  voice.RULE_CLIPS) -> rules.propose -> preview of waiting steps it would block (autonomy.would_block); confirm ->
+  autonomy.block_for_new_rule: each waiting step that breaks it is blocked ("Blocked by your new rule"), approval
+  closed, audited. Seed rule loosened to "No discounts above 15%": the owner choice "Offer up to 15% off (your
+  limit)" schedules a code-written offer (holding.OFFER_TEMPLATES, send_owner_offer); the spoken 10% rule flips it.
+  Works per visitor sandbox; Reset demo restores. Rules page: Speak a rule panel. Catalog has ne/hi/bho names
+  ("छठ खातिर पियर कॉटन साड़ी"); stock/collection facts come in the message's language. words.fix_spelling fixes
+  the model's दिनुहुछ/हुछ before verification.
   Data bug fixed: 28 old messages were dated after the night started (synth._before_night moves them a day back;
   only their timestamps changed); Pooja Ansari's night message was hidden by one, so the brief counted 22, not 23.
 - Attack moment (Step 5, Glimmer cut: Modal needs a card): an attacker gets no word from any model. The owner gets
@@ -170,12 +180,12 @@ Read this before every task. These rules are not optional.
   length, links, money); no judge (the text claims nothing about the customer), stated in the stored verification;
   sent only through the sha gate, at 08:00 their time. Shown under Stopped (brief) and on the Night shift timeline.
   Recorder: same request twice in a run reuses its reply; refusals recorded; the pruned file
-  is re-checked in a fresh process and restored if anything misses. Recording 212 replies.
+  is re-checked in a fresh process and restored if anything misses. Recording 334 replies (pruning kept all: the voice compile key failed the re-check; harmless, to look at).
 - Waiting on Aditi: Nepali + Hindi clips; native review of Birgunj strings; Render clicks.
   Screenshots: uvicorn :8000 (replay), then `npm run build && npm start` (not the dev server), then
   `node scripts/evidence.mjs evidence [state]`; one heavy process at a time; restart the API before retaking
   (approving changes its state; the script approves last).
-- Live spend: Meta $8.2858 of $130, Baseten $4.3477 of $90, Modal $0 of $25. Tests: 430 + 15 skipped (Postgres tests run when
+- Live spend: Meta $8.8663 of $130, Baseten $4.5334 of $90, Modal $0 of $25. Tests: 437 + 15 skipped (Postgres tests run when
   PHERI_TEST_DATABASE_URL is set).
 
 ## What we are building

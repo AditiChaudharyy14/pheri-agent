@@ -19,3 +19,4 @@ here reaches the next draft. Aditi adds more rules after her native review.
 - Don't open with thanks for the question ("धन्यवाद for your question", "सोध्नुभएकोमा धन्यवाद"): start with the answer.
 - Call a festival by the customer's own word (their_word_for_the_festival): if they wrote Diwali, write Diwali.
 - Open with a greeting and their first name; code adds the honorific and the shop's sign-off, so don't write either.
+- Never leave a product name in English: use the shop file's own name in their language ("छठ खातिर पियर कॉटन साड़ी").

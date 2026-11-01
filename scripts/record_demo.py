@@ -50,6 +50,9 @@ def run() -> dict:
         # Slop vs Pheri: the plain drafts are model replies too, recorded with the cards (Birgunj, the hero).
         client.get("/businesses/birgunj/slop").raise_for_status()
         client.get("/businesses/birgunj/brief").raise_for_status()  # no model: it must not need one either
+        # Speak a rule: the owner's recorded voice note -> Muse Voice -> the rule compiler (recorded, so a visitor's
+        # sandbox replays it). Proposed only, never confirmed here: the decisions above stay as they are.
+        client.post("/businesses/birgunj/rules/voice", json={"clip": "owner-rule-hi", "by": "owner:demo"}).raise_for_status()
     return cards
 
 

@@ -65,7 +65,9 @@ def verify_template(action: ProposedAction, ctx: CheckContext, store, language: 
         ("language", lang_problems),
         ("length", [f"the message is {len(msg)} characters"] if len(msg) > MAX_MESSAGE_CHARS else []),
         ("links", _links(ctx.business, msg)),
-        ("money", ["a holding reply never offers money"] if _MONEY.search(msg) else []),
+        # money only in an offer the owner chose, whose percentage the owner's rules checked just above
+        ("money", ["a holding reply never offers money"] if _MONEY.search(msg) and action.kind != "offer_discount"
+         else []),
     ]
     checks = [{"name": n, "applies": True, "passed": not r, "reasons": r} for n, r in plan]
     checks[1]["note"] = NO_JUDGE
@@ -100,3 +102,41 @@ def send_holding_reply(store, ctx: CheckContext, customer_key: str, first_name: 
 
 def holding_reply_for(store, customer_key: str) -> dict | None:
     return next((a for a in store.actions(customer_key) if a["kind"] == KIND), None)
+
+
+# ---- the owner's own offer: chosen on a card, written by code (never by a model) -------------------------------
+OFFER_TEMPLATES = {
+    "ne": "नमस्ते {name}, साहुजीले हजुरको अर्को अर्डरमा {pct}% छुट दिनुभएको छ। – बिरगंज साडी घर",
+    "ne-Latn": "Namaste {name}, sahuji le hajur ko arko order ma {pct}% chhut dinu bhayo. – Birgunj Saree Ghar",
+    "hi": "नमस्ते {name}, साहुजी ने आपके अगले ऑर्डर पर {pct}% छूट दी है। – बिरगंज साड़ी घर",
+    "bho": "प्रणाम {name}, साहुजी रउआ के अगिला ऑर्डर पर {pct}% छूट देले बाड़न। – बिरगंज साड़ी घर",
+    "en": "Hi {name}, the owner is giving you {pct}% off your next order. – Birgunj Saree Ghar",
+}
+OFFER_KIND = "offer_discount"
+
+
+def send_owner_offer(store, ctx: CheckContext, customer_key: str, first_name: str, language: str | None,
+                     pct: float, by: str) -> dict:
+    """The owner picked "Offer up to N% (your limit)": a fixed offer, written by code in their language, checked in
+    code (the owner's rules decide the percentage; no judge, it claims nothing about them), out when quiet hours
+    end. It is still an ordinary waiting step: a rule the owner adds before then blocks it."""
+    lang = language if language in OFFER_TEMPLATES else "en"
+    message = OFFER_TEMPLATES[lang].format(name=name_for(first_name, lang), pct=f"{pct:g}")
+    action = ProposedAction(kind=OFFER_KIND, channel=CHANNEL, discount_pct=pct, message=message)
+    action.send_at = next_send_time(active_rules(store), action, ctx)
+    v = verify_template(action, ctx, store, lang)
+    payload = {"kind": OFFER_KIND, "channel": CHANNEL, "discount_pct": pct, "message": message, "language": lang,
+               "send_at": action.send_at.isoformat() if action.send_at else None, "written_by": "code",
+               "owner_offer": True, "verification": {**v.record(), "note": NO_JUDGE}}
+    with store.tx():
+        aid = store.add_action(customer_key, OFFER_KIND, payload, f"The owner chose to offer up to {pct:g}%.", [],
+                               "ask_owner", v.rule_check, "approved" if v.passed else "blocked")
+        store.audit(by, "owner_offer", "action", aid, {"customer": customer_key, "pct": pct, "passed": v.passed,
+                                                       "reasons": v.reasons})
+        if v.passed:
+            _execute(store, aid, ctx.now, by)
+    return store.get_action(aid)
+
+
+def owner_offer_for(store, customer_key: str) -> dict | None:
+    return next((a for a in store.actions(customer_key) if (a["payload"] or {}).get("owner_offer")), None)

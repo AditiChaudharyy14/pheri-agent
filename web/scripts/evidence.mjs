@@ -97,6 +97,37 @@ if (state === "main") {
     console.log(`${out}/success-${vp}.png`);
     await page.close();
   }
+  // Speak a rule, the demo's flow: approve "Offer up to 15%" on a money card (a code-written offer waits for 8:00),
+  // play the owner's voice note into a rule (10%), confirm it, and the offer flips to "Blocked by your new rule".
+  const page = await browser.newPage({ viewport: VIEWPORTS["1440x900"], deviceScaleFactor: 1 });
+  await page.goto(BASE + "/birgunj", { waitUntil: "networkidle" });
+  const offer = page.getByRole("button", { name: /^Offer up to 15% off \(your limit\)$/ }).first();
+  if (!(await offer.count())) problems.push("speak a rule: no money card offers 'Offer up to 15% off (your limit)'");
+  else {
+    await offer.click();
+    await page.waitForLoadState("networkidle");
+    await page.waitForTimeout(500);
+    await page.goto(BASE + "/birgunj/rules", { waitUntil: "networkidle" });
+    await page.getByRole("button", { name: "Turn this voice note into a rule" }).click();
+    await page.getByText("What code will enforce:").waitFor({ timeout: 60_000 });
+    await page.screenshot({ path: `${out}/speak-rule-1440x900.png`, fullPage: true });
+    const preview = await page.getByText(/waiting step(s)? break/).count();
+    if (!preview) problems.push("speak a rule: the preview shows no waiting step that breaks the rule");
+    await page.getByRole("button", { name: "Confirm the rule" }).click();
+    await page.getByText("In force from now on.").waitFor({ timeout: 60_000 });
+    const flipped = await page.getByText("Blocked by your new rule:").count();
+    if (!flipped) problems.push("speak a rule: nothing flipped after confirming");
+    await page.screenshot({ path: `${out}/speak-confirmed-1440x900.png`, fullPage: true });
+    for (const [vp, size] of Object.entries(VIEWPORTS)) {
+      await page.setViewportSize(size);
+      await page.goto(BASE + "/birgunj", { waitUntil: "networkidle" });
+      const blocked = await page.getByText("Blocked by your new rule:").count();
+      if (!blocked) problems.push(`${vp} speak a rule: the morning brief does not show the blocked offer`);
+      await page.screenshot({ path: `${out}/speak-flipped-${vp}.png`, fullPage: true });
+      console.log(`${out}/speak-flipped-${vp}.png (blocked offers shown: ${blocked})`);
+    }
+  }
+  await page.close();
 }
 await browser.close();
 if (problems.length) {

@@ -89,6 +89,13 @@ class ApproveIn(By):
                                description="for a money question: which of the step's owner_options the owner picked")
 
 
+OFFER_CHOICE = "Offer up to"  # autonomy.owner_options' discount choice: it makes a code-written offer
+
+
+class VoiceRuleIn(By):
+    clip: str = Field(min_length=1, max_length=60, description="one of the owner's recorded rule clips (voice.RULE_CLIPS)")
+
+
 class RejectIn(By):
     note: str | None = Field(default=None, max_length=500)
 
@@ -380,8 +387,11 @@ def create_app(llm: LLM | None = None) -> FastAPI:
         with state.lock:
             try:
                 # The re-check needs code-computed facts only: approving never costs a model call.
-                return approve(state.stores[b], approval_id, state.who(body.by), context_for=lambda k: ctx_for(b, k),
+                done = approve(state.stores[b], approval_id, state.who(body.by), context_for=lambda k: ctx_for(b, k),
                                override=body.override, choice=body.choice)
+                if body.choice and body.choice.startswith(OFFER_CHOICE):
+                    owner_offer(b, done, state.who(body.by))
+                return done
             except NotFound:
                 raise HTTPException(404, f"no approval {approval_id!r}") from None
             except ValueError as exc:
@@ -413,16 +423,50 @@ def create_app(llm: LLM | None = None) -> FastAPI:
                 raise HTTPException(422, str(exc)) from None
             return {**rule_view(state.stores[b].get_rule(draft.id)), "confirmable": draft.confirmable}
 
+    @app.post("/businesses/{b}/rules/voice", status_code=201)
+    def add_rule_by_voice(body: VoiceRuleIn, b: str = Depends(business)):
+        """Speak a rule: one of the owner's recorded voice notes (no microphone here) -> Muse Voice -> the same rule
+        compiler as typed words -> a draft the owner confirms. Shows which waiting steps it would stop."""
+        from .autonomy import would_block
+        from .rules import Rule, _draft
+        from .voice import RULE_CLIPS, transcribe_rule_clip
+
+        if body.clip not in RULE_CLIPS:
+            raise HTTPException(404, f"no recorded clip {body.clip!r}")
+        with state.lock:
+            warm(b)
+            store = state.stores[b]
+            transcript, clip = transcribe_rule_clip(state.llm, body.clip)
+            try:
+                draft = propose(store, state.llm, transcript, actor=state.who(body.by))
+            except ValueError as exc:
+                raise HTTPException(422, str(exc)) from None
+            d = _draft(b, store.get_rule(draft.id))
+            preview = would_block(store, Rule(draft.id, transcript, d.checks), lambda k: ctx_for(b, k))
+            return {**rule_view(store.get_rule(draft.id)), "confirmable": draft.confirmable, "transcript": transcript,
+                    "clip": clip, "would_block": [named(b, x) for x in preview]}
+
     @app.post("/businesses/{b}/rules/{rule_id}/confirm")
     def confirm_rule(rule_id: str, body: By, b: str = Depends(business)):
+        """Confirm: from now on code enforces it, and every step still waiting is checked against it again."""
+        from .autonomy import block_for_new_rule
+        from .rules import active_rules
+
         with state.lock:
+            store = state.stores[b]
             try:
-                confirm(state.stores[b], rule_id, state.who(body.by))
+                confirm(store, rule_id, state.who(body.by))
             except NotFound:
                 raise HTTPException(404, f"no rule {rule_id!r}") from None
             except ValueError as exc:
                 raise HTTPException(409, str(exc)) from None
-            return rule_view(state.stores[b].get_rule(rule_id))
+            rule = next(r for r in active_rules(store) if r.id == rule_id)
+            flipped = block_for_new_rule(store, rule, lambda k: ctx_for(b, k), state.who(body.by))
+            return {**rule_view(store.get_rule(rule_id)), "blocked": [named(b, x) for x in flipped]}
+
+    def named(b: str, x: dict) -> dict:
+        cu = state.data[b].customers.get(x["customer"])
+        return {**x, "name": cu.name if cu else x["customer"]}
 
     # ---- private mode ----
     @app.get("/businesses/{b}/private-mode")
@@ -521,6 +565,8 @@ def create_app(llm: LLM | None = None) -> FastAPI:
                 "waits_for_owner": (action or {}).get("payload", {}).get("waits_for_owner"),
                 "owner_options": (action or {}).get("payload", {}).get("owner_options") or [],
                 "owner_choice": owner_choice(b, action),
+                "blocked_by_rule": ((action or {}).get("rule_check") or {}).get("blocked_by_rule"),
+                "owner_offer": offer_view(b, k),
                 "holding_reply": holding(b, k),
                 "customer": {"key": k, "name": cu.name, "company": cu.company, "town": cu.attrs.get("town"),
                              "stage": state.stages[b][k].stage},
@@ -546,6 +592,30 @@ def create_app(llm: LLM | None = None) -> FastAPI:
         when = local_time(datetime.fromisoformat(at), CheckContext(b, {"country": cu.attrs.get("country")}, CLOCKS[b][1]))             if at and a["status"] == "scheduled" else None
         return {"message": a["payload"]["message"], "language": a["payload"].get("language"), "status": a["status"],
                 "sends_at_local": when, "checks": (a["payload"].get("verification") or {}).get("code_checks")}
+
+    def owner_offer(b: str, action: dict, by: str) -> dict | None:
+        """The owner chose "Offer up to N% (your limit)": a fixed offer written by code, at the owner's limit, out when
+        quiet hours end (holding.send_owner_offer). It waits like any step, so a rule added before then stops it."""
+        from .holding import send_owner_offer
+        from .rules import MaxDiscountPct, active_rules
+
+        store = state.stores[b]
+        cap = min((c.pct for r in active_rules(store) for c in r.checks if isinstance(c, MaxDiscountPct)), default=None)
+        if not cap:
+            return None
+        cu = state.data[b].customers[action["customer_key"]]
+        return send_owner_offer(store, ctx_for(b, cu.key), cu.key, cu.name.split()[0],
+                                read_language(action["payload"].get("message") or ""), cap, by)
+
+    def offer_view(b: str, k: str) -> dict | None:
+        from .holding import owner_offer_for
+
+        a = owner_offer_for(state.stores[b], k)
+        if a is None:
+            return None
+        return {"message": a["payload"]["message"], "pct": a["payload"]["discount_pct"], "status": a["status"],
+                "language": a["payload"].get("language"),
+                "blocked_by_rule": (a.get("rule_check") or {}).get("blocked_by_rule")}
 
     def owner_choice(b: str, action: dict | None) -> str | None:
         """What the owner picked when approving a money question (from the audit log), or None."""
@@ -775,6 +845,11 @@ def create_app(llm: LLM | None = None) -> FastAPI:
             if c["skipped"] == "do_not_contact":
                 out.append({"customer": c["customer"], "rule": "Asked not to be contacted", "refused": None,
                             "then": "Pheri sent nothing and asked no model."})
+                continue
+            if new := c.get("blocked_by_rule") or (c.get("owner_offer") or {}).get("blocked_by_rule"):
+                # a rule the owner confirmed this morning stopped a waiting step (an offer they chose, too)
+                out.append({"customer": c["customer"], "rule": f"Your new rule: {new['text']}", "refused": None,
+                            "then": f"Blocked by your new rule ({new['reason']}). Nothing goes out."})
                 continue
             for pre in state.decided[b][k].get("prechecks") or []:
                 # the owner's rules only: never the middle step's bar (its stage, its plan, a question to answer first)

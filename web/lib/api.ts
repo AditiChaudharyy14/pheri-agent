@@ -210,7 +210,11 @@ export const pp = (v: number | null | undefined) => (v == null ? "—" : `${v > 
 export const usd = (v: number) => `$${v.toFixed(4)}`;
 
 export type NextStepWithTime = NextStep & { sends_at_local?: string | null; waits_for_owner?: string | null;
-  owner_options?: string[]; owner_choice?: string | null };
+  owner_options?: string[]; owner_choice?: string | null; owner_offer?: OwnerOffer | null;
+  blocked_by_rule?: { id: string; text: string; reason: string } | null };
+/** The offer the owner chose on a card ("Offer up to N%"), written by code; a rule added before 8:00 blocks it. */
+export type OwnerOffer = { message: string; pct: number; status: string; language: string | null;
+  blocked_by_rule: { id: string; text: string; reason: string } | null };
 export type Brief = {
   night: string; morning: string;
   read: { messages: number; by_language: Record<string, number>; voice_notes: { read: number; unreadable: number } };

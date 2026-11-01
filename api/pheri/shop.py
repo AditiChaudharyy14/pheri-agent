@@ -14,6 +14,7 @@ import re
 from functools import lru_cache
 
 from .synth import OUT
+from .words import read_language
 
 SHOP_FACTS = ("shop_delivery", "shop_cod", "shop_size_guide", "shop_stock", "shop_collection", "shop_returns")
 
@@ -71,6 +72,34 @@ def _category(text: str | None) -> str | None:
     return next((c for c, words in CATEGORY_WORDS.items() if any(w in t for w in words)), None)
 
 
+# Facts in the language the customer wrote: a Nepali, Hindi or Bhojpuri reply copies these names, never English ones.
+LABELS = {"en": ("in stock", "photo", "collection", "from NPR {n}", "photos"),
+          "ne-Latn": ("in stock", "photo", "collection", "from NPR {n}", "photos"),
+          "ne": ("स्टकमा", "फोटो", "कलेक्सन", "NPR {n} देखि", "फोटो"),
+          "hi": ("स्टॉक में", "फोटो", "कलेक्शन", "NPR {n} से", "फोटो"),
+          "bho": ("स्टॉक में", "फोटो", "कलेक्शन", "NPR {n} से", "फोटो")}
+
+
+def _name(it: dict, lang: str) -> str:
+    return (it.get("names") or {}).get(lang) or it["name"]
+
+
+def _item_line(it: dict, lang: str) -> str:
+    stock_w, photo_w = LABELS.get(lang, LABELS["en"])[:2]
+    count = "" if it["stock"] is None else (f"{it['stock']} {stock_w}, " if lang in ("en", "ne-Latn")
+                                            else f"{stock_w} {it['stock']}, ")
+    return f"{_name(it, lang)}: {count}NPR {it['price_npr']}, {photo_w} {it['photo']}"
+
+
+def _collection_line(s: dict, fest: str, lang: str) -> str:
+    items = [it for it in s["catalog"] if it["id"] in s["collections"][fest]]
+    _, _, coll_w, from_w, photos_w = LABELS.get(lang, LABELS["en"])
+    fest_name = (s.get("festival_names", {}).get(fest) or {}).get(lang) or fest.title()
+    low = min(it["price_npr"] for it in items)
+    return (f"{fest_name} {coll_w}: " + ", ".join(_name(it, lang) for it in items) + f"; {from_w.format(n=low)}; "
+            f"{photos_w} " + ", ".join(it["photo"] for it in items) + ".")
+
+
 def asked_town(text: str) -> str | None:
     t = (text or "").casefold()
     return next((town for town, words in TOWN_WORDS.items() if any(w in t for w in words)), None)
@@ -84,6 +113,7 @@ def facts_for(text: str | None, town: str | None, country: str | None, festival:
     if not s or not text:
         return {}, {}
     on = topics(text)
+    lang = read_language(text)  # names and labels in the language of their message: no English product names
     items = _items(text, s["catalog"])
     if not items and on & {"stock", "price"} and last_item:
         # "Any more like last time?" names no item: their last order does, if it is the kind of thing they named.
@@ -103,14 +133,14 @@ def facts_for(text: str | None, town: str | None, country: str | None, festival:
     if "size" in on:
         facts["shop_size_guide"], prov["shop_size_guide"] = s["size_guide"], ["shop:size_guide"]
     if items and on & {"stock", "price", "photos", "designs", "size"}:
-        facts["shop_stock"] = "; ".join(
-            f"{it['name']}: " + (f"{it['stock']} in stock, " if it["stock"] is not None else "")
-            + f"NPR {it['price_npr']}, photo {it['photo']}" for it in items)
+        facts["shop_stock"] = "; ".join(_item_line(it, lang) for it in items)
         prov["shop_stock"] = ["shop:catalog"]
     if on & {"designs", "photos"}:
-        fest = next((f for f in s["festivals"] if f in (text or "").casefold() or _alias(text, f)), None) or festival
-        if fest in s["festivals"]:
-            facts["shop_collection"], prov["shop_collection"] = s["festivals"][fest], ["shop:festivals"]
+        fests = s["collections"]
+        fest = next((f for f in fests if f in (text or "").casefold() or _alias(text, f)), None) or festival
+        if fest in fests:
+            facts["shop_collection"] = _collection_line(s, fest, lang)
+            prov["shop_collection"] = ["shop:collections"]
     if "returns" in on:
         facts["shop_returns"], prov["shop_returns"] = s["returns"], ["shop:returns"]
     return facts, prov

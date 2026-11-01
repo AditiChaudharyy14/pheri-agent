@@ -178,6 +178,26 @@
       "viewport": "1440x900",
       "artifact": "brightdesk-1440x900.png",
       "observation": "Brightdesk's morning, scanned for internal ids."
+    },
+    {
+      "viewport": "1440x900",
+      "artifact": "speak-rule-1440x900.png",
+      "observation": "Speak a rule, before confirming: the owner's voice note, what Muse Voice heard (recorded from a live run), what code will enforce (Block any discount over 10%), and the waiting step it would block (Salma Pandey's 15% offer, chosen on her card)."
+    },
+    {
+      "viewport": "1440x900",
+      "artifact": "speak-confirmed-1440x900.png",
+      "observation": "After Confirm: the rule is in force (third under In force) and 'Blocked by your new rule: Salma Pandey, offer a discount'."
+    },
+    {
+      "viewport": "390x844",
+      "artifact": "speak-flipped-390x844.png",
+      "observation": "The morning brief after the rule: the 15% offer reads 'Blocked by your new rule', and Your rules stopped lists it."
+    },
+    {
+      "viewport": "1440x900",
+      "artifact": "speak-flipped-1440x900.png",
+      "observation": "The same on desktop."
     }
   ]
 }

@@ -58,3 +58,31 @@ def fill(ds, llm: LLM, folder: Path | None = None) -> dict[str, dict]:
 
 
 register_mock(PURPOSE, lambda messages, schema: "(mock transcript)")
+
+
+# ---- Speak a rule: the owner's recorded voice notes (no microphone in the demo) ---------------------------------
+RULE_PURPOSE = "rule_voice"
+RULE_CLIPS = {
+    "owner-rule-hi": {
+        "file": "owner-rule-hi.wav", "language": "Hindi",
+        "said": "किसी भी ग्राहक को दस परसेंट से ज़्यादा डिस्काउंट मत देना।",
+        "about": "The owner's own voice note (Aditi, recorded 1 Nov 2026, converted to 16 kHz mono WAV): a scripted "
+                 "rule in Hindi, no customer data, sent to Muse Voice with her consent.",
+    },
+}
+
+
+def transcribe_rule_clip(llm: LLM, clip: str) -> tuple[str, dict]:
+    """The transcript of one recorded rule clip, through llm.transcribe (replayed by its audio hash), and its
+    details. Only the clips listed in RULE_CLIPS: nothing a visitor uploads is ever sent anywhere."""
+    from .config import REPO_ROOT
+
+    c = RULE_CLIPS[clip]
+    audio = (REPO_ROOT / "data" / "voice" / c["file"]).read_bytes()
+    r = llm.transcribe(audio, purpose=RULE_PURPOSE, language_bias=[c["language"]])
+    return (r.text or "").strip(), {"clip": clip, "language": c["language"], "said": c["said"],
+                                    "recorded": r.recorded, "cost_usd": r.cost_usd, "about": c["about"]}
+
+
+# Offline, the stand-in hears exactly what the owner said (the recording replays the real transcript).
+register_mock(RULE_PURPOSE, lambda messages, schema: RULE_CLIPS["owner-rule-hi"]["said"])

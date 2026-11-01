@@ -273,3 +273,51 @@ def sent_messages(store, customer_key: str) -> list[tuple[str, datetime]]:
         if a["status"] == "executed" and t and t.customer_facing and a["executed_at"] is not None:
             out.append((a["payload"]["channel"], a["executed_at"]))
     return out
+
+
+# ---- a new rule, after the fact: what it stops among the steps already waiting ----------------------------
+OPEN_STATUSES = ("awaiting_approval", "approved", "scheduled", "suggested")  # not yet sent
+
+
+def _breaks(rule, action: dict, context_for: Callable[[str], CheckContext]) -> str | None:
+    """Why this waiting step breaks `rule` (that rule alone, checked in code), or None."""
+    from .rules import check
+
+    t = CATALOG.get(action["kind"])
+    if action["status"] not in OPEN_STATUSES or not (t and t.customer_facing):
+        return None
+    p = action["payload"]
+    ctx = context_for(action["customer_key"])
+    proposed = ProposedAction(kind=action["kind"], channel=p.get("channel"), discount_pct=p.get("discount_pct"),
+                              message=p.get("message", ""))
+    proposed.send_at = datetime.fromisoformat(p["send_at"]) if p.get("send_at") else ctx.now
+    res = check([rule], proposed, ctx)
+    return next((r["reason"] for r in res.results if not r["passed"] and r["rule_id"] == rule.id), None)
+
+
+def would_block(store, rule, context_for: Callable[[str], CheckContext]) -> list[dict]:
+    """A preview, before the owner confirms: the waiting steps this rule would stop. Nothing changes."""
+    return [{"action_id": a["id"], "customer": a["customer_key"], "kind": a["kind"], "reason": why}
+            for a in store.actions() if (why := _breaks(rule, a, context_for))]
+
+
+def block_for_new_rule(store, rule, context_for: Callable[[str], CheckContext], by: str) -> list[dict]:
+    """The owner confirmed `rule`: every step still waiting is checked against it, in code, and each one that breaks
+    it is blocked ("Blocked by your new rule"), its approval closed, and the audit log says which rule and why."""
+    out = []
+    with store.tx():
+        for a in store.actions():
+            why = _breaks(rule, a, context_for)
+            if not why:
+                continue
+            note = f"Blocked by your new rule: {rule.source_text}"
+            store.set_action(a["id"], "blocked", rule_check={"allowed": False, "results": [
+                {"rule_id": rule.id, "check": "new_rule", "passed": False, "reason": why}],
+                "blocked_by_rule": {"id": rule.id, "text": rule.source_text, "reason": why}})
+            for ap in store.approvals():
+                if ap["action_id"] == a["id"]:
+                    store.decide_approval(ap["id"], "rejected", by, note=note)
+            store.audit(by, "blocked_by_new_rule", "action", a["id"],
+                        {"customer": a["customer_key"], "rule_id": rule.id, "rule": rule.source_text, "reason": why})
+            out.append({"action_id": a["id"], "customer": a["customer_key"], "kind": a["kind"], "reason": why})
+    return out

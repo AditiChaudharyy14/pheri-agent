@@ -4,7 +4,7 @@ import { ApproveReject } from "@/components/approve";
 import { DecidedByLine } from "@/components/decided-by";
 import { EvidenceChips } from "@/components/evidence";
 import { Skeleton } from "@/components/ui";
-import { api, pct, type Brief, type NextStepWithTime, type HoldingReply } from "@/lib/api";
+import { api, pct, type Brief, type NextStepWithTime, type HoldingReply, type OwnerOffer } from "@/lib/api";
 import { actionLabel, clockNPT, dayNPT, LANGUAGE_NAME, stageLabel } from "@/lib/labels";
 
 /** The owner's morning check, usually on a phone: what the night shift did, in sentences, then what needs them. */
@@ -310,6 +310,21 @@ function HoldingLine({ h }: { h: HoldingReply }) {
   );
 }
 
+/** The offer the owner chose on a card: written by code, out at 8:00, unless a rule added since stops it. */
+function OfferLine({ o }: { o: OwnerOffer }) {
+  return o.blocked_by_rule ? (
+    <span className="mt-1 block text-[0.88rem]">
+      <span className="font-medium text-rose">Blocked by your new rule:</span>{" "}
+      <span className="text-ink-2">the {o.pct}% offer ({o.blocked_by_rule.reason}). Nothing goes out.</span>
+    </span>
+  ) : (
+    <span className="mt-1 block text-[0.88rem] text-ink-2">
+      <span className="text-teal-ink">+ your {o.pct}% offer, written by code, {o.status === "scheduled" ? "out at 8:00" : o.status}:</span>{" "}
+      <span lang={o.language ?? undefined}>{o.message}</span>
+    </span>
+  );
+}
+
 function Ready({ business, step, sent = false }: { business: string; step: NextStepWithTime; sent?: boolean }) {
   const d = step.decision;
   return (
@@ -318,6 +333,7 @@ function Ready({ business, step, sent = false }: { business: string; step: NextS
         <span className="min-w-0">
           <span className="font-medium text-ink">{step.customer.name}</span>{" "}
           <span className="text-[0.92rem] text-ink-2">· {actionLabel(d.action)}</span>
+          {step.owner_offer && <OfferLine o={step.owner_offer} />}
         </span>
         <span className="shrink-0 text-[0.85rem] text-teal-ink">
           {step.approval?.decision === "approved" ? `✓ approved by you${step.owner_choice ? ` (${step.owner_choice.toLowerCase()})` : ""}, ` : ""}

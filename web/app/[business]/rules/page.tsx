@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { RuleComposer } from "@/components/rule-composer";
+import { SpeakRule } from "@/components/speak-rule";
 import { Badge, Card, PageHead, Skeleton } from "@/components/ui";
 import { api, BUSINESSES, type Business, type MiddleStep, type RuleRow } from "@/lib/api";
 import { actionLabel, stageLabel } from "@/lib/labels";
@@ -29,9 +30,16 @@ async function Rules({ params }: { params: PageProps<"/[business]/rules">["param
   return (
     <div className="space-y-8">
       <div className="grid items-start gap-6 lg:grid-cols-[1fr_460px] lg:gap-8">
-        <Card className="min-w-0">
-          <RuleComposer business={business} />
-        </Card>
+        <div className="min-w-0 space-y-6">
+          {business === "birgunj" && (
+            <Card>
+              <SpeakRule business={business} />
+            </Card>
+          )}
+          <Card>
+            <RuleComposer business={business} />
+          </Card>
+        </div>
         <div className="min-w-0 space-y-6">
           <Card>
             <h2 className="text-[1.45rem] font-medium">

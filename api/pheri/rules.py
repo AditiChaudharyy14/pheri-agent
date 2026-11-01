@@ -32,7 +32,7 @@ MAX_RULE_CHARS = 500
 PRIVATE_MAX_OUTPUT_TOKENS = 8000  # Muse Spark Open always reasons
 
 SEED_RULES = {"brightdesk": ["Never offer discounts in a customer's first month."],
-              "birgunj": ["Don't message customers between 9pm and 8am.", "No discounts above 10%."]}
+              "birgunj": ["Don't message customers between 9pm and 8am.", "No discounts above 15%."]}
 
 
 # ---- typed checks ---------------------------------------------------------------
@@ -357,7 +357,7 @@ def _mock_compile(messages: list[dict], schema: dict | None) -> str:
     text = json.loads(messages[-1]["content"])["rule"].casefold()
     blank = {k: None for k in RawCheck.model_fields if k != "kind"}
     checks, used = [], False
-    if "discount" in text:
+    if "discount" in text or "डिस्काउंट" in text or "छूट" in text:
         if m := re.search(rf"first {_N}? ?(day|week|month|year)s?", text):
             checks.append({**blank, "kind": "no_discount_first_days",
                            "days": _n(m.group(1) or "one") * _UNIT_DAYS[m.group(2)]})
@@ -365,6 +365,11 @@ def _mock_compile(messages: list[dict], schema: dict | None) -> str:
         if m := re.search(r"(?:over|above|more than|bigger than|larger than|max(?:imum)?(?: of)?|up to)\s*(\d+(?:\.\d+)?)\s*%",
                           text):
             checks.append({**blank, "kind": "max_discount_pct", "pct": float(m.group(1))})
+            used = True
+        elif m := re.search(r"(\d+|दस|पाँच|पंद्रह|बीस)\s*(?:परसेंट|प्रतिशत|%)\s*से\s*(?:ज़्यादा|ज्यादा|अधिक)", text):
+            # the owner's Hindi ("दस परसेंट से ज़्यादा डिस्काउंट मत देना"): offline stand-in only
+            hindi = {"दस": 10, "पाँच": 5, "पंद्रह": 15, "बीस": 20}
+            checks.append({**blank, "kind": "max_discount_pct", "pct": float(hindi.get(m.group(1), m.group(1)))})
             used = True
         elif re.search(r"\b(never|no)\b.*discount", text) and not used:
             checks.append({**blank, "kind": "max_discount_pct", "pct": 0.0})

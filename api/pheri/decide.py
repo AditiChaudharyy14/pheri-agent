@@ -143,7 +143,24 @@ ANSWER_POLICY = ("A question is answered from the facts, the shop's own facts (s
 MONEY_POLICY = ("They asked about money, which the owner decides: still reply to them now, with a step that fits "
                 "(a holding reply), saying the owner will answer this morning; code gives the owner the two choices. "
                 "Never make it a task_for_owner, and promise no price, discount or refund.")
+GOLD_HOW = ("Replies the owner corrected by hand, in this customer's language: copy their tone, words and length, "
+            "never their facts (use only this customer's own facts).")
 STYLE_WHEN = "the shop's own rules: follow every one whenever you write in Nepali, Hindi or Bhojpuri"
+
+
+def gold_examples(business: str, language: str | None) -> list[dict]:
+    """The owner's corrected replies in this language (the style guide's "* lang | they wrote | reply" lines), as
+    examples for the brief: what the customer wrote, and the reply body the owner would send."""
+    name = STYLE_GUIDES.get(business)
+    if name is None or not language:
+        return []
+    out = []
+    for line in globals()[name].read_text(encoding="utf-8").splitlines():
+        if line.startswith("* ") and line.count("|") >= 2:
+            lang, wrote, reply = (x.strip() for x in line[2:].split("|", 2))
+            if lang == language:
+                out.append({"customer_wrote": wrote, "reply": reply})
+    return out
 
 
 def style_rules(business: str) -> list[str]:
@@ -529,6 +546,8 @@ class _ToolLoop:
                  "business_name": BUSINESS_NAMES[p.business], "today": now.date().isoformat()}
         if rules := style_rules(p.business):  # the shop's own style guide: part of its brief, not of Pheri's behaviour
             brief["style_guide"] = {"follow_when": STYLE_WHEN, "rules": rules}
+            if examples := gold_examples(p.business, p.writes_in):  # the owner's own corrected replies, their language
+                brief["style_guide"]["examples"] = {"how": GOLD_HOW, "replies": examples}
         if shop_file(p.business):  # a shop with its own facts: answer from them; the owner keeps what they can't settle
             brief["answer_policy"] = ANSWER_POLICY
             if p.facts.get("asks_about_money"):  # seen live: the policy alone made a money question an owner task
@@ -634,6 +653,8 @@ class _PrivateLoop:
                    "allowed": _allowed_view(store), "dry_run": dry}
         if rules := style_rules(business):
             payload["style_guide"] = {"follow_when": STYLE_WHEN, "rules": rules}
+            if examples := gold_examples(business, run.profile.writes_in):
+                payload["style_guide"]["examples"] = {"how": GOLD_HOW, "replies": examples}
         if shop_file(business):
             payload["answer_policy"] = ANSWER_POLICY
             if run.profile.facts.get("asks_about_money"):

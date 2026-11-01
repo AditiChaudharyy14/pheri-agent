@@ -223,7 +223,8 @@ def test_every_style_rule_is_one_line_so_the_brief_reads_all_of_it():
     """The brief takes the guide's "- " lines; a rule wrapped onto a second line would lose that line."""
     lines = (REPO_ROOT / "api" / "pheri" / "style_ne_hi.md").read_text(encoding="utf-8").splitlines()
     first_rule = next(i for i, x in enumerate(lines) if x.startswith("- "))
-    assert all(x.startswith("- ") or not x.strip() for x in lines[first_rule:])
+    gold = next((i for i, x in enumerate(lines) if x.startswith("## Gold examples")), len(lines))
+    assert all(x.startswith("- ") or not x.strip() for x in lines[first_rule:gold])
 
 
 # ---- round 3: lots counted in lots, phrases said once, India's prices in ₹ by code ---------------------------------
@@ -263,3 +264,25 @@ def test_customers_in_india_see_rupees_too_converted_by_code_at_1_6():
     assert money(2400, "ne") == "रु 2400"  # Nepal: no ₹
     f, _ = facts_for("पिछली बार वाली साड़ी बहुत अच्छी थी। वैसी और है?", "Raxaul", "IN", "tihar", last_item="Georgette saree")
     assert "रु 2400 (₹1500)" in f["shop_stock"]
+
+
+def test_the_owners_gold_examples_reach_the_brief_in_the_customers_language_only(birgunj, llm, monkeypatch):
+    """Round 3: Aditi's corrected replies are few-shot examples, one language at a time (a Bhojpuri customer sees
+    the Bhojpuri ones), each with the message it answers."""
+    from pheri import decide
+    from pheri import llm as llm_module
+
+    bho = decide.gold_examples("birgunj", "bho")
+    assert bho and all(set(x) == {"customer_wrote", "reply"} for x in bho)
+    assert any("फोटो भेज देले बानी" in x["reply"] for x in bho)
+    assert not any("छ।" in x["reply"] for x in bho)  # no Nepali example for a Bhojpuri customer
+    assert decide.gold_examples("brightdesk", "en") == [] and decide.gold_examples("birgunj", None) == []
+    briefs = {}
+    real = llm_module._mock_responders[decide.PURPOSE]
+    monkeypatch.setitem(llm_module._mock_responders, decide.PURPOSE,
+                        lambda m, s: briefs.setdefault("b", json.loads(m[1]["content"])) and real(m, s))
+    sita = next(k for k, c in birgunj.customers.items() if c.name == "Sita Shrestha")
+    store = MemoryStore("birgunj")
+    seed(store, llm, by="test")
+    decide.decide(build_profile(birgunj, sita, llm), store, llm, NIGHT_RUN)
+    assert briefs["b"]["style_guide"]["examples"]["replies"] == bho

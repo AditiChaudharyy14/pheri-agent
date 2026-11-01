@@ -28,3 +28,13 @@ here reaches the next draft. Aditi adds more rules after her native review.
 - In Nepali, the size line is: "छातीको सबैभन्दा फराकिलो भाग नापेर १ इन्च थप्नुहोस्".
 - To send photos, use the send photos step and say so in their language: Nepali "फोटो पठाएका छौं", Roman Nepali "photo pathayeka chhau", Hindi "फोटो भेज दी हैं", Bhojpuri "फोटो भेज देले बानी"; never write a photo id.
 - A late delivery: the reply starts with an apology ("देरी के लिए माफ़ी चाहते हैं"; Bhojpuri "देरी खातिर माफी चाहत बानी").
+
+## Gold examples
+
+Aditi's corrected replies from her native review, each with the message it answers. The brief gives the model the
+ones in the customer's language as examples (decide.gold_examples). Each line: `* language | what the customer wrote |
+the reply body` (code adds the honorific after their name and the shop's sign-off).
+
+* ne | अर्को लटमा बीसवटा कटन साडी चाहियो, पहिलेकै जस्तो। | २० वटा कटन साडीको लट स्टकमा छ। रेटबारे साहुजीले आफैं जवाफ दिनुहुन्छ।
+* hi | अगले हफ्ते पिछली बार जैसा लॉट भेज दीजिए। | पिछली बार जैसे 10 जॉर्जेट साड़ियों के लॉट स्टॉक में हैं, रु 21000 (₹13125) प्रति लॉट। अगले हफ्ते भेजने के लिए साहुजी आज सुबह कन्फर्म करेंगे।
+* bho | छठ खातिर नया डिजाइन आइल बा? फोटो भेजीं। | छठ खातिर पियर कॉटन साड़ी आइल बा, रु 1800। फोटो भेज देले बानी।
